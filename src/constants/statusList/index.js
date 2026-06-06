@@ -1,0 +1,1 @@
+export const statusList = ["Started", "Running", "DNF", "DQ", "Finish", "Pending", "DNS"];

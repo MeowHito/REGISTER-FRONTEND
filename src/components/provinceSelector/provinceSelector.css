@@ -1,0 +1,283 @@
+.ps-wrapper {
+  position: relative;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid #f0f0f0;
+  background: #fff;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.ps-wrapper:hover {
+  border-color: #d9d9d9;
+}
+
+/* ─── Compact mode (no card wrapper) ───────────────────────────────────────── */
+.ps-wrapper.ps-compact {
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: 0;
+}
+
+.ps-wrapper.ps-compact:hover {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.ps-wrapper.ps-compact .ps-cascade-bar {
+  margin-bottom: 8px;
+}
+
+.ps-wrapper.ps-compact .ps-field-wrap {
+  padding: 0;
+  background: transparent;
+  border: none;
+  margin-bottom: 0;
+}
+
+.ps-wrapper.ps-compact .ps-field-wrap.ps-waiting {
+  background: transparent;
+  border: none;
+}
+
+.ps-wrapper.ps-compact .ps-step-num {
+  display: none;
+}
+
+.ps-wrapper.ps-compact .ps-field-item {
+  margin-bottom: 0;
+}
+
+.ps-wrapper.ps-compact .ps-count {
+  display: none;
+}
+
+
+
+.ps-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.ps-header-icon {
+  font-size: 18px;
+}
+
+.ps-header-icon.ps-loading {
+  color: #1677ff;
+}
+
+.ps-header-icon.ps-complete {
+  color: #52c41a;
+}
+
+.ps-header-icon.ps-default {
+  color: #8c8c8c;
+}
+
+.ps-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.ps-badge {
+  margin-left: auto;
+}
+
+/* ─── Cascade flow bar ─────────────────────────────────────────────────────── */
+.ps-cascade-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+  padding: 6px 10px;
+  background: #fafafa;
+  border-radius: 20px;
+  border: 1px solid #f0f0f0;
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.ps-cascade-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.ps-cascade-arrow {
+  font-size: 10px;
+  color: #d9d9d9;
+  transition: color 0.3s;
+  flex-shrink: 0;
+}
+
+.ps-cascade-arrow.active {
+  color: #52c41a;
+}
+
+.ps-cascade-tag {
+  border-radius: 12px;
+  font-size: 12px;
+  line-height: 20px;
+  padding: 0 10px;
+  margin: 0;
+  cursor: default;
+  transition: all 0.3s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ps-cascade-tag.ps-cascade-done {
+  background: #f6ffed;
+  border-color: #b7eb8f;
+  color: #389e0d;
+}
+
+.ps-cascade-tag.ps-cascade-loading {
+  background: #e6f4ff;
+  border-color: #91caff;
+  color: #1677ff;
+}
+
+.ps-cascade-tag.ps-cascade-pending {
+  background: #fff;
+  border-color: #e8e8e8;
+  color: #bfbfbf;
+}
+
+/* ─── Fields row ───────────────────────────────────────────────────────────── */
+.ps-fields {
+  position: relative;
+}
+
+/* ─── Individual field wrapper ─────────────────────────────────────────────── */
+.ps-field-wrap {
+  position: relative;
+  padding: 12px 10px 4px 10px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1.5px solid transparent;
+  transition: all 0.3s;
+  margin-bottom: 4px;
+}
+
+.ps-field-wrap.ps-filled {
+  background: #fff;
+  border-color: transparent;
+}
+
+.ps-field-wrap.ps-waiting {
+  background: #fffbe6;
+  border-color: #ffe58f;
+}
+
+.ps-field-wrap.ps-locked {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* ─── Step number badge ────────────────────────────────────────────────────── */
+.ps-step-num {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #1677ff;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.ps-field-wrap.ps-filled .ps-step-num {
+  background: #52c41a;
+  box-shadow: 0 1px 4px rgba(82, 196, 26, 0.3);
+}
+
+.ps-field-wrap.ps-waiting .ps-step-num {
+  background: #faad14;
+  box-shadow: 0 1px 4px rgba(250, 173, 20, 0.3);
+}
+
+.ps-field-wrap.ps-locked .ps-step-num {
+  background: #d9d9d9;
+  box-shadow: none;
+}
+
+/* ─── Form item spacing fix ────────────────────────────────────────────────── */
+.ps-field-item {
+  margin-bottom: 4px;
+}
+
+.ps-field-item .ant-form-item-control {
+  margin-bottom: 0;
+}
+
+/* ─── Count badge (items in dropdown) ──────────────────────────────────────── */
+.ps-count {
+  font-size: 11px;
+  color: #8c8c8c;
+  text-align: center;
+  margin-top: 2px;
+  line-height: 1;
+}
+
+/* ─── Responsive: mobile ───────────────────────────────────────────────────── */
+@media (max-width: 575px) {
+  .ps-wrapper {
+    padding: 12px 10px;
+  }
+
+  .ps-cascade-bar {
+    margin-bottom: 10px;
+    padding: 4px 8px;
+    gap: 4px;
+  }
+
+  .ps-cascade-tag {
+    font-size: 11px;
+    padding: 0 6px;
+  }
+
+  .ps-cascade-arrow {
+    font-size: 8px;
+  }
+
+  .ps-field-wrap {
+    padding: 8px 8px 4px 8px;
+    margin-bottom: 2px;
+  }
+
+  .ps-step-num {
+    display: none;
+  }
+}
+
+/* ─── Responsive: tablet ───────────────────────────────────────────────────── */
+@media (min-width: 576px) and (max-width: 767px) {
+  .ps-wrapper {
+    padding: 14px 12px;
+  }
+
+  .ps-cascade-bar {
+    margin-bottom: 12px;
+  }
+
+  .ps-field-wrap {
+    padding: 10px 10px 4px 10px;
+  }
+}
+

@@ -1,0 +1,96 @@
+.float-label {
+  position: relative;
+}
+
+.float-label .float-input:not(textarea),
+.float-label .float-input:not(textarea) .ant-input-number-wrapper input,
+.float-label .float-input:not(textarea) .ant-input-number-input-wrap input {
+  height: 40px;
+}
+
+.float-label .label {
+  font-weight: normal !important;
+  position: absolute;
+  pointer-events: none;
+  left: 12px;
+  top: 8px;
+  transition: 0.2s ease all;
+  background: transparent;
+  z-index: 10;
+  border-radius: 8px;
+}
+
+.float-label:not(:has(.float-color)) .as-placeholder {
+  color: rgba(0, 0, 0, 0.25);
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 100px); 
+}
+
+.float-label .as-label,
+.float-label:has(.float-color) .as-placeholder {
+  top: -9px;
+  font-size: 12px !important;
+  padding: 0 4px;
+  margin-left: -4px;
+  z-index: 10;
+  border-radius: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 24px);
+
+  text-shadow:
+    -1.5px 0 0 white,
+    1.5px 0 0 white,
+    0 -1.5px 0 white,
+    0 1.5px 0 white,
+    -1px -1px 0 white,
+    1px -1px 0 white,
+    -1px 1px 0 white,
+    1px 1px 0 white;
+}
+
+.float-label input:focus + .label,
+.float-label input:-webkit-autofill + .label {
+  top: -9px;
+  font-size: 12px !important;
+  padding: 0 4px;
+  margin-left: -4px;
+  z-index: 10;
+  white-space: nowrap;
+
+  text-shadow:
+    -1.5px 0 0 white,
+    1.5px 0 0 white,
+    0 -1.5px 0 white,
+    0 1.5px 0 white,
+    -1px -1px 0 white,
+    1px -1px 0 white,
+    -1px 1px 0 white,
+    1px 1px 0 white;
+}
+
+.float-color {
+  height: 40px;
+  width: 40px;
+  align-items: center;
+}
+
+.float-label input:-webkit-autofill,
+.float-label input:-webkit-autofill:hover,
+.float-label input:-webkit-autofill:focus,
+.float-label input:-webkit-autofill:active {
+  background-color: white !important;
+  -webkit-box-shadow: 0 0 0px 1000px white inset !important;
+  -webkit-text-fill-color: black !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.radio-align-center {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}

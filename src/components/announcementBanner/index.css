@@ -1,0 +1,128 @@
+.announcement-banner-overlay {
+  position: sticky;
+  top: 65px;
+  z-index: 45;
+  width: 100%;
+  background: linear-gradient(90deg, rgba(51, 122, 183, 0.75) 0%, rgba(42, 99, 149, 0.75) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* Type variants */
+.announcement-type-info {
+  background: linear-gradient(90deg, rgba(51, 122, 183, 0.75) 0%, rgba(42, 99, 149, 0.75) 100%);
+}
+
+.announcement-type-warning {
+  background: linear-gradient(90deg, rgba(230, 168, 23, 0.75) 0%, rgba(201, 148, 16, 0.75) 100%);
+}
+
+.announcement-type-maintenance {
+  background: linear-gradient(90deg, rgba(108, 117, 125, 0.75) 0%, rgba(84, 91, 98, 0.75) 100%);
+}
+
+.announcement-type-important {
+  background: linear-gradient(90deg, rgba(155, 89, 182, 0.75) 0%, rgba(128, 57, 153, 0.75) 100%);
+}
+
+.announcement-banner-inner {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  gap: 10px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.announcement-banner-icon {
+  color: #fff;
+  font-size: 16px;
+  flex-shrink: 0;
+  animation: pulse-icon 2s ease-in-out infinite;
+}
+
+.announcement-banner-content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  height: 22px;
+}
+
+.announcement-banner-slide {
+  display: inline-block;
+  white-space: nowrap;
+  color: #fff;
+  font-size: 14px;
+  line-height: 22px;
+  animation: marquee 30s linear infinite;
+  padding-left: 100%;
+}
+
+.announcement-banner-title {
+  font-weight: 600;
+}
+
+.announcement-banner-message {
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.announcement-banner-counter {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  flex-shrink: 0;
+  min-width: 30px;
+  text-align: center;
+}
+
+.announcement-banner-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 12px;
+  flex-shrink: 0;
+  transition: color 0.2s;
+  line-height: 1;
+}
+
+.announcement-banner-close:hover {
+  color: #fff;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes pulse-icon {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (max-width: 768px) {
+  .announcement-banner-overlay {
+    position: relative;
+    top: 0;
+  }
+
+  .announcement-banner-inner {
+    padding: 6px 12px;
+  }
+
+  .announcement-banner-slide {
+    font-size: 13px;
+  }
+}

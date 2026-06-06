@@ -1,0 +1,114 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+.ant-form-item-control-input-content .ant-checkbox-wrapper {
+  height: 32px !important;
+}
+
+.tiptap-wrapper table {
+  border-collapse: collapse;
+  width: 100%;
+  border: 1px solid #ddd;
+}
+
+.tiptap-wrapper th,
+.tiptap-wrapper td {
+  padding: 8px;
+  border: 1px solid #ddd;
+}
+
+.tiptap-wrapper p {
+  margin: 0;
+}
+
+.tiptap-wrapper [contenteditable="true"] {
+  cursor: text !important;
+}
+
+.tiptap-render{
+  word-break: break-word;
+}
+
+.tiptap-render p,
+.tiptap-render span {
+  margin-block-start: 0.5em;
+  margin-block-end: 0.5em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ─── QA Selection Option Cards ─── */
+.qa-option-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+  background: #fafafa;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.qa-option-card:hover {
+  border-color: #91caff;
+  background: rgba(230, 244, 255, 0.4);
+}
+
+.qa-option-card:has(.ant-checkbox-checked) {
+  border-color: #4096ff;
+  background: #e6f4ff;
+  box-shadow: 0 0 0 1px rgba(64, 150, 255, 0.15);
+}
+
+.qa-option-card .ant-checkbox-wrapper {
+  margin-right: 0 !important;
+  height: auto !important;
+}
+
+/* When free text input is visible, round only top of its parent card */
+.qa-option-card:has(.ant-checkbox-checked) + .qa-freetext-inline {
+  margin-top: 0;
+}
+
+.qa-freetext-inline .ant-input {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
