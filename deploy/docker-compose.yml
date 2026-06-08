@@ -15,7 +15,8 @@ services:
     container_name: membership-fe
     restart: unless-stopped
     ports:
-      - "80:80"
+      # Bind to localhost only — the host nginx (HTTPS) proxies app.<domain> here.
+      - "127.0.0.1:8081:80"
     depends_on:
       - return-2c2p
 
