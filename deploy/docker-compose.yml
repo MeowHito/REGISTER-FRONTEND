@@ -1,0 +1,26 @@
+# Frontend production stack: nginx (serves the built SPA) + return-2c2p bridge.
+#
+#   cd frontend
+#   cp .env.production.example .env.production    # fill in, esp. VITE_CONTEXT_URL
+#   docker compose -f deploy/docker-compose.yml up -d --build
+#
+# Terminate HTTPS in front of this (Caddy/Traefik/Certbot) — OAuth requires HTTPS.
+# This serves plain HTTP on :80; see DEPLOYMENT_PROD.md for the TLS options.
+
+services:
+  web:
+    build:
+      context: ..                 # frontend root (so .env.production is in the build context)
+      dockerfile: Dockerfile
+    container_name: membership-fe
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - return-2c2p
+
+  return-2c2p:
+    build: ./return-2c2p
+    container_name: membership-return-2c2p
+    restart: unless-stopped
+    # not published to the host; only nginx reaches it over the compose network

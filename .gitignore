@@ -12,10 +12,11 @@ dist
 dist-ssr
 *.local
 
-# Environment files with secrets (keep .env.example tracked)
+# Environment files with secrets (keep the .example templates tracked)
 .env
 .env.*
 !.env.example
+!.env.production.example
 
 # Editor directories and files
 .vscode/*
