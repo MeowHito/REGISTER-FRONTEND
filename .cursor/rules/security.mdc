@@ -1,0 +1,18 @@
+---
+description: Security rules — never commit secrets
+alwaysApply: true
+---
+
+# 🔒 NEVER commit secrets
+
+Full policy: see `AGENTS.md`.
+
+Never stage/commit/push real API keys, OAuth client secrets (`GOCSPX-…`), Google API keys
+(`AIza…`), AWS keys (`AKIA…`), or passwords.
+
+Real values live only in gitignored `.env` / `.env.production`. Only `*.example` templates
+with placeholders are committed. OAuth client IDs in `VITE_*` are public (baked into the
+bundle) and OK; client secrets/keys must never be in this frontend repo.
+
+Before committing: review `git diff --staged` for secrets; never `git add -A` blindly;
+never remove `.gitignore` entries that protect `.env` files.
