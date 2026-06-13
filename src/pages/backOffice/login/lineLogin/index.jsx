@@ -4,7 +4,6 @@ import lineLogo from "../../../../assets/images/line.png";
 import masterService from "services/master.services";
 import { useNavigate } from "react-router-dom";
 import { AlertSuccessLogin, AlertClosed, AlertError, AlertLoading } from "components/alert";
-import { errorToMessage } from "hooks/functions/errorToMessage";
 import { useQueryClient } from "@tanstack/react-query";
 
 const LineLogin = () => {
@@ -28,12 +27,12 @@ const LineLogin = () => {
         sessionStorage.setItem("fromSocialLogin", "true");
         navigate("/register");
       } else {
-        AlertError({ text: `LOGIN: ${res?.message || "Login failed"}` });
+        AlertError({ text: res?.message || "ไม่สามารถเข้าสู่ระบบด้วย LINE ได้ กรุณาลองใหม่อีกครั้ง" });
       }
     },
     (err) => {
       AlertClosed();
-      AlertError({ text: errorToMessage(err?.response?.data?.message || err?.message) });
+      AlertError({ text: err?.response?.data?.message || "ไม่สามารถเข้าสู่ระบบด้วย LINE ได้ กรุณาลองใหม่อีกครั้ง" });
     }
   );
 

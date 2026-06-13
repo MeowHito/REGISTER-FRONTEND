@@ -3,7 +3,6 @@ import { useGoogleLogin } from "@react-oauth/google";
 import { AlertClosed, AlertSuccessLogin, AlertError, AlertLoading } from "components/alert";
 import masterService from "services/master.services";
 import { useNavigate } from "react-router-dom";
-import { errorToMessage } from "hooks/functions/errorToMessage";
 import { useQueryClient } from "@tanstack/react-query";
 
 const GoogleLogin = () => {
@@ -23,12 +22,12 @@ const GoogleLogin = () => {
         sessionStorage.setItem("fromSocialLogin", "true");
         navigate("/register");
       } else {
-        AlertError({ text: `LOGIN : ${res?.message || "Login failed"}` });
+        AlertError({ text: res?.message || "ไม่สามารถเข้าสู่ระบบด้วย Google ได้ กรุณาลองใหม่อีกครั้ง" });
       }
     },
     (err) => {
       AlertClosed();
-      AlertError({ text: errorToMessage(err?.response?.data?.message || err?.message) });
+      AlertError({ text: err?.response?.data?.message || "ไม่สามารถเข้าสู่ระบบด้วย Google ได้ กรุณาลองใหม่อีกครั้ง" });
     }
   );
 
