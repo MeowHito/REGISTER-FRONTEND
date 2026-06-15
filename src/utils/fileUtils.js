@@ -65,10 +65,18 @@ export const checkAndUploadImg = async (html, prefix, { isPublic = false } = {})
     return updatedHtml;
 };
 
+// A stored image value may already be a full URL (e.g. seeded/imported events
+// using https://placehold.co/... or any external link) instead of an S3 object
+// key. In that case it must be used as-is — passing it through getPublicUrl would
+// wrongly nest it under the S3 bucket path and 404 ("Image not available").
+export const isAbsoluteUrl = (value) =>
+    typeof value === "string" && /^(https?:)?\/\/|^(data|blob):/i.test(value.trim());
+
 export const usePublicImageUrl = ({ key, prefix = "event", isPublic = false }) => {
     return useQuery({
         queryKey: ["publicUrl", prefix, key],
         queryFn: async () => {
+            if (isAbsoluteUrl(key)) return key;
             const { data } = await createRequest.get("/public-api/getPublicUrl", {
                 params: { key, prefix, isPublic },
             });
@@ -81,6 +89,7 @@ export const usePublicImageUrl = ({ key, prefix = "event", isPublic = false }) =
 
 export const getPublicUrl = async ({ key, prefix, isPublic = false }) => {
     if (!key || !prefix) return null
+    if (isAbsoluteUrl(key)) return key;
     const { data } = await createRequest.get("/public-api/getPublicUrl", {
         params: { key, prefix, isPublic },
     });
