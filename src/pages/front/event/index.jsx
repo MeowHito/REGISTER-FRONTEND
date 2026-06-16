@@ -156,7 +156,7 @@ function Event({ layout = "FrontLayout" }) {
         {isLoadingEvents && page === 1 ? (
           <Row justify="center" gutter={[8, 24]} align="stretch">
             {[...Array(3)].map((_, index) => (
-              <Col className="flex" xs={12} md={8} key={`skeleton-${index}`}>
+              <Col className="flex" xs={24} md={8} key={`skeleton-${index}`}>
                 <Skeleton active>
                   <EventCard />
                 </Skeleton>
@@ -175,7 +175,7 @@ function Event({ layout = "FrontLayout" }) {
             >
               <Row justify="left" gutter={[8, 24]}>
                 {items.map((data, index) => (
-                  <Col key={`event-${index}`} xs={12} md={8}>
+                  <Col key={`event-${index}`} xs={24} md={8}>
                     <EventCard {...data} />
                   </Col>
                 ))}

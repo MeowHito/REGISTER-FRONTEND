@@ -1,12 +1,11 @@
-import { Image, Popover, Skeleton, Tag, Typography } from "antd";
+import { Skeleton } from "antd";
+import { CalendarOutlined, CheckCircleFilled } from "@ant-design/icons";
 import { NOT_FOUND_IMG } from "assets";
 import { SYS_DISPLAY_DATE_FORMAT } from "constants/helper";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { usePublicImageUrl } from "utils/fileUtils";
-
-const { Paragraph } = Typography;
 
 const EventCard = ({
     id,
@@ -15,58 +14,87 @@ const EventCard = ({
     province = "",
     name = "",
     eventDate = null,
-    eventStatus = ""
+    eventStatus = "",
+    type = ""
 }) => {
     const { t, i18n } = useTranslation();
     const { data: logoPreviewUrl, isFetching } = usePublicImageUrl({ key: logoUrl, prefix: "event", isPublic: true });
     const currentLanguage = i18n.language?.toLowerCase();
+    const provinceLabel = province
+        ? currentLanguage === "th"
+            ? province.stateLocal
+            : province.stateEn
+        : "";
+
+    const statusText =
+        eventStatus === "soon"
+            ? t("general.soon")
+            : eventStatus === "openRegistration"
+                ? t("general.openRegistration")
+                : eventStatus === "closedRegistration"
+                    ? t("general.closedRegistration")
+                    : "";
+
+    const statusColor =
+        eventStatus === "soon"
+            ? "text-primary"
+            : eventStatus === "openRegistration"
+                ? "text-[#a83a0a]"
+                : "text-red-300";
 
     return (
-        <div key={`event-${id}`} className="sa-tutor m-auto max-w-[425px] w-full h-full">
-            <Link to={`/eventDetail/${link || id}`}>
-                <div className="tutor-thumb">
-                    {isFetching ?
+        <div key={`event-${id}`} className="m-auto max-w-[425px] w-full h-full">
+            <Link
+                to={`/eventDetail/${link || id}`}
+                className="group h-full bg-white rounded-[18px] md:rounded overflow-hidden border border-slate-200 md:border-gray-100 shadow-[0_14px_35px_rgba(15,23,42,0.08)] md:shadow-[0_10px_15px_2px_rgba(0,0,0,0.03)] flex flex-col transition-all duration-300 md:hover:shadow-none"
+            >
+                <div className="relative aspect-[16/9] overflow-hidden bg-gray-100">
+                    {isFetching ? (
                         <Skeleton.Image
                             active
-                            className="!max-w-full !h-auto !aspect-[16/9] !object-cover !w-full md:!h-60"
-                        /> : <Image
+                            className="!w-full !h-full"
+                        />
+                    ) : (
+                        <img
                             src={logoPreviewUrl || NOT_FOUND_IMG}
-                            alt="Image"
-                            className={`!max-w-full !h-auto !aspect-[16/9] !object-cover md:!h-60`}
-                            style={{ pointerEvents: 'none' }}
-                            preview={false}
-                            fallback={NOT_FOUND_IMG}
-                        />}
+                            alt={name}
+                            onError={(e) => { e.currentTarget.src = NOT_FOUND_IMG; }}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                    )}
+                    {type && (
+                        <span className="absolute top-4 right-4 bg-[#c63d00] text-white text-[12px] font-bold tracking-[0.18em] uppercase px-4 py-2 rounded-full shadow-sm md:text-[10px] md:px-3 md:py-1.5">
+                            {type}
+                        </span>
+                    )}
+                    {provinceLabel && (
+                        <span className="hidden md:inline absolute top-3 left-3 bg-brand text-white text-[11px] font-semibold tracking-wide uppercase px-3 py-1 rounded-full shadow-sm">
+                            {provinceLabel}
+                        </span>
+                    )}
                 </div>
-                <div className="tutor-info text-center min-h-20 md:min-h-28 h-auto flex flex-col gap-1 p-2">
-                    <Popover content={name} trigger="hover">
-                        <Typography className="!text-xs md:!text-base !font-bold">
-                            <Paragraph ellipsis={{ rows: 2 }}>
-                                {name}
-                            </Paragraph>
-                        </Typography>
-                    </Popover>
-                    {province && (
-                        <div className="flex justify-center">
-                            <Tag
-                                bordered={false}
-                                color="blue"
-                            >
-                                {currentLanguage === "th" ? province.stateLocal : province.stateEn}
-                            </Tag>
-                        </div>
+
+                <div className="p-5 md:p-3 flex flex-col flex-1">
+                    <h3 className="text-[24px] md:text-base font-bold text-gray-900 leading-tight md:leading-snug line-clamp-2">
+                        {name}
+                    </h3>
+                    {provinceLabel && (
+                        <span className="md:hidden mt-3 w-fit bg-[#e7e8ff] text-[#091842] text-[12px] font-bold tracking-[0.18em] uppercase px-3 py-1 rounded-lg shadow-sm">
+                            {provinceLabel}
+                        </span>
                     )}
 
-                    <div className={`flex justify-center items-center mb-0 flex-col text-xs md:flex-row md:text-base`}>
-                        <div>
-                            <i className="far fa-calendar mr-2"></i>
+                    <div className="mt-5 md:mt-auto flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 md:gap-2 text-[#4b4d59] text-[18px] md:text-sm">
+                            <CalendarOutlined className="text-brand text-[24px] md:text-base" />
                             {dayjs(eventDate).format(SYS_DISPLAY_DATE_FORMAT)}
                         </div>
-                        <div className={`font-semibold text-xs pl-1.5 md:pl-4 ${eventStatus === "soon" ? 'text-primary' : eventStatus === "openRegistration" ? 'text-success' : 'text-red-300'}`}>
-                            {eventStatus === "soon" && t("general.soon")}
-                            {eventStatus === "openRegistration" && t("general.openRegistration")}
-                            {eventStatus === "closedRegistration" && t("general.closedRegistration")}
-                        </div>
+                        {statusText && (
+                            <div className={`flex items-center gap-2 font-bold text-[13px] md:text-xs tracking-[0.18em] md:tracking-normal whitespace-nowrap ${statusColor}`}>
+                                {eventStatus === "openRegistration" && <CheckCircleFilled />}
+                                {statusText}
+                            </div>
+                        )}
                     </div>
                 </div>
             </Link>

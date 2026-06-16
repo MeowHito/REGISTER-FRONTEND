@@ -1,5 +1,5 @@
 import { Empty, Skeleton } from "antd";
-import { ArrowRightOutlined, CalendarOutlined, LeftOutlined, RightOutlined } from "@ant-design/icons";
+import { ArrowRightOutlined, CalendarOutlined, CheckCircleFilled, LeftOutlined, RightOutlined } from "@ant-design/icons";
 import { NOT_FOUND_IMG } from "assets";
 import { SYS_DISPLAY_DATE_FORMAT } from "constants/helper";
 import { EMPTY_DESCRIPTION } from "constants/emptyDescription";
@@ -12,7 +12,7 @@ import { usePublicImageUrl } from "utils/fileUtils";
 
 const PREVIEW_SIZE = 10;
 
-function UpcomingEventCard({ id, link, logoUrl, province, name, eventDate, eventStatus }) {
+function UpcomingEventCard({ id, link, logoUrl, province, name, eventDate, eventStatus, type }) {
   const { t, i18n } = useTranslation();
   const { data: logoPreviewUrl, isFetching } = usePublicImageUrl({ key: logoUrl, prefix: "event", isPublic: true });
   const currentLanguage = i18n.language?.toLowerCase();
@@ -42,9 +42,9 @@ function UpcomingEventCard({ id, link, logoUrl, province, name, eventDate, event
   return (
     <Link
       to={`/eventDetail/${link || id}`}
-      className="group snap-start shrink-0 w-[260px] sm:w-[300px] md:w-[340px] bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-[0_10px_30px_rgba(0,0,0,0.05)] hover:shadow-[0_18px_40px_rgba(0,0,0,0.10)] hover:-translate-y-1 transition-all duration-300 flex flex-col"
+      className="group snap-start shrink-0 w-full md:w-[340px] bg-white rounded-[18px] md:rounded-2xl overflow-hidden border border-slate-200 md:border-gray-100 shadow-[0_14px_35px_rgba(15,23,42,0.08)] md:shadow-[0_10px_30px_rgba(0,0,0,0.05)] hover:shadow-[0_18px_40px_rgba(0,0,0,0.10)] md:hover:-translate-y-1 transition-all duration-300 flex flex-col"
     >
-      <div className="relative aspect-[16/10] overflow-hidden bg-gray-100">
+      <div className="relative aspect-[16/9] md:aspect-[16/10] overflow-hidden bg-gray-100">
         {isFetching ? (
           <Skeleton.Image active className="!w-full !h-full" />
         ) : (
@@ -55,25 +55,36 @@ function UpcomingEventCard({ id, link, logoUrl, province, name, eventDate, event
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
         )}
+        {type && (
+          <span className="absolute top-4 right-4 bg-[#c63d00] text-white text-[12px] font-bold tracking-[0.18em] uppercase px-4 py-2 rounded-full shadow-sm">
+            {type}
+          </span>
+        )}
         {provinceLabel && (
-          <span className="absolute top-3 left-3 bg-brand text-white text-[11px] font-semibold tracking-wide uppercase px-3 py-1 rounded-full shadow-sm">
+          <span className="hidden md:inline absolute top-3 left-3 bg-brand text-white text-[11px] font-semibold tracking-wide uppercase px-3 py-1 rounded-full shadow-sm">
             {provinceLabel}
           </span>
         )}
       </div>
 
-      <div className="p-4 md:p-5 flex flex-col flex-1">
-        <h3 className="text-sm md:text-base font-bold text-gray-900 leading-snug line-clamp-2 min-h-[2.6em]">
+      <div className="p-5 md:p-5 flex flex-col flex-1">
+        <h3 className="text-[24px] md:text-base font-bold text-gray-900 leading-tight md:leading-snug line-clamp-2 md:min-h-[2.6em]">
           {name}
         </h3>
+        {provinceLabel && (
+          <span className="md:hidden mt-3 w-fit bg-[#e7e8ff] text-[#091842] text-[12px] font-bold tracking-[0.18em] uppercase px-3 py-1 rounded-lg shadow-sm">
+            {provinceLabel}
+          </span>
+        )}
 
-        <div className="mt-auto pt-4 flex items-center justify-between border-t border-gray-100 mt-4">
-          <div className="flex items-center gap-2 text-gray-500 text-xs md:text-sm">
-            <CalendarOutlined className="text-brand" />
+        <div className="mt-5 md:mt-auto md:pt-4 flex items-center justify-between md:border-t md:border-gray-100">
+          <div className="flex items-center gap-3 md:gap-2 text-[#4b4d59] text-[18px] md:text-sm">
+            <CalendarOutlined className="text-brand text-[24px] md:text-base" />
             <span>{dayjs(eventDate).format(SYS_DISPLAY_DATE_FORMAT)}</span>
           </div>
           {statusText && (
-            <span className={`text-[11px] md:text-xs font-semibold whitespace-nowrap ${statusColor}`}>
+            <span className={`flex items-center gap-2 text-[13px] md:text-xs font-bold tracking-[0.18em] md:tracking-normal whitespace-nowrap ${eventStatus === "openRegistration" ? "text-[#a83a0a]" : statusColor}`}>
+              {eventStatus === "openRegistration" && <CheckCircleFilled className="text-[#a83a0a]" />}
               {statusText}
             </span>
           )}
@@ -111,12 +122,12 @@ export default function UpcomingEvents() {
   };
 
   return (
-    <section className="bg-white py-10 md:py-16">
-      <div className="container md:max-w-screen-xl mx-auto px-4">
+    <section className="bg-[#f9fafc] md:bg-white py-12 md:py-16">
+      <div className="container md:max-w-screen-xl mx-auto px-5 md:px-4">
         {/* Section header */}
-        <div className="flex items-end justify-between gap-4 mb-6 md:mb-10">
+        <div className="flex items-end justify-between gap-4 mb-8 md:mb-10">
           <div>
-            <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900">
+            <h2 className="text-[36px] leading-[1.05] md:text-3xl font-extrabold text-gray-900">
               {t("front.home.upcomingEvents")}
             </h2>
             <div className="h-1 w-16 md:w-20 bg-brand rounded-full mt-2" />
@@ -157,11 +168,11 @@ export default function UpcomingEvents() {
 
         {/* Cards */}
         {isFetching && items.length === 0 ? (
-          <div className="flex gap-5 overflow-hidden">
+          <div className="flex flex-col md:flex-row gap-8 md:gap-5 overflow-hidden">
             {[...Array(3)].map((_, index) => (
               <div
                 key={`skeleton-${index}`}
-                className="shrink-0 w-[260px] sm:w-[300px] md:w-[340px] bg-white rounded-2xl border border-gray-100 p-4"
+                className="shrink-0 w-full md:w-[340px] bg-white rounded-[18px] md:rounded-2xl border border-gray-100 p-4"
               >
                 <Skeleton.Image active className="!w-full !h-40 !rounded-xl" />
                 <Skeleton active paragraph={{ rows: 2 }} className="mt-3" />
@@ -171,7 +182,7 @@ export default function UpcomingEvents() {
         ) : items.length > 0 ? (
           <div
             ref={scrollRef}
-            className="flex gap-5 overflow-x-auto pb-4 -mx-4 px-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent"
+            className="flex flex-col md:flex-row gap-8 md:gap-5 overflow-visible md:overflow-x-auto pb-4 md:-mx-4 md:px-4 snap-y md:snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent"
           >
             {items.map((data, index) => (
               <UpcomingEventCard key={`upcoming-${data.id || index}`} {...data} />
@@ -179,7 +190,7 @@ export default function UpcomingEvents() {
             {/* Trailing CTA card */}
             <Link
               to="/event"
-              className="snap-start shrink-0 w-[160px] md:w-[200px] rounded-2xl border-2 border-dashed border-gray-200 text-gray-500 hover:border-brand hover:text-brand transition-colors flex flex-col items-center justify-center gap-2 font-semibold"
+              className="hidden md:flex snap-start shrink-0 w-[200px] rounded-2xl border-2 border-dashed border-gray-200 text-gray-500 hover:border-brand hover:text-brand transition-colors flex-col items-center justify-center gap-2 font-semibold"
             >
               <ArrowRightOutlined className="text-xl" />
               <span className="text-sm text-center px-3">{t("front.home.viewAllEvents")}</span>
