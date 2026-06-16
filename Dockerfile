@@ -9,7 +9,11 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+# The committed package-lock.json pins a wrong-platform rollup binary (android-arm),
+# which breaks `npm ci` on linux/x64. Drop the lockfile so npm resolves the correct
+# native module (@rollup/rollup-linux-x64-musl) for this platform. See npm/cli#4828.
+RUN --mount=type=cache,target=/root/.npm \
+    rm -f package-lock.json && npm install
 COPY . .
 RUN npm run build            # reads .env.production, outputs dist/
 
