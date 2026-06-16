@@ -8,7 +8,8 @@ import { Outlet, useLocation } from 'react-router-dom'
 
 export default function MainLayout() {
   const loading = useSelector((state) => state.loading.loading);
-  const isBackoffice = useLocation().pathname.startsWith('/backoffice');
+  const { pathname } = useLocation();
+  const isFullWidth = pathname.startsWith('/backoffice') || pathname === '/';
   return (
     <>
       {loading &&
@@ -16,7 +17,7 @@ export default function MainLayout() {
           <Spin className="center" />
         </div>
       }
-      <Layout className={`min-h-screen mx-auto ${isBackoffice ? 'w-full' : 'md:max-w-[1200px]'}`}>
+      <Layout className={`min-h-screen mx-auto ${isFullWidth ? 'w-full' : 'md:max-w-[1200px]'}`}>
         <Header />
         <AnnouncementBanner />
         <Content id="scrollableDiv">

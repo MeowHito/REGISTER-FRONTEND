@@ -34,7 +34,7 @@ export default function Menu() {
   ], [currentLanguage]);
 
   const isActive = (link) => location.pathname === link || location.pathname.startsWith(link + "/");
-  const isBackoffice = location.pathname.startsWith("/backoffice");
+  const isFullWidth = location.pathname.startsWith("/backoffice") || location.pathname === "/";
 
   const handleLogout = async () => {
     await logout();
@@ -82,11 +82,11 @@ export default function Menu() {
 
   return (
     <div className="bg-white/85 backdrop-blur-md border-b border-gray-200">
-      <nav className={`flex justify-between items-center h-[56px] md:h-[65px] px-4 md:px-6 mx-auto ${isBackoffice ? "max-w-full" : "max-w-[1200px]"}`}>
+      <nav className={`flex justify-between items-center h-[56px] md:h-[65px] px-4 md:px-6 mx-auto ${isFullWidth ? "max-w-full" : "max-w-[1200px]"}`}>
         {/* Left: logo + desktop nav */}
         <div className="flex items-center gap-8">
           <Link to="/" className="shrink-0">
-            <img src={logo_black} alt="Logo" className="h-9 md:h-10 w-auto align-middle" />
+            <img src={logo_black} alt="Logo" className="h-7 md:h-10 w-auto align-middle" />
           </Link>
 
           {!isTablet && (
@@ -142,9 +142,9 @@ export default function Menu() {
                 type="button"
                 aria-label="Open menu"
                 onClick={() => setDrawerOpen(true)}
-                className="p-2 text-inkx-variant active:scale-95 transition-transform"
+                className="w-8 h-8 flex items-center justify-center rounded-full text-inkx-variant hover:bg-gray-100 active:scale-95 transition-all"
               >
-                <MenuOutlined style={{ fontSize: 20 }} />
+                <MenuOutlined style={{ fontSize: 18 }} />
               </button>
             </>
           )}

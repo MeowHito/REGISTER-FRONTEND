@@ -52,7 +52,7 @@ function Slider() {
   }
 
   const Hero = (
-    <section className="relative overflow-hidden aspect-[16/5] flex items-center">
+    <section className="relative overflow-hidden flex items-center aspect-[16/5]">
       {/* Background images */}
       <div className="absolute inset-0">
         {images.map((img, index) => (
@@ -71,8 +71,8 @@ function Slider() {
   )
 
   const SearchBar = (
-    <div className="max-w-[1100px] mx-auto px-5 -mt-8 md:-mt-10 relative z-20">
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-xl p-3 md:p-4 grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
+    <div className="max-w-screen-xl mx-auto px-4 md:px-5 mt-4 md:-mt-10 relative z-20">
+      <div className="bg-white border border-gray-200 rounded-xl md:rounded-2xl shadow-xl p-2.5 md:p-4 grid grid-cols-3 md:grid-cols-4 gap-2 md:gap-3 items-center">
         <Select
           placeholder={t('front.event.selectProvince')}
           allowClear
@@ -108,7 +108,7 @@ function Slider() {
         />
         <button
           onClick={handleSearch}
-          className="h-10 w-full bg-brand hover:bg-brand-dark text-white font-semibold rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md"
+          className="col-span-3 md:col-span-1 h-10 w-full bg-brand hover:bg-brand-dark text-white font-semibold text-sm md:text-base rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md"
         >
           <SearchOutlined />
           {t('general.search')}
