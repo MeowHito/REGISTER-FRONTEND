@@ -4,10 +4,11 @@ import Header from 'components/header'
 import AnnouncementBanner from 'components/announcementBanner'
 import React from 'react'
 import { useSelector } from 'react-redux'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 
 export default function MainLayout() {
   const loading = useSelector((state) => state.loading.loading);
+  const isBackoffice = useLocation().pathname.startsWith('/backoffice');
   return (
     <>
       {loading &&
@@ -15,10 +16,10 @@ export default function MainLayout() {
           <Spin className="center" />
         </div>
       }
-      <Layout className='min-h-screen md:max-w-[1200px] mx-auto'>
+      <Layout className={`min-h-screen mx-auto ${isBackoffice ? 'w-full' : 'md:max-w-[1200px]'}`}>
         <Header />
         <AnnouncementBanner />
-        <Content id="scrollableDiv" className='md:mt-[65px]'>
+        <Content id="scrollableDiv">
           <Outlet />
         </Content>
       </Layout>

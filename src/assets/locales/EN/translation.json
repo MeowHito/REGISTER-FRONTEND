@@ -20,7 +20,8 @@
       "organizer": "For Organizers",
       "contact": "Contact Us",
       "login": "Login",
-      "logout": "Logout"
+      "logout": "Logout",
+      "register": "Register"
     },
     "campaign": {
       "searchEvent": "Search Event"
@@ -107,7 +108,7 @@
       "searchTitle": "Search Participants",
       "enterNameToSearch": "Enter a participant name to start searching",
       "bibNo": "BIB No.",
-      "idNo": "ID No.",
+      "idNo": "ID / Passport No.",
       "nationality": "Nationality",
       "gender": "Gender",
       "orderNo": "Order No.",
@@ -127,7 +128,6 @@
       "birthDate": "Birth Date",
       "contactInfo": "Contact Info",
       "email": "Email",
-      "idNo": "ID / Passport No.",
       "phone": "Phone",
       "address": "Address",
       "healthEmergency": "Health & Emergency",
@@ -147,7 +147,17 @@
       "totalPrice": "Total",
       "fullDetailRemark": "Some information is hidden. To view full details, please log in and link your ID number."
     },
-    "home": {},
+    "home": {
+      "upcomingEvents": "Upcoming Events",
+      "upcomingEventsDesc": "Discover your next challenge and secure your spot today.",
+      "viewAllEvents": "View all events",
+      "newsletterTitle": "Stay Ahead of the Pack",
+      "newsletterDesc": "Subscribe to get notified about early bird registrations and exclusive athlete perks.",
+      "newsletterPlaceholder": "Your email address",
+      "newsletterButton": "Subscribe",
+      "newsletterInvalid": "Please enter a valid email address.",
+      "newsletterSuccess": "Thanks for subscribing!"
+    },
     "slider": {},
     "summary": {},
     "footer": {
@@ -1815,7 +1825,7 @@
         "districtPrefix": "Dist.",
         "provincePrefix": "Prov.",
         "fee": "Charges",
-        "linkhere":"Click here",
+        "linkhere": "Click here",
         "orderClosed": "Your registration has expired.",
         "orderCancelled": "Your registration has been cancelled.",
         "orderReview": "Your order is under review",

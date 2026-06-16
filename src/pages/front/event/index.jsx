@@ -13,6 +13,8 @@ import enUS from 'antd/es/date-picker/locale/en_US';
 import { eventTypeOption } from 'constants/options/eventTypeOption';
 import { handleQueryStatus } from 'utils';
 import useCountryStateHook from 'hooks/useCountryStateHook';
+import { useSearchParams } from 'react-router-dom';
+import dayjs from 'dayjs';
 
 const { MonthPicker } = DatePicker;
 
@@ -20,12 +22,21 @@ function Event({ layout = "FrontLayout" }) {
   const { t, i18n } = useTranslation();
   const limitPage = 12;
 
+  const [urlParams] = useSearchParams();
+  const initialProvince = (() => {
+    const p = urlParams.get('province');
+    if (!p) return null;
+    return /^\d+$/.test(p) ? Number(p) : p;
+  })();
+  const monthParam = urlParams.get('month');
+  const initialMonth = monthParam ? dayjs(`${monthParam}-01`) : null;
+
   const [page, setPage] = useState(1);
   const [items, setItems] = useState([]);
-  const [provinceId, setProvinceId] = useState(null);
+  const [provinceId, setProvinceId] = useState(initialProvince);
 
-  const [eventType, setEventType] = useState(null);
-  const [selectedMonth, setSelectedMonth] = useState(null);
+  const [eventType, setEventType] = useState(urlParams.get('type') || null);
+  const [selectedMonth, setSelectedMonth] = useState(initialMonth);
   const [eventName, setEventName] = useState(null);
   const [searchParams, setSearchParams] = useState(null);
   const isThai = i18n.language === "th";

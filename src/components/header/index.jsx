@@ -1,9 +1,11 @@
 import Menu from "components/menu";
+import { useLocation } from "react-router-dom";
 
 export default function Header() {
+  const isBackoffice = useLocation().pathname.startsWith("/backoffice");
 
   return (
-    <header className="md:fixed md:h-[65px] shadow-sm w-full md:max-w-[1200px] mx-auto z-50 bg-inherit">
+    <header className={`sticky top-0 z-50 shadow-sm w-full mx-auto ${isBackoffice ? "" : "md:max-w-[1200px]"}`}>
       <Menu />
     </header>
   );

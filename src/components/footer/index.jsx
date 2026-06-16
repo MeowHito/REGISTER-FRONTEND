@@ -1,120 +1,103 @@
-import { logo_white } from "assets";
+import { logo_black } from "assets";
 import { Link } from "react-router-dom";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "antd";
 
-const bottomMenu = [
-  {
-    key: "allEvents",
-    link: "/event",
-  },
-  {
-    key: "eventCalendar",
-    link: "/eventCalendar",
-  },
-  {
-    key: "contactChannel",
-    link: "/contact",
-  },
+const socials = [
+  { href: "https://www.facebook.com/@action.in.th", title: "Facebook", icon: "fab fa-facebook-f" },
+  { href: "https://wa.me/message/W6KZXL2IWEH5N1", title: "WhatsApp", icon: "fab fa-whatsapp" },
+  { href: "https://line.me/R/ti/p/@action.in.th", title: "LINE", icon: "fab fa-line" },
+  { href: "https://www.instagram.com/action.in.th", title: "Instagram", icon: "fab fa-instagram" },
+  { href: "https://photo.action.in.th", title: "Action Gallery", icon: "fas fa-image" },
+];
+
+const menuLinks = [
+  { key: "allEvents", to: "/event" },
+  { key: "eventCalendar", to: "/eventCalendar" },
+  { key: "contactChannel", to: "/contact" },
+  { key: "searchPhotos", href: "https://photo.action.in.th" },
+  { key: "raceResults", href: "https://timing.action.in.th" },
 ];
 
 export default function Footer({ layout }) {
   const { t } = useTranslation();
 
   return (
-    <div className="footer">
-      {layout != "compact" ? (
-        <div className="footer-top hidden md:block">
-          <div className="container">
-            <div className="footer-content md:max-w-screen-lg mx-auto">
-              <div className="footer-social">
-                <ul className="global-list">
+    <footer className="w-full bg-surfacex-highest border-t border-gray-300/60">
+      {layout !== "compact" && (
+        <div className="max-w-[1200px] mx-auto px-5 md:px-6 py-10 md:py-14">
+          <div className="flex flex-col md:flex-row justify-between gap-10">
+            {/* Brand */}
+            <div className="max-w-sm">
+              <img src={logo_black} alt="Action" className="h-10 w-auto mb-4" />
+              <p className="text-inkx-variant text-sm leading-relaxed">
+                {t("front.footer.description")}
+              </p>
+              <div className="flex items-center gap-3 mt-5">
+                {socials.map((s) => (
+                  <a
+                    key={s.title}
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={s.title}
+                    className="w-9 h-9 rounded-full bg-white text-inkx-variant border border-gray-200 flex items-center justify-center hover:bg-brand hover:text-white hover:border-brand transition-colors"
+                  >
+                    <i className={s.icon}></i>
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Link columns */}
+            <div className="grid grid-cols-2 gap-10 md:gap-16">
+              <div>
+                <h4 className="text-brand font-bold mb-4">{t("front.footer.otherMenu")}</h4>
+                <ul className="space-y-3 text-sm">
+                  {menuLinks.map((m) => (
+                    <li key={m.key}>
+                      {m.to ? (
+                        <Link to={m.to} className="text-inkx-variant hover:text-brand transition-colors">
+                          {t(`front.footer.${m.key}`)}
+                        </Link>
+                      ) : (
+                        <a
+                          href={m.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-inkx-variant hover:text-brand transition-colors"
+                        >
+                          {t(`front.footer.${m.key}`)}
+                        </a>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="text-brand font-bold mb-4">{t("front.footer.contact")}</h4>
+                <ul className="space-y-3 text-sm text-inkx-variant">
+                  <li>{t("front.footer.address")}</li>
                   <li>
-                    <a href="https://www.facebook.com/@action.in.th" target="_blank" rel="noopener noreferrer" title="Facebook">
-                      <i className="fab fa-facebook-f"></i>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="https://wa.me/message/W6KZXL2IWEH5N1" target="_blank" rel="noopener noreferrer" title="WhatsApp">
-                      <i className="fab fa-whatsapp"></i>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="https://line.me/R/ti/p/@action.in.th" target="_blank" rel="noopener noreferrer" title="LINE">
-                      <i className="fab fa-line"></i>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="https://photo.action.in.th" target="_blank" rel="noopener noreferrer" title="Action Gallery">
-                      <i className="fas fa-image"></i>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="https://www.instagram.com/action.in.th" target="_blank" rel="noopener noreferrer" title="Instagram">
-                      <i className="fab fa-instagram"></i>
+                    <a href="mailto:Action.in.th@gmail.com" className="hover:text-brand transition-colors">
+                      Action.in.th@gmail.com
                     </a>
                   </li>
                 </ul>
               </div>
-
-              <div className="flex flex-wrap -mx-3">
-                <div className="w-full md:w-1/2 lg:w-1/3 px-3 mb-6">
-                  <div className="footer-widget">
-                    <div className="footer-logo">
-                      <img src={logo_white} alt="Logo" className="max-w-full h-auto" />
-                    </div>
-                    <p>{t("front.footer.description")}</p>
-                  </div>
-                </div>
-
-                <div className="w-full md:w-1/2 lg:w-1/3 px-3 mb-6">
-                  <div className="footer-widget md:px-4">
-                    <h3>{t("front.footer.otherMenu")}</h3>
-                    <ul className="global-list">
-                      {bottomMenu?.map((menu, index) => (
-                        <li key={index}>
-                          <Link to={menu.link}>
-                            <p>{t(`front.footer.${menu.key}`)}</p>
-                          </Link>
-                        </li>
-                      ))}
-                      <li>
-                        <a href="https://photo.action.in.th" target="_blank" rel="noopener noreferrer">
-                          <p>{t("front.footer.searchPhotos")}</p>
-                        </a>
-                      </li>
-                      <li>
-                        <a href="https://timing.action.in.th" target="_blank" rel="noopener noreferrer">
-                          <p>{t("front.footer.raceResults")}</p>
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="w-full md:w-1/2 lg:w-1/3 px-3 mb-6">
-                  <div className="footer-widget">
-                    <div className="payment-gateway">
-                      <h4>{t("front.footer.contact")}</h4>
-                      <p>{t("front.footer.address")}</p>
-                      <p>Email: Action.in.th@gmail.com</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
-      ) : null}
+      )}
 
-      <div className="footer-bottom">
-        <div className="container text-center">
-          <span className="block text-sm text-center">
+      <div className="border-t border-gray-300/60">
+        <div className="max-w-[1200px] mx-auto px-5 md:px-6 py-5 text-center">
+          <span className="block text-sm text-inkx-variant">
             © 2022-{new Date().getFullYear()} Action in thai™. {t("front.footer.rightsReserved")}
           </span>
         </div>
       </div>
-    </div>
+    </footer>
   );
 }

@@ -1,17 +1,19 @@
 import { logo_black } from "assets";
-import { useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import LanguageSelector from "components/languageSelector";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "react-responsive";
-import { Dropdown } from "antd";
-import { LogoutOutlined, SolutionOutlined, UserOutlined } from "@ant-design/icons";
+import { Drawer, Dropdown } from "antd";
+import { LogoutOutlined, MenuOutlined, SolutionOutlined, UserOutlined } from "@ant-design/icons";
 import useMe, { useLogout } from "hooks/useMe";
 
 export default function Menu() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const isTablet = useMediaQuery({ query: "(max-width: 992px)" });
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const { data: me, status } = useMe({ retry: 0 });
   const isLoggedIn = status === "success" && !!me;
@@ -25,26 +27,14 @@ export default function Menu() {
 
   const currentLanguage = i18n.language?.toLowerCase();
 
-  const standartMenu = [
+  const navMenu = useMemo(() => [
     { text: t("front.menu.event"), link: "/event" },
     { text: t("front.menu.eventCalendar"), link: "/eventCalendar" },
     { text: t("front.menu.contact"), link: "/contact" },
-  ];
+  ], [currentLanguage]);
 
-  const mainMenuNormal = [
-    ...standartMenu,
-    { text: t("front.menu.login"), link: "/login" },
-  ];
-
-  const truncate = (text, maxLength = 10) => {
-    if (!text) return "";
-    if (isTablet) return text;
-    return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
-  };
-
-  const mainMenu = useMemo(() => {
-    return isLoggedIn ? standartMenu : mainMenuNormal;
-  }, [isLoggedIn, currentLanguage]);
+  const isActive = (link) => location.pathname === link || location.pathname.startsWith(link + "/");
+  const isBackoffice = location.pathname.startsWith("/backoffice");
 
   const handleLogout = async () => {
     await logout();
@@ -80,97 +70,150 @@ export default function Menu() {
   ];
 
   const handleUserMenuClick = ({ key }) => {
-    if (key === "logout") {
-      handleLogout();
-    }
+    if (key === "logout") handleLogout();
   };
 
-  const navDropdownItems = [
-    ...mainMenu.map((m) => ({
-      key: `nav-${m.link}`,
-      label: <Link to={m.link}>{m.text}</Link>,
-    })),
-    ...(isLoggedIn
-      ? [
-        { type: "divider" },
-        ...userMenuItems,
-      ]
-      : []),
-  ];
+  const navLinkClass = (link) =>
+    `font-semibold text-[15px] transition-colors pb-1 ${
+      isActive(link)
+        ? "text-brand border-b-2 border-brand"
+        : "text-inkx-variant hover:text-brand border-b-2 border-transparent"
+    }`;
 
   return (
-    <div className="sa-menu">
-      <nav className="navbar navbar-expand-lg !p-0">
-        <div className="w-full px-3 md:px-5 flex justify-between items-center h-[56px] md:h-[65px]">
-          <div className="navbar-brand">
-            <Link to="/">
-              <img src={logo_black} alt="Logo" className="w-full h-auto align-middle" />
-            </Link>
-          </div>
+    <div className="bg-white/85 backdrop-blur-md border-b border-gray-200">
+      <nav className={`flex justify-between items-center h-[56px] md:h-[65px] px-4 md:px-6 mx-auto ${isBackoffice ? "max-w-full" : "max-w-[1200px]"}`}>
+        {/* Left: logo + desktop nav */}
+        <div className="flex items-center gap-8">
+          <Link to="/" className="shrink-0">
+            <img src={logo_black} alt="Logo" className="h-9 md:h-10 w-auto align-middle" />
+          </Link>
 
-          <div className="flex items-center">
-            <LanguageSelector className={`flex ${isTablet ? "" : "hidden"}`} />
+          {!isTablet && (
+            <div className="flex items-center gap-7">
+              {navMenu.map((item) => (
+                <Link key={item.link} to={item.link} className={navLinkClass(item.link)}>
+                  {item.text}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
 
-            {isTablet ? (
-              <Dropdown
-                menu={{ items: navDropdownItems, onClick: handleUserMenuClick }}
-                trigger={["click"]}
-                placement="bottomRight"
-              >
-                <button
-                  className="navbar-toggler"
-                  type="button"
-                  aria-label="Open menu"
+        {/* Right: actions */}
+        <div className="flex items-center gap-2 md:gap-3">
+          {!isTablet && <LanguageSelector className="flex" />}
+
+          {isLoggedIn ? (
+            <Dropdown
+              menu={{ items: userMenuItems, onClick: handleUserMenuClick }}
+              trigger={["click"]}
+              placement="bottomRight"
+            >
+              <button className="hidden md:flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-inkx-variant hover:bg-gray-100 transition-colors">
+                <UserOutlined />
+                <span className="max-w-[140px] truncate">{currentName || me?.email}</span>
+              </button>
+            </Dropdown>
+          ) : (
+            !isTablet && (
+              <>
+                <Link
+                  to="/login"
+                  className="px-4 py-2 rounded-lg font-semibold text-inkx-variant hover:bg-gray-100 transition-colors"
                 >
-                  <span className="navbar-toggler-icon">
-                    <i className="fas fa-bars"></i>
-                  </span>
-                </button>
-              </Dropdown>
-            ) : (
-              <div className="navbar-nav">
-                {mainMenu.map((menuItem, index) => (
-                  <li
-                    className={(menuItem.subMenu ? "sa-dropdown" : "") + " text-nowrap"}
-                    key={menuItem.link || index}
-                  >
-                    {menuItem.subMenu ? (
-                      <>
-                        <a href="#">{menuItem.text}</a>
-                        <ul className="sa-dropdown-menu">
-                          {menuItem.subMenu.map((subMenuItem, subIndex) => (
-                            <li key={subIndex}>
-                              <Link to={subMenuItem.link}>{subMenuItem.text}</Link>
-                            </li>
-                          ))}
-                        </ul>
-                      </>
-                    ) : (
-                      <Link to={menuItem.link}>{menuItem.text}</Link>
-                    )}
-                  </li>
-                ))}
+                  {t("front.menu.login")}
+                </Link>
+                <Link
+                  to="/register"
+                  className="px-5 py-2 rounded-lg font-semibold text-white bg-brand hover:bg-brand-dark shadow-md transition-all active:scale-95"
+                >
+                  {t("front.menu.register")}
+                </Link>
+              </>
+            )
+          )}
 
-                {isLoggedIn && (
-                  <li className={`cursor-pointer select-none text-nowrap font-medium py-2 ${isTablet ? "" : " center"}`}>
-                    <Dropdown
-                      menu={{ items: userMenuItems, onClick: handleUserMenuClick }}
-                      trigger={["click"]}
-                      className="px-3"
-                    >
-                      <div className="w-full h-full flex items-center">
-                        {truncate(currentName || me?.email || "", 16)}
-                      </div>
-                    </Dropdown>
-                  </li>
-                )}
-              </div>
-            )}
-
-            <LanguageSelector className={`m-auto ${isTablet ? "hidden" : "flex"}`} />
-          </div>
+          {/* Mobile */}
+          {isTablet && (
+            <>
+              <LanguageSelector className="flex" />
+              <button
+                type="button"
+                aria-label="Open menu"
+                onClick={() => setDrawerOpen(true)}
+                className="p-2 text-inkx-variant active:scale-95 transition-transform"
+              >
+                <MenuOutlined style={{ fontSize: 20 }} />
+              </button>
+            </>
+          )}
         </div>
       </nav>
+
+      {/* Mobile drawer */}
+      <Drawer
+        placement="right"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        width={280}
+        styles={{ body: { padding: 0 } }}
+        title={<img src={logo_black} alt="Logo" className="h-8 w-auto" />}
+      >
+        <div className="flex flex-col h-full">
+          <nav className="flex-1 p-4 space-y-1">
+            {navMenu.map((item) => (
+              <Link
+                key={item.link}
+                to={item.link}
+                onClick={() => setDrawerOpen(false)}
+                className={`block px-4 py-3 rounded-xl font-semibold ${
+                  isActive(item.link) ? "text-brand bg-brand-fixed" : "text-inkx-variant hover:bg-gray-100"
+                }`}
+              >
+                {item.text}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="p-4 border-t border-gray-200 space-y-3">
+            {isLoggedIn ? (
+              <>
+                <Link
+                  to={defaultMenu.path}
+                  onClick={() => setDrawerOpen(false)}
+                  className="w-full block text-center py-3 rounded-xl border-2 border-brand text-brand font-bold"
+                >
+                  {t("front.menu.profile.title")}
+                </Link>
+                <button
+                  onClick={() => { setDrawerOpen(false); handleLogout(); }}
+                  className="w-full py-3 rounded-xl bg-brand text-white font-bold"
+                >
+                  {t("front.menu.logout")}
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  onClick={() => setDrawerOpen(false)}
+                  className="w-full block text-center py-3 rounded-xl border-2 border-brand text-brand font-bold"
+                >
+                  {t("front.menu.login")}
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => setDrawerOpen(false)}
+                  className="w-full block text-center py-3 rounded-xl bg-brand text-white font-bold"
+                >
+                  {t("front.menu.register")}
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      </Drawer>
     </div>
   );
 }

@@ -10,7 +10,23 @@ export default {
         },
         overlay: {
           DEFAULT: COLOR.overlay
-        }
+        },
+        // RacePulse mockup palette
+        brand: {
+          DEFAULT: "#003ec7",
+          dark: "#0038b6",
+          fixed: "#dde1ff",
+          "on-fixed": "#001452",
+        },
+        surfacex: {
+          DEFAULT: "#f9f9fc",
+          high: "#e8e8ea",
+          highest: "#e2e2e5",
+        },
+        inkx: {
+          DEFAULT: "#1a1c1e",
+          variant: "#434656",
+        },
       },
       animation: {
         'spin-slow': 'spin 5s linear infinite',
