@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="raGrad" gradientUnits="userSpaceOnUse" x1="120" y1="90" x2="470" y2="450">
+      <stop offset="0" stop-color="#F8B85A"/>
+      <stop offset="0.5" stop-color="#F38E6A"/>
+      <stop offset="1" stop-color="#EC6C7E"/>
+    </linearGradient>
+  </defs>
+
+  <g stroke="url(#raGrad)" stroke-width="17" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Clipboard body -->
+    <rect x="128" y="104" width="252" height="324" rx="30"/>
+
+    <!-- Clip with hanger tab -->
+    <rect x="196" y="100" width="120" height="54" rx="16"/>
+    <path d="M236 100 L236 84 Q236 72 256 72 Q276 72 276 84 L276 100"/>
+
+    <!-- Binding marks (left margin) -->
+    <path d="M152 186 L152 210"/>
+    <path d="M152 246 L152 270"/>
+
+    <!-- Avatar -->
+    <circle cx="256" cy="214" r="54"/>
+    <circle cx="256" cy="198" r="17"/>
+    <path d="M224 252 Q224 224 256 224 Q288 224 288 252"/>
+
+    <!-- Text lines -->
+    <path d="M196 326 L300 326"/>
+    <path d="M196 362 L300 362"/>
+
+    <!-- Pencil -->
+    <g transform="translate(420 296) rotate(45)">
+      <path d="M-18 62 L-18 -92 Q-18 -104 -6 -104 L6 -104 Q18 -104 18 -92 L18 62 L0 116 Z"/>
+      <path d="M-18 -66 L18 -66"/>
+      <path d="M-18 62 L18 62"/>
+      <path d="M-8 90 L8 90"/>
+    </g>
+  </g>
+</svg>
