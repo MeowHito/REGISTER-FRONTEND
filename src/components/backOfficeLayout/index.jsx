@@ -155,6 +155,48 @@ export default function BackOfficeLayout() {
   }
 
   return (
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: COLOR.primary,
+          colorInfo: COLOR.primary,
+          borderRadius: 8,
+          colorBorderSecondary: "#eef0f4",
+        },
+        components: {
+          Table: {
+            headerBg: "#f7f9fc",
+            headerColor: "#475569",
+            headerSplitColor: "transparent",
+            borderColor: "#eef0f4",
+            headerBorderRadius: 10,
+            cellPaddingBlock: 12,
+            rowHoverBg: "#f5f9ff",
+            fontWeightStrong: 600,
+          },
+          Button: {
+            borderRadius: 8,
+            controlHeight: 38,
+            fontWeight: 500,
+            primaryShadow: "0 2px 6px rgba(51,122,183,0.25)",
+            defaultShadow: "none",
+          },
+          Card: {
+            borderRadiusLG: 16,
+            boxShadowTertiary: "0 1px 3px rgba(16,24,40,0.06)",
+          },
+          Input: { borderRadius: 8, controlHeight: 38 },
+          InputNumber: { borderRadius: 8, controlHeight: 38 },
+          Select: { borderRadius: 8, controlHeight: 38 },
+          DatePicker: { borderRadius: 8, controlHeight: 38 },
+          Pagination: { borderRadius: 8, itemActiveBg: COLOR.primary },
+          Modal: { borderRadiusLG: 16 },
+          Tabs: { horizontalItemGutter: 24 },
+          Tag: { borderRadiusSM: 6 },
+          Segmented: { borderRadius: 8 },
+        },
+      }}
+    >
     <Layout>
       <div className="w-full min-h-[calc(100vh-40px)] md:min-h-[calc(100vh-65px)]">
         {collapsed && isMobile && (
@@ -277,8 +319,8 @@ export default function BackOfficeLayout() {
           className={`flex flex-col max-w-full h-full transition-all duration-300 ${collapsed ? "md:!ml-[80px]" : "md:!ml-[220px]"
             }`}
         >
-          <div className="flex flex-col flex-1 bg-white p-2 md:!p-6">
-            <div className="flex-1">
+          <div className="flex flex-col flex-1 bg-[#f4f6fa] p-2 md:!p-5">
+            <div className="flex-1 bg-white rounded-2xl border border-[#eef0f4] shadow-[0_1px_3px_rgba(16,24,40,0.04)] p-3 md:!p-6">
               <Outlet />
             </div>
           </div>
@@ -286,5 +328,6 @@ export default function BackOfficeLayout() {
         </div>
       </div>
     </Layout>
+    </ConfigProvider>
   );
 }

@@ -10,7 +10,8 @@ import {
     message,
     Space,
     Spin,
-    Tag
+    Switch,
+    Tooltip
 } from 'antd';
 import { useState, useMemo, useEffect } from 'react';
 import { useMediaQuery } from 'react-responsive';
@@ -229,39 +230,24 @@ const EventList = () => {
             key: 'status',
             align: 'center',
             fixed: 'right',
-            width: 100,
-            render: (_, record) => (
-                <div className="center gap-2">
-                    {canUpdateRecord(record) ? (
-                        record.isDraft ?
-                            <Button
-                                color="orange"
-                                variant="outlined"
-                                className='w-full'
-                                onClick={() => {
-                                    handleUpdateStatus(record);
-                                }}
-                            >
-                                ฉบับร่าง
-                            </Button>
-                            :
-                            <Button
-                                type="primary"
-                                className='w-full'
-                                onClick={() => {
-                                    handleUpdateStatus(record);
-                                }}
-                            >
-                                ใช้งาน
-                            </Button>
-                    ) : (
-                        record.isDraft ?
-                            <Tag color="orange">ฉบับร่าง</Tag>
-                            :
-                            <Tag color="blue">ใช้งาน</Tag>
-                    )}
-                </div>
-            ),
+            width: 120,
+            render: (_, record) => {
+                const active = !record.isDraft;
+                const editable = canUpdateRecord(record);
+                return (
+                    <div className="flex justify-center">
+                        <Tooltip title={active ? 'ใช้งาน' : 'ฉบับร่าง'}>
+                            <Switch
+                                checked={active}
+                                disabled={!editable}
+                                checkedChildren="ใช้งาน"
+                                unCheckedChildren="ฉบับร่าง"
+                                onChange={() => handleUpdateStatus(record)}
+                            />
+                        </Tooltip>
+                    </div>
+                );
+            },
         },
     ], [page, limitPage, totalData, t, isMobile]);
 
