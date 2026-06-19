@@ -16,12 +16,12 @@ import FloatingLabel from "components/floatingLabel";
 import { useQueryClient } from "@tanstack/react-query";
 import { errorToMessage } from "hooks/functions/errorToMessage";
 
-function Register() {
+function Register({ organizerMode = false }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [form] = CommonForm.useForm();
-  const [role, setRole] = useState("guest");
+  const [role, setRole] = useState(organizerMode ? "organizer" : "guest");
   const [fromSocialLogin, setFromSocialLogin] = useState(false);
   const [socialEmail, setSocialEmail] = useState("");
   const [isAccepted, setIsAccepted] = useState(false);
@@ -55,6 +55,16 @@ function Register() {
         const { success, message } = res || {};
         if (success) {
           Swal.close();
+          if (res?.data?.pendingApproval) {
+            AlertSuccess({
+              text: t("back.register.pendingApproval"),
+              onOk: () => {
+                clearRegisterSession();
+                navigate("/organizer/login");
+              },
+            });
+            return;
+          }
           AlertSuccess({
             text: t("back.register.successful"),
             onOk: async () => {
@@ -80,6 +90,16 @@ function Register() {
         const { success, message } = res || {};
         if (success) {
           Swal.close();
+          if (res?.data?.pendingApproval) {
+            AlertSuccess({
+              text: t("back.register.pendingApproval"),
+              onOk: () => {
+                clearRegisterSession();
+                navigate("/organizer/login");
+              },
+            });
+            return;
+          }
           AlertSuccess({
             text: t("back.register.successful"),
             onOk: async () => {
@@ -152,7 +172,7 @@ function Register() {
                   <div className="account-content">
                     <div className="flex w-full">
                       <Tabs
-                        defaultActiveKey="1"
+                        defaultActiveKey={organizerMode ? "2" : "1"}
                         centered
                         tabBarStyle={{ margin: "0 20px" }}
                         tabBarGutter={20}
@@ -338,7 +358,7 @@ function Register() {
                           <p>
                             {t("back.register.existing")}{" "}
                             <Link
-                              to="/login"
+                              to={organizerMode ? "/organizer/login" : "/login"}
                               onClick={() => {
                                 clearRegisterSession();
                               }}

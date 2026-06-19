@@ -244,8 +244,8 @@ const EventCalendar = () => {
   }, [searchParams, page, startDate, endDate]);
 
   return (
-    <FrontLayout title={"event"}>
-      <div className="pt-3 md:pt-12">
+    <FrontLayout title={"event"} fullWidth>
+      <div className="pt-3 md:pt-12 max-w-[1600px] mx-auto">
         <Row className='mb-4' gutter={[4, 4]}>
           <Col xs={24} md={5}>
             <Select

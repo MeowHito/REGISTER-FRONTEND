@@ -250,6 +250,12 @@ const ApplicantCard = React.memo(({
       totalQuota: pricingToUse.totalQuota,
       registeredCount: pricingToUse.registeredCount,
       selectionAnswers: {},
+      expandView: {
+        ...current.expandView,
+        all: true,
+        eventType: true,
+        detail: true,
+      },
     };
     setSelectedEventType(eventType);
 
@@ -605,8 +611,8 @@ const ApplicantCard = React.memo(({
           })()
         )}
         {allView && (
-          <>
-            <div className="flex items-center justify-start mb-2 bg-slate-50 px-4 border border-slate-200 rounded">
+          <div className="flex flex-col">
+            <div className="order-3 flex items-center justify-start mb-2 bg-slate-50 px-4 border border-slate-200 rounded">
               <Divider orientation="left" className="!mb-0 !mt-0">
                 {t("back.reg.common.applicant")}
                 <Button type="link" onClick={() => handleToggleSection('detail')}>
@@ -614,7 +620,7 @@ const ApplicantCard = React.memo(({
                 </Button>
               </Divider>
             </div>
-            <div className={detailView ? "block" : "hidden"}>
+            <div className={`order-4 ${detailView ? "block" : "hidden"}`}>
               <CommonForm.Item name={[parentName, "type"]} label={<span className="font-semibold">{t("back.reg.common.selectApplicant")}</span>}>
                 <Space wrap align="center">
                   {fieldKey ? (
@@ -632,8 +638,8 @@ const ApplicantCard = React.memo(({
                             selectedFriendId: 'newFriend',
                             expandView: {
                               all: true,
-                              detail: true,
-                              eventType: false,
+                              detail: false,
+                              eventType: true,
                               payment: false,
                             }
                           }
@@ -1094,7 +1100,7 @@ const ApplicantCard = React.memo(({
               </Row>
             </div>
 
-            <div className="flex items-center justify-start mb-2 bg-slate-50 px-4 border border-slate-200 rounded">
+            <div className="order-1 flex items-center justify-start mb-2 bg-slate-50 px-4 border border-slate-200 rounded">
               <Divider orientation="left" className="!mb-0 !mt-0">
                 {t("back.reg.common.eventType")}
                 <Button type="link" onClick={() => handleToggleSection('eventType')}>
@@ -1102,7 +1108,7 @@ const ApplicantCard = React.memo(({
                 </Button>
               </Divider>
             </div>
-            <div className={eventTypeView ? "block" : "hidden"}>
+            <div className={`order-2 ${eventTypeView ? "block" : "hidden"}`}>
               <CommonForm.Item
                 colon={false}
                 name={[parentName, "eventTypeId"]}
@@ -1570,7 +1576,7 @@ const ApplicantCard = React.memo(({
               ) : null}
             </div>
 
-            <div className="flex items-center justify-start mb-2 bg-slate-50 px-4 border border-slate-200 rounded">
+            <div className="order-5 flex items-center justify-start mb-2 bg-slate-50 px-4 border border-slate-200 rounded">
               <Divider orientation="left" className="!mb-0 !mt-0">
                 {t("back.reg.payment.method")}
                 <Button type="link" onClick={() => handleToggleSection('payment')}>
@@ -1578,7 +1584,7 @@ const ApplicantCard = React.memo(({
                 </Button>
               </Divider>
             </div>
-            <div className={paymentView ? "block" : "hidden"}>
+            <div className={`order-6 ${paymentView ? "block" : "hidden"}`}>
               <CommonForm.Item
                 colon={false}
                 name={[parentName, "deliveryMethod"]}
@@ -1722,7 +1728,7 @@ const ApplicantCard = React.memo(({
                 </> : null
               }
             </div>
-          </>
+          </div>
         )}
       </div >
     </>

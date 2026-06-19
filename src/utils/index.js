@@ -3,6 +3,17 @@ import { message } from "antd";
 export { default as errorLogger } from "./errorLogger";
 
 export const PUBLIC_API = "/public-api";
+
+// Routes that should render edge-to-edge (no max-w-[1200px] container)
+const FULL_WIDTH_PREFIXES = ["/backoffice", "/contact", "/eventCalendar", "/registrationInfo"];
+
+export function isFullWidthPath(pathname = "") {
+  if (pathname === "/") return true;
+  return FULL_WIDTH_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(p + "/")
+  );
+}
+
 export const UPLOAD_TIME = import.meta.env.VITE_STORAGE_UPLOAD_TIME;
 export const DOWNLOAD_TIME = import.meta.env.VITE_STORAGE_DOWNLOAD_TIME;
 export const STORAGE_CHECK_IN = import.meta.env.VITE_STORAGE_CHECK_IN;

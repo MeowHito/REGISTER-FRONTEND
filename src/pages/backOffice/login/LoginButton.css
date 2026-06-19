@@ -45,34 +45,6 @@
     z-index: 2;
 }
 
-.facebook-btn {
-    background-color: #1877F2;
-    border: none;
-    color: #FFFFFF;
-    font-family: 'Arial', sans-serif;
-    font-size: 16px;
-    font-weight: bold;
-}
-
-.facebook-btn:hover {
-    background-color: #155CC1;
-}
-
-.facebook-btn:active {
-    background-color: #104A9D;
-}
-
-.facebook-logo {
-    position: absolute;
-    left: 5px;
-    height: 40px;
-    width: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2;
-}
-
 .google-btn {
     background-color: #FFFFFF;
     border: 1px solid #747775;

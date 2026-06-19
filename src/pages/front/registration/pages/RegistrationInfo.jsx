@@ -171,8 +171,8 @@ const RegistrationInfo = () => {
 
                     expandView: {
                         all: true,
-                        detail: true,
-                        eventType: false,
+                        detail: false,
+                        eventType: true,
                         payment: false,
                     }
                 }
@@ -218,8 +218,8 @@ const RegistrationInfo = () => {
             selectedFriendId: "newFriend",
             expandView: {
                 all: true,
-                detail: true,
-                eventType: false,
+                detail: false,
+                eventType: true,
                 payment: false,
             },
             isSameAddress: true,
@@ -440,7 +440,15 @@ const RegistrationInfo = () => {
     }
 
     return (
-        <FrontLayout>
+        <FrontLayout fullWidth>
+            {event?.name && (
+                <div className="md:!max-w-screen-lg !mx-auto pt-4 px-2">
+                    <h1 className="text-xl md:text-2xl font-bold text-gray-900 text-center md:text-left">
+                        {event?.name}
+                    </h1>
+                    <div className="h-1 w-16 bg-brand rounded-full mt-2 mx-auto md:mx-0" />
+                </div>
+            )}
             <RegistrationSteps currentStep={0} />
             <CommonForm
                 form={form}
@@ -494,11 +502,12 @@ const RegistrationInfo = () => {
                 </CommonForm.List>
 
                 <Row className="mt-10" justify="space-between">
-                    <Link to="/event">
-                        <Button style={{ backgroundColor: "#FFF6E6", borderColor: "#FFF6E6" }}>
-                            {t("general.back")}
-                        </Button>
-                    </Link>
+                    <Button
+                        style={{ backgroundColor: "#FFF6E6", borderColor: "#FFF6E6" }}
+                        onClick={() => navigate(-1)}
+                    >
+                        {t("general.back")}
+                    </Button>
 
                     <Button
                         type="primary"

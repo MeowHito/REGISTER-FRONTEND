@@ -105,8 +105,12 @@ export default function BackOfficeLayout() {
         if (!me) return;
         dispatch(PROFILE_LOADING(false));
 
+        const roleType = me?.role?.roleType;
+        const hideHistory = roleType === "admin" || roleType === "organizer";
+
         const menus = me.role.permissions
           .map(p => p.menu)
+          .filter(m => !(hideHistory && m.title === "historyList"))
           .sort((a, b) => a.position - b.position);
 
         if (menus.length === 0) return;

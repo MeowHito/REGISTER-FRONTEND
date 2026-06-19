@@ -12,7 +12,6 @@ const socials = [
 ];
 
 const menuLinks = [
-  { key: "allEvents", to: "/event" },
   { key: "eventCalendar", to: "/eventCalendar" },
   { key: "contactChannel", to: "/contact" },
   { key: "searchPhotos", href: "https://photo.action.in.th" },

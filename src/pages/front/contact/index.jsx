@@ -26,9 +26,9 @@ const Contact = () => {
     };
 
     return (
-        <div style={{ padding: "4rem", background: "#f9f9f9", minHeight: "100vh" }}>
-            <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-                <h2 style={{ fontSize: "2rem", marginBottom: "2rem", textAlign: "center" }}>{t("front.contact.title")}</h2>
+        <div className="bg-[#f9f9f9] min-h-[calc(100vh-65px)] w-full px-4 py-8 sm:px-8 sm:py-12 lg:px-16 lg:py-16">
+            <div className="w-full max-w-[1400px] mx-auto">
+                <h2 className="text-2xl sm:text-3xl font-bold mb-8 text-center">{t("front.contact.title")}</h2>
                 <div className="md:flex gap-6">
                     <div className="w-full md:w-2/5 flex flex-col">
                         <Card className="rounded-2xl md:p-6 sm:p-0 h-full bg-[#fafafa] shadow-md flex-1" >

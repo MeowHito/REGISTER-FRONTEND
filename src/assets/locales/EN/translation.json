@@ -21,7 +21,8 @@
       "contact": "Contact Us",
       "login": "Login",
       "logout": "Logout",
-      "register": "Register"
+      "register": "Register",
+      "loginRegister": "Login / Sign up"
     },
     "campaign": {
       "searchEvent": "Search Event"
@@ -156,7 +157,9 @@
       "newsletterPlaceholder": "Your email address",
       "newsletterButton": "Subscribe",
       "newsletterInvalid": "Please enter a valid email address.",
-      "newsletterSuccess": "Thanks for subscribing!"
+      "newsletterSuccess": "Thanks for subscribing!",
+      "searchResults": "Search results",
+      "searchEventName": "Search event name..."
     },
     "slider": {},
     "summary": {},
@@ -460,7 +463,8 @@
       "register": "Register",
       "forgot": "Forgot password?",
       "or": "or",
-      "loginError": "Incorrect email or password. Please click \"Forgot password\" to reset your password."
+      "loginError": "Incorrect email or password. Please click \"Forgot password\" to reset your password.",
+      "noOrganizerAccount": "Don't have an organizer account?"
     },
     "register": {
       "successful": "Registration successful",
@@ -476,7 +480,8 @@
       "continue": "Continue",
       "registerWith": "Register with",
       "agree": "I have read and agree to the",
-      "termsOfUse": "Terms of Use"
+      "termsOfUse": "Terms of Use",
+      "pendingApproval": "Your organizer registration has been received. Please wait for an administrator to approve your account before signing in."
     },
     "terms": {
       "termsOfUse": "Terms of use",
@@ -1882,7 +1887,17 @@
       "tab": {
         "helpRequests": "Help Requests",
         "jobMonitoring": "Job Monitoring",
-        "emailQueue": "Email Queue"
+        "emailQueue": "Email Queue",
+        "pendingOrganizers": "Pending organizers"
+      },
+      "pendingOrganizers": {
+        "name": "Name",
+        "company": "Company",
+        "status": "Status",
+        "pending": "Pending",
+        "approve": "Approve",
+        "approved": "Approved successfully",
+        "empty": "No organizers pending approval"
       }
     }
   },
@@ -1979,7 +1994,8 @@
     "noCompetitiveAgeGroup": "No competitive age group",
     "upTo": "Up to",
     "above": "years and above",
-    "duplicate": "Duplicate"
+    "duplicate": "Duplicate",
+    "somethingWrong": "Something went wrong. Please try again."
   },
   "month": {
     "jan": "January",

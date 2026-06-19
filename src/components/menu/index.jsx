@@ -4,9 +4,11 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import LanguageSelector from "components/languageSelector";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "react-responsive";
-import { Drawer, Dropdown } from "antd";
+import { Avatar, Drawer, Dropdown } from "antd";
 import { LogoutOutlined, MenuOutlined, SolutionOutlined, UserOutlined } from "@ant-design/icons";
 import useMe, { useLogout } from "hooks/useMe";
+import { isFullWidthPath } from "utils";
+import { usePublicImageUrl } from "utils/fileUtils";
 
 export default function Menu() {
   const { t, i18n } = useTranslation();
@@ -28,17 +30,22 @@ export default function Menu() {
   const currentLanguage = i18n.language?.toLowerCase();
 
   const navMenu = useMemo(() => [
-    { text: t("front.menu.event"), link: "/event" },
     { text: t("front.menu.eventCalendar"), link: "/eventCalendar" },
     { text: t("front.menu.contact"), link: "/contact" },
   ], [currentLanguage]);
 
   const isActive = (link) => location.pathname === link || location.pathname.startsWith(link + "/");
-  const isFullWidth = location.pathname.startsWith("/backoffice") || location.pathname === "/";
+  const isFullWidth = isFullWidthPath(location.pathname);
 
   const handleLogout = async () => {
     await logout();
   };
+
+  const { data: resolvedAvatarUrl } = usePublicImageUrl({
+    key: me?.pictureUrl,
+    prefix: me?.prefixPath || "userData",
+  });
+  const avatarUrl = me?.pictureUrl ? resolvedAvatarUrl : null;
 
   const currentName =
     currentLanguage === "en" && me?.firstNameEn
@@ -86,7 +93,7 @@ export default function Menu() {
         {/* Left: logo + desktop nav */}
         <div className="flex items-center gap-8">
           <Link to="/" className="shrink-0">
-            <img src={logo_black} alt="Logo" className="h-7 md:h-10 w-auto align-middle" />
+            <img src={logo_black} alt="Logo" className="h-9 md:h-12 w-auto align-middle" />
           </Link>
 
           {!isTablet && (
@@ -105,16 +112,22 @@ export default function Menu() {
           {!isTablet && <LanguageSelector className="flex" />}
 
           {isLoggedIn ? (
-            <Dropdown
-              menu={{ items: userMenuItems, onClick: handleUserMenuClick }}
-              trigger={["click"]}
-              placement="bottomRight"
-            >
-              <button className="hidden md:flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-inkx-variant hover:bg-gray-100 transition-colors">
-                <UserOutlined />
-                <span className="max-w-[140px] truncate">{currentName || me?.email}</span>
-              </button>
-            </Dropdown>
+            !isTablet && (
+              <Dropdown
+                menu={{ items: userMenuItems, onClick: handleUserMenuClick }}
+                trigger={["click"]}
+                placement="bottomRight"
+              >
+                <button className="flex items-center rounded-full transition-transform active:scale-95 hover:opacity-90">
+                  <Avatar
+                    src={avatarUrl || undefined}
+                    icon={<UserOutlined />}
+                    size={32}
+                    className="!bg-brand cursor-pointer ring-1 ring-gray-200"
+                  />
+                </button>
+              </Dropdown>
+            )
           ) : (
             !isTablet && (
               <>
@@ -122,13 +135,13 @@ export default function Menu() {
                   to="/login"
                   className="px-4 py-2 rounded-lg font-semibold text-inkx-variant hover:bg-gray-100 transition-colors"
                 >
-                  {t("front.menu.login")}
+                  {t("front.menu.loginRegister")}
                 </Link>
                 <Link
-                  to="/register"
+                  to="/organizer/login"
                   className="px-5 py-2 rounded-lg font-semibold text-white bg-brand hover:bg-brand-dark shadow-md transition-all active:scale-95"
                 >
-                  {t("front.menu.register")}
+                  {t("front.menu.organizer")}
                 </Link>
               </>
             )
@@ -138,6 +151,15 @@ export default function Menu() {
           {isTablet && (
             <>
               <LanguageSelector className="flex" />
+              {isLoggedIn && (
+                <Avatar
+                  src={avatarUrl || undefined}
+                  icon={<UserOutlined />}
+                  size={30}
+                  onClick={() => setDrawerOpen(true)}
+                  className="!bg-brand cursor-pointer ring-1 ring-gray-200"
+                />
+              )}
               <button
                 type="button"
                 aria-label="Open menu"
@@ -200,14 +222,14 @@ export default function Menu() {
                   onClick={() => setDrawerOpen(false)}
                   className="w-full block text-center py-3 rounded-xl border-2 border-brand text-brand font-bold"
                 >
-                  {t("front.menu.login")}
+                  {t("front.menu.loginRegister")}
                 </Link>
                 <Link
-                  to="/register"
+                  to="/organizer/login"
                   onClick={() => setDrawerOpen(false)}
                   className="w-full block text-center py-3 rounded-xl bg-brand text-white font-bold"
                 >
-                  {t("front.menu.register")}
+                  {t("front.menu.organizer")}
                 </Link>
               </>
             )}

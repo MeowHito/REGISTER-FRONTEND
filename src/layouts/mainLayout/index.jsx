@@ -5,11 +5,12 @@ import AnnouncementBanner from 'components/announcementBanner'
 import React from 'react'
 import { useSelector } from 'react-redux'
 import { Outlet, useLocation } from 'react-router-dom'
+import { isFullWidthPath } from 'utils'
 
 export default function MainLayout() {
   const loading = useSelector((state) => state.loading.loading);
   const { pathname } = useLocation();
-  const isFullWidth = pathname.startsWith('/backoffice') || pathname === '/';
+  const isFullWidth = isFullWidthPath(pathname);
   return (
     <>
       {loading &&

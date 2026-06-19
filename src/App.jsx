@@ -6,7 +6,6 @@ import Home from 'pages/front/home';
 import Error from 'pages/front/error';
 import Login from 'pages/backOffice/login';
 import Register from 'pages/backOffice/register';
-import Event from 'pages/front/event';
 import Setting from 'pages/backOffice/setting';
 import Forgot from 'pages/backOffice/forgot';
 import ChangePassword from 'pages/backOffice/changepassword';
@@ -58,7 +57,6 @@ function App() {
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Home />} />
             <Route path="contact" element={<Contact />} />
-            <Route path="event" element={<Event />} />
             <Route path="eventCalendar" element={<EventCalendar />} />
             <Route path="eventDetail/:name" element={<EventDetail />} />
             <Route path="participantSearch/:eventId" element={<ParticipantSearch />} />
@@ -85,6 +83,8 @@ function App() {
             </Route>
           </Route>
           <Route path="/login" element={<Login />} />
+          <Route path="/organizer/login" element={<Login organizerMode />} />
+          <Route path="/organizer/register" element={<Register organizerMode />} />
           <Route path="/invite/accept" element={<InviteAccept />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot" element={<Forgot />} />

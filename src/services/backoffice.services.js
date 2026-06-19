@@ -199,6 +199,20 @@ const backOfficeServices = {
     });
   },
 
+  // Inactive accounts = pending approval (organizers awaiting admin activation)
+  useQueryGetPendingUsers() {
+    return useQuery({
+      queryKey: ["getPendingUsers"],
+      queryFn: async () => {
+        const payload = { active: false, paging: null };
+        const res = await createRequest.post(`/api/user/getAllUsers`, payload);
+        return res.data.data;
+      },
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    });
+  },
+
   useQueryGetAllRole() {
     return useQuery({
       queryKey: ["getAllRole"],

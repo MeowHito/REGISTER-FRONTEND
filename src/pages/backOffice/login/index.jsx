@@ -6,13 +6,12 @@ import masterService from "services/master.services";
 import { useTranslation } from "react-i18next";
 import { HomeOutlined, SettingOutlined } from "@ant-design/icons";
 import GoogleLogin from "./googleLogin";
-import FacebookLogin from "./facebookLogin";
 import LineLogin from "./lineLogin";
 import "./LoginButton.css";
 import FloatingLabel from "components/floatingLabel";
 import { useQueryClient } from "@tanstack/react-query";
 
-function Login() {
+function Login({ organizerMode = false }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
@@ -92,7 +91,7 @@ function Login() {
                       />
                     </div>
                     <div className="text-gray-600 opacity-60 text-2xl font-semibold mt-8 mb-4 md:mb-[2px]">
-                      {t("back.login.login")}
+                      {organizerMode ? t("front.menu.organizer") : t("back.login.login")}
                     </div>
                     <div className="ragister-form flex flex-col w-full text-left">
                       <div className="form-group mb-3">
@@ -128,13 +127,12 @@ function Login() {
                       </div>
                       <div className="flex flex-col gap-3 w-full">
                         <GoogleLogin />
-                        <FacebookLogin />
                         <LineLogin />
                       </div>
                       <div className="text-center mt-6">
                         <p className="mb-2">
-                          {t("back.login.noAccount")}
-                          <Link to="/register" className="text-primary ms-2">
+                          {organizerMode ? t("back.login.noOrganizerAccount") : t("back.login.noAccount")}
+                          <Link to={organizerMode ? "/organizer/register" : "/register"} className="text-primary ms-2">
                             {t("back.login.register")}
                           </Link>
                         </p>

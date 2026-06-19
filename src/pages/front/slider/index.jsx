@@ -1,44 +1,67 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import UpcomingEvents from 'components/upcomingEvents'
-import Newsletter from 'components/newsletter'
-import { DatePicker, Select } from 'antd'
+import EventResults from 'components/eventResults'
+import { AutoComplete, Input, Select } from 'antd'
 import {
-  CalendarOutlined,
   EnvironmentOutlined,
   SearchOutlined,
   ThunderboltFilled,
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
-import dayjs from 'dayjs'
-import thTH from 'antd/es/date-picker/locale/th_TH'
-import enUS from 'antd/es/date-picker/locale/en_US'
 import { BANNER } from 'assets'
 import generalService from 'services/general.services'
 import useCountryStateHook from 'hooks/useCountryStateHook'
 import { eventTypeOption } from 'constants/options/eventTypeOption'
 
-const { MonthPicker } = DatePicker
-
 function Slider() {
-  const { t, i18n } = useTranslation()
-  const navigate = useNavigate()
-  const isThai = i18n.language === 'th'
+  const { t } = useTranslation()
 
-  const { data: sliders } = generalService.useQueryGetActiveSliders()
+  const { data: sliders, isLoading: isLoadingSliders, isFetched: slidersFetched } =
+    generalService.useQueryGetActiveSliders()
   const { isLoadingProvince, provinceOption } = useCountryStateHook()
 
+  // Filters applied to the inline results grid
   const [provinceId, setProvinceId] = useState(null)
   const [eventType, setEventType] = useState(null)
-  const [selectedMonth, setSelectedMonth] = useState(null)
+  const [appliedName, setAppliedName] = useState(null)
+
+  // Event-name autocomplete
+  const [nameInput, setNameInput] = useState('')
   const [currentSlide, setCurrentSlide] = useState(0)
 
+  // Fetch a pool of events for name suggestions
+  const suggestionPaging = useMemo(() => ({ size: 100, page: 0, search: [] }), [])
+  const { data: suggestionData, refetch: refetchSuggestions } =
+    generalService.useQueryGetAllEvents({
+      paging: suggestionPaging,
+      queryKey: ['homeEventSuggestions', suggestionPaging],
+    })
+  useEffect(() => {
+    refetchSuggestions()
+  }, [refetchSuggestions])
+
+  const nameOptions = useMemo(() => {
+    const list = suggestionData?.content || []
+    const seen = new Set()
+    const keyword = nameInput.trim().toLowerCase()
+    return list
+      .map((e) => e.name)
+      .filter((name) => {
+        if (!name || seen.has(name)) return false
+        seen.add(name)
+        return !keyword || name.toLowerCase().includes(keyword)
+      })
+      .slice(0, 8)
+      .map((name) => ({ value: name }))
+  }, [suggestionData, nameInput])
+
+  // Hero banner images — avoid showing default BANNER until the query settles
   const images = useMemo(() => {
     if (sliders && sliders.length > 0) {
       return sliders.map((s) => s.imagePreviewUrl || BANNER)
     }
-    return [BANNER]
-  }, [sliders])
+    if (slidersFetched) return [BANNER]
+    return []
+  }, [sliders, slidersFetched])
 
   useEffect(() => {
     if (images.length <= 1) return
@@ -48,18 +71,19 @@ function Slider() {
     return () => clearInterval(interval)
   }, [images.length])
 
-  const handleSearch = () => {
-    const params = new URLSearchParams()
-    if (provinceId) params.set('province', provinceId)
-    if (eventType) params.set('type', eventType)
-    if (selectedMonth) params.set('month', dayjs(selectedMonth).format('YYYY-MM'))
-    navigate(`/event${params.toString() ? `?${params.toString()}` : ''}`)
+  const handleSearch = (value) => {
+    setAppliedName((value ?? nameInput).trim() || null)
   }
 
+  const showHeroSkeleton = isLoadingSliders && images.length === 0
+
   const Hero = (
-    <section className="relative overflow-hidden flex items-start md:items-center h-[640px] md:h-auto md:aspect-[16/5]">
+    <section className="relative overflow-hidden flex items-start md:items-center h-[640px] md:h-auto md:aspect-[16/5] bg-gray-100">
       {/* Background images */}
       <div className="absolute inset-0">
+        {showHeroSkeleton && (
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-100 animate-pulse" />
+        )}
         {images.map((img, index) => (
           <div
             key={`hero-bg-${index}`}
@@ -75,13 +99,13 @@ function Slider() {
 
   const SearchBar = (
     <div className="max-w-screen-xl mx-auto px-3 md:px-5 -mt-28 md:-mt-10 relative z-20">
-      <div className="mobile-home-search bg-white border border-gray-200 rounded-2xl shadow-[0_18px_45px_rgba(15,23,42,0.18)] p-4 md:p-4 grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-3 items-center">
+      <div className="mobile-home-search bg-white border border-gray-200 rounded-2xl shadow-[0_18px_45px_rgba(15,23,42,0.18)] p-4 flex flex-col md:flex-row gap-3 md:items-center">
         <Select
           placeholder={t('front.event.selectProvince')}
           allowClear
           showSearch
           size="large"
-          className="w-full"
+          className="w-full md:flex-1"
           suffixIcon={<EnvironmentOutlined />}
           value={provinceId}
           options={provinceOption}
@@ -96,25 +120,31 @@ function Slider() {
           placeholder={t('front.event.selectEventType')}
           allowClear
           size="large"
-          className="w-full"
+          className="w-full md:flex-1"
           suffixIcon={<ThunderboltFilled />}
           value={eventType}
           options={eventTypeOption}
           onChange={setEventType}
         />
-        <MonthPicker
-          key={i18n.language}
-          placeholder={t('front.event.selectMonth')}
-          size="large"
-          style={{ width: '100%' }}
-          suffixIcon={<CalendarOutlined />}
-          locale={isThai ? thTH : enUS}
-          value={selectedMonth}
-          onChange={setSelectedMonth}
-        />
+        <AutoComplete
+          className="w-full md:flex-[1.4]"
+          value={nameInput}
+          options={nameOptions}
+          onChange={setNameInput}
+          onSelect={(value) => { setNameInput(value); handleSearch(value) }}
+          allowClear
+          onClear={() => { setNameInput(''); setAppliedName(null) }}
+        >
+          <Input.Search
+            placeholder={t('front.home.searchEventName')}
+            size="large"
+            enterButton={false}
+            onSearch={(value) => handleSearch(value)}
+          />
+        </AutoComplete>
         <button
-          onClick={handleSearch}
-          className="md:col-span-1 h-[60px] md:h-10 w-full bg-brand hover:bg-brand-dark text-white font-semibold text-lg md:text-base rounded-xl md:rounded-lg flex items-center justify-center gap-3 md:gap-2 transition-all active:scale-95 shadow-md"
+          onClick={() => handleSearch()}
+          className="h-[60px] md:h-10 md:w-auto md:shrink-0 w-full bg-brand hover:bg-brand-dark text-white font-semibold text-lg md:text-sm rounded-xl md:rounded-lg flex items-center justify-center gap-2 md:px-6 transition-all active:scale-95 shadow-md"
         >
           <SearchOutlined />
           {t('general.search')}
@@ -128,8 +158,11 @@ function Slider() {
       {Hero}
       {SearchBar}
       <div className="p-0 flex-1">
-        <UpcomingEvents />
-        <Newsletter />
+        <EventResults
+          provinceId={provinceId}
+          eventType={eventType}
+          eventName={appliedName}
+        />
       </div>
     </>
   )

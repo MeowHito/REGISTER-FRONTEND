@@ -133,6 +133,17 @@ function EventDetail({ eventId, setView }) {
     const eventKey = data?.link || name || data?.id;
     const shouldShowChecklist = Boolean(data?.showChecklist);
 
+    const handleRegister = () => {
+        if (!me) {
+            navigate('/login', { state: { from: `/registrationInfo/${eventKey}` } });
+            return;
+        }
+        dispatch(CLEAR_ORDER());
+        navigate(`/registrationInfo/${eventKey}`);
+    };
+
+    const canRegister = !isFetching && !!data && isGuestOrAnonymous && !countdownTime && !isAfterEnd;
+
     return (
         <>
             {
@@ -448,6 +459,18 @@ function EventDetail({ eventId, setView }) {
                     }
                 </SelectLayout>
             </Spin>
+
+            {/* Always-visible floating register CTA while registration is open */}
+            {canRegister && (
+                <div className="fixed bottom-0 inset-x-0 z-50 px-4 pb-4 pointer-events-none md:bottom-6 md:right-6 md:left-auto md:inset-x-auto md:px-0 md:pb-0">
+                    <button
+                        onClick={handleRegister}
+                        className="pointer-events-auto w-full md:w-auto bg-brand hover:bg-brand-dark text-white font-bold text-lg px-8 py-4 md:py-3 rounded-2xl md:rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.25)] transition-all active:scale-95 flex items-center justify-center gap-2"
+                    >
+                        {t("general.openRegistration")}
+                    </button>
+                </div>
+            )}
         </>
     );
 }
