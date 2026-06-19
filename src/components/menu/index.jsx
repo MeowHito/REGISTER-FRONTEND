@@ -5,7 +5,7 @@ import LanguageSelector from "components/languageSelector";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "react-responsive";
 import { Avatar, Drawer, Dropdown } from "antd";
-import { LogoutOutlined, MenuOutlined, SolutionOutlined, UserOutlined } from "@ant-design/icons";
+import { DownOutlined, LogoutOutlined, MenuOutlined, SolutionOutlined, UserOutlined } from "@ant-design/icons";
 import useMe, { useLogout } from "hooks/useMe";
 import { isFullWidthPath } from "utils";
 import { usePublicImageUrl } from "utils/fileUtils";
@@ -118,13 +118,14 @@ export default function Menu() {
                 trigger={["click"]}
                 placement="bottomRight"
               >
-                <button className="flex items-center rounded-full transition-transform active:scale-95 hover:opacity-90">
+                <button className="flex items-center gap-1 rounded-full transition-transform active:scale-95 hover:opacity-90">
                   <Avatar
                     src={avatarUrl || undefined}
                     icon={<UserOutlined />}
                     size={32}
                     className="!bg-brand cursor-pointer ring-1 ring-gray-200"
                   />
+                  <DownOutlined className="text-[10px] text-gray-400" />
                 </button>
               </Dropdown>
             )

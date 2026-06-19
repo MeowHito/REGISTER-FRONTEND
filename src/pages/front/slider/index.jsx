@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import EventResults from 'components/eventResults'
-import { AutoComplete, Input, Select } from 'antd'
+import { AutoComplete, Select } from 'antd'
 import {
   EnvironmentOutlined,
   SearchOutlined,
@@ -128,20 +128,17 @@ function Slider() {
         />
         <AutoComplete
           className="w-full md:flex-[1.4]"
+          size="large"
           value={nameInput}
           options={nameOptions}
+          placeholder={t('front.home.searchEventName')}
+          suffixIcon={<SearchOutlined />}
           onChange={setNameInput}
           onSelect={(value) => { setNameInput(value); handleSearch(value) }}
+          onKeyDown={(e) => { if (e.key === 'Enter') handleSearch() }}
           allowClear
           onClear={() => { setNameInput(''); setAppliedName(null) }}
-        >
-          <Input.Search
-            placeholder={t('front.home.searchEventName')}
-            size="large"
-            enterButton={false}
-            onSearch={(value) => handleSearch(value)}
-          />
-        </AutoComplete>
+        />
         <button
           onClick={() => handleSearch()}
           className="h-[60px] md:h-10 md:w-auto md:shrink-0 w-full bg-brand hover:bg-brand-dark text-white font-semibold text-lg md:text-sm rounded-xl md:rounded-lg flex items-center justify-center gap-2 md:px-6 transition-all active:scale-95 shadow-md"
