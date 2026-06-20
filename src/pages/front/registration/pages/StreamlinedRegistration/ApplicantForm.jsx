@@ -56,7 +56,11 @@ const ApplicantForm = ({
   const prefix = "userData";
 
   const type = CommonForm.useWatch(["applicants", index, "type"], form);
-  const pictureUrl = CommonForm.useWatch(["applicants", index, "pictureUrl"], form);
+  // `pictureUrl` is set imperatively (no Form.Item wraps it) and this page has no
+  // Form.List, so it isn't a "registered" field. Default useWatch reads only
+  // registered values and would always see undefined here — `preserve: true`
+  // makes it read the full store so the uploaded image actually re-renders.
+  const pictureUrl = CommonForm.useWatch(["applicants", index, "pictureUrl"], { form, preserve: true });
 
   const setPersonal = (patch) => {
     const current = form.getFieldValue(["applicants", index]) || {};
