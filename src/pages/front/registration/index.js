@@ -4,3 +4,4 @@ export { default as RegistrationPayment } from './pages/RegistrationPayment/inde
 export { default as RegistrationPaymentConfirmation } from './pages/RegistrationPaymentConfirmation';
 export { default as RegistrationPaymentResult } from './pages/RegistrationPaymentResult';
 export { default as RegistrationLink } from './pages/RegistrationLink';
+export { default as StreamlinedRegistration } from './pages/StreamlinedRegistration';

@@ -12,12 +12,12 @@ import ChangePassword from 'pages/backOffice/changepassword';
 import BackOfficeLayout from 'components/backOfficeLayout';
 import EventList from 'pages/backOffice/event/eventList';
 import {
-  RegistrationInfo,
   RegistrationDetail,
   RegistrationPayment,
   RegistrationPaymentConfirmation,
   RegistrationPaymentResult,
   RegistrationLink,
+  StreamlinedRegistration,
 } from 'pages/front/registration';
 import Dashboard from 'pages/backOffice/dashboard';
 import ContractList from 'pages/backOffice/contract/contractList';
@@ -60,7 +60,7 @@ function App() {
             <Route path="eventCalendar" element={<EventCalendar />} />
             <Route path="eventDetail/:name" element={<EventDetail />} />
             <Route path="participantSearch/:eventId" element={<ParticipantSearch />} />
-            <Route path="registrationInfo/:id" element={<RegistrationInfo />} />
+            <Route path="registrationInfo/:id" element={<StreamlinedRegistration />} />
             <Route path="registrationDetail" element={<RegistrationDetail />} />
             <Route path="registrationPayment" element={<RegistrationPayment />} />
             <Route path="registrationPaymentConfirmation" element={<RegistrationPaymentConfirmation />} />
