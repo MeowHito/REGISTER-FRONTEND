@@ -5,7 +5,7 @@ export { default as errorLogger } from "./errorLogger";
 export const PUBLIC_API = "/public-api";
 
 // Routes that should render edge-to-edge (no max-w-[1200px] container)
-const FULL_WIDTH_PREFIXES = ["/backoffice", "/contact", "/eventCalendar", "/registrationInfo"];
+const FULL_WIDTH_PREFIXES = ["/backoffice", "/contact", "/eventCalendar", "/registrationInfo", "/eventDetail"];
 
 export function isFullWidthPath(pathname = "") {
   if (pathname === "/") return true;

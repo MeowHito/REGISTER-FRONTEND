@@ -78,7 +78,7 @@ function Slider() {
   const showHeroSkeleton = isLoadingSliders && images.length === 0
 
   const Hero = (
-    <section className="relative overflow-hidden flex items-start md:items-center h-[420px] md:h-auto md:aspect-[16/5] bg-gray-100">
+    <section className="relative overflow-hidden flex items-start md:items-center h-[280px] md:h-auto md:aspect-[16/5] bg-gray-100">
       {/* Background images */}
       <div className="absolute inset-0">
         {showHeroSkeleton && (

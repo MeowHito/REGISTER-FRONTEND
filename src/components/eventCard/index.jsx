@@ -72,12 +72,12 @@ const EventCard = ({
                     {(provinceLabel || type) && (
                         <div className="flex flex-wrap items-center gap-2 mt-3">
                             {provinceLabel && (
-                                <span className="bg-[#e7e8ff] text-[#091842] text-[12px] md:text-[11px] font-bold tracking-wide uppercase px-3 py-1 rounded-lg">
+                                <span className="bg-[#e7e8ff] text-[#091842] text-[12px] md:text-[11px] font-bold px-3 py-1 rounded-lg">
                                     {provinceLabel}
                                 </span>
                             )}
                             {type && (
-                                <span className="bg-[#fbe5da] text-[#c63d00] text-[12px] md:text-[11px] font-bold tracking-[0.12em] uppercase px-3 py-1 rounded-lg">
+                                <span className="bg-[#fbe5da] text-[#c63d00] text-[12px] md:text-[11px] font-bold px-3 py-1 rounded-lg">
                                     {type}
                                 </span>
                             )}
@@ -90,7 +90,7 @@ const EventCard = ({
                             {dayjs(eventDate).format(SYS_DISPLAY_DATE_FORMAT)}
                         </div>
                         {statusText && (
-                            <div className={`flex items-center gap-2 font-bold text-[13px] md:text-xs tracking-[0.18em] md:tracking-normal whitespace-nowrap ${statusColor}`}>
+                            <div className={`flex items-center gap-2 font-bold text-[13px] md:text-xs whitespace-nowrap ${statusColor}`}>
                                 {eventStatus === "openRegistration" && <CheckCircleFilled />}
                                 {statusText}
                             </div>
