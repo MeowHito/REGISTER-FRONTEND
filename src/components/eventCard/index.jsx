@@ -39,7 +39,7 @@ const EventCard = ({
         eventStatus === "soon"
             ? "text-primary"
             : eventStatus === "openRegistration"
-                ? "text-[#a83a0a]"
+                ? "text-green-600"
                 : "text-red-300";
 
     return (
@@ -62,29 +62,29 @@ const EventCard = ({
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                     )}
-                    {type && (
-                        <span className="absolute top-4 right-4 bg-[#c63d00] text-white text-[12px] font-bold tracking-[0.18em] uppercase px-4 py-2 rounded-full shadow-sm md:text-[10px] md:px-3 md:py-1.5">
-                            {type}
-                        </span>
-                    )}
-                    {provinceLabel && (
-                        <span className="hidden md:inline absolute top-3 left-3 bg-brand text-white text-[11px] font-semibold tracking-wide uppercase px-3 py-1 rounded-full shadow-sm">
-                            {provinceLabel}
-                        </span>
-                    )}
                 </div>
 
                 <div className="p-5 md:p-3 flex flex-col flex-1">
                     <h3 className="text-[24px] md:text-base font-bold text-gray-900 leading-tight md:leading-snug line-clamp-2">
                         {name}
                     </h3>
-                    {provinceLabel && (
-                        <span className="md:hidden mt-3 w-fit bg-[#e7e8ff] text-[#091842] text-[12px] font-bold tracking-[0.18em] uppercase px-3 py-1 rounded-lg shadow-sm">
-                            {provinceLabel}
-                        </span>
+
+                    {(provinceLabel || type) && (
+                        <div className="flex flex-wrap items-center gap-2 mt-3">
+                            {provinceLabel && (
+                                <span className="bg-[#e7e8ff] text-[#091842] text-[12px] md:text-[11px] font-bold tracking-wide uppercase px-3 py-1 rounded-lg">
+                                    {provinceLabel}
+                                </span>
+                            )}
+                            {type && (
+                                <span className="bg-[#fbe5da] text-[#c63d00] text-[12px] md:text-[11px] font-bold tracking-[0.12em] uppercase px-3 py-1 rounded-lg">
+                                    {type}
+                                </span>
+                            )}
+                        </div>
                     )}
 
-                    <div className="mt-5 md:mt-auto flex items-center justify-between gap-3">
+                    <div className="mt-5 md:mt-auto md:pt-3 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3 md:gap-2 text-[#4b4d59] text-[18px] md:text-sm">
                             <CalendarOutlined className="text-brand text-[24px] md:text-base" />
                             {dayjs(eventDate).format(SYS_DISPLAY_DATE_FORMAT)}

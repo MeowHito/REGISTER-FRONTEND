@@ -61,9 +61,18 @@ code {
     monospace;
 }
 
+/* Make room for the in-field search button on the event-name autocomplete */
+.home-search-ac .ant-select-selector {
+  padding-right: 112px !important;
+}
+
 @media (max-width: 767px) {
   .mobile-home-search {
     row-gap: 12px !important;
+  }
+
+  .mobile-home-search .home-search-ac .ant-select-selector {
+    padding-right: 120px !important;
   }
 
   .mobile-home-search .ant-select,

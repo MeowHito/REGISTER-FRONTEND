@@ -78,7 +78,7 @@ function Slider() {
   const showHeroSkeleton = isLoadingSliders && images.length === 0
 
   const Hero = (
-    <section className="relative overflow-hidden flex items-start md:items-center h-[640px] md:h-auto md:aspect-[16/5] bg-gray-100">
+    <section className="relative overflow-hidden flex items-start md:items-center h-[420px] md:h-auto md:aspect-[16/5] bg-gray-100">
       {/* Background images */}
       <div className="absolute inset-0">
         {showHeroSkeleton && (
@@ -126,26 +126,27 @@ function Slider() {
           options={eventTypeOption}
           onChange={setEventType}
         />
-        <AutoComplete
-          className="w-full md:flex-[1.4]"
-          size="large"
-          value={nameInput}
-          options={nameOptions}
-          placeholder={t('front.home.searchEventName')}
-          suffixIcon={<SearchOutlined />}
-          onChange={setNameInput}
-          onSelect={(value) => { setNameInput(value); handleSearch(value) }}
-          onKeyDown={(e) => { if (e.key === 'Enter') handleSearch() }}
-          allowClear
-          onClear={() => { setNameInput(''); setAppliedName(null) }}
-        />
-        <button
-          onClick={() => handleSearch()}
-          className="h-[60px] md:h-10 md:w-auto md:shrink-0 w-full bg-brand hover:bg-brand-dark text-white font-semibold text-lg md:text-sm rounded-xl md:rounded-lg flex items-center justify-center gap-2 md:px-6 transition-all active:scale-95 shadow-md"
-        >
-          <SearchOutlined />
-          {t('general.search')}
-        </button>
+        <div className="relative w-full md:flex-[2]">
+          <AutoComplete
+            className="home-search-ac w-full"
+            size="large"
+            value={nameInput}
+            options={nameOptions}
+            placeholder={t('front.home.searchEventName')}
+            suffixIcon={null}
+            onChange={setNameInput}
+            onSelect={(value) => { setNameInput(value); handleSearch(value) }}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSearch() }}
+          />
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); handleSearch(); }}
+            className="absolute right-1.5 md:right-1 top-1/2 -translate-y-1/2 z-10 h-[46px] md:h-8 px-4 md:px-3 bg-brand hover:bg-brand-dark text-white text-base md:text-sm font-semibold rounded-lg md:rounded-md flex items-center gap-1.5 active:scale-95 transition-all shadow-sm"
+          >
+            <SearchOutlined />
+            {t('general.search')}
+          </button>
+        </div>
       </div>
     </div>
   )

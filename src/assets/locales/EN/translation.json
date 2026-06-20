@@ -11,7 +11,7 @@
     },
     "menu": {
       "profile": {
-        "title": "Profile",
+        "title": "Account",
         "desc": "Full history and information"
       },
       "home": "Home",
@@ -22,7 +22,8 @@
       "login": "Login",
       "logout": "Logout",
       "register": "Register",
-      "loginRegister": "Login / Sign up"
+      "loginRegister": "Login / Sign up",
+      "registrationHistory": "Registration history"
     },
     "campaign": {
       "searchEvent": "Search Event"
@@ -1535,7 +1536,7 @@
         "desc": "System overview and registration information"
       },
       "setting": {
-        "name": "Settings",
+        "name": "Account",
         "desc": "Configure system information"
       },
       "contractList": {

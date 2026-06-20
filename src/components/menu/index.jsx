@@ -5,7 +5,7 @@ import LanguageSelector from "components/languageSelector";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "react-responsive";
 import { Avatar, Drawer, Dropdown } from "antd";
-import { DownOutlined, LogoutOutlined, MenuOutlined, SolutionOutlined, UserOutlined } from "@ant-design/icons";
+import { DownOutlined, HistoryOutlined, LogoutOutlined, MenuOutlined, SolutionOutlined, UserOutlined } from "@ant-design/icons";
 import useMe, { useLogout } from "hooks/useMe";
 import { isFullWidthPath } from "utils";
 import { usePublicImageUrl } from "utils/fileUtils";
@@ -52,22 +52,42 @@ export default function Menu() {
       ? [me?.firstNameEn, me?.lastNameEn].filter(Boolean).join(" ")
       : [me?.firstName, me?.lastName].filter(Boolean).join(" ");
 
+  const isGuestUser = !me?.role?.roleType || me?.role?.roleType === "guest";
+
   const userMenuItems = [
     {
-      key: "name",
-      icon: <UserOutlined />,
+      type: "group",
       label: (
-        <span className="text-gray-500 cursor-default">
-          {currentName || me?.email || ""}
-        </span>
+        <div className="flex flex-col items-center text-center px-2 pt-2 pb-1 min-w-[190px]">
+          <Avatar
+            src={avatarUrl || undefined}
+            icon={<UserOutlined />}
+            size={56}
+            className="!bg-brand mb-2 ring-2 ring-gray-100"
+          />
+          <span className="font-semibold text-gray-800 leading-tight">
+            {currentName || me?.email}
+          </span>
+          {me?.email && (
+            <span className="text-xs text-gray-400 mt-0.5 break-all">{me.email}</span>
+          )}
+        </div>
       ),
-      disabled: true,
     },
     { type: "divider" },
+    ...(isGuestUser
+      ? [
+          {
+            key: "history",
+            icon: <HistoryOutlined />,
+            label: <Link to="/backoffice/historyList">{t("front.menu.registrationHistory")}</Link>,
+          },
+        ]
+      : []),
     {
       key: "profile",
       icon: <SolutionOutlined />,
-      label: <Link to={defaultMenu.path}>{t("front.menu.profile.title")}</Link>,
+      label: <Link to="/backoffice/setting">{t("front.menu.profile.title")}</Link>,
     },
     {
       key: "logout",
@@ -139,7 +159,7 @@ export default function Menu() {
                   {t("front.menu.loginRegister")}
                 </Link>
                 <Link
-                  to="/organizer/login"
+                  to="/organizer/register"
                   className="px-5 py-2 rounded-lg font-semibold text-white bg-brand hover:bg-brand-dark shadow-md transition-all active:scale-95"
                 >
                   {t("front.menu.organizer")}
@@ -202,8 +222,31 @@ export default function Menu() {
           <div className="p-4 border-t border-gray-200 space-y-3">
             {isLoggedIn ? (
               <>
+                <div className="flex flex-col items-center text-center pb-2">
+                  <Avatar
+                    src={avatarUrl || undefined}
+                    icon={<UserOutlined />}
+                    size={56}
+                    className="!bg-brand mb-2 ring-2 ring-gray-100"
+                  />
+                  <span className="font-semibold text-gray-800 leading-tight">
+                    {currentName || me?.email}
+                  </span>
+                  {me?.email && (
+                    <span className="text-xs text-gray-400 mt-0.5 break-all">{me.email}</span>
+                  )}
+                </div>
+                {isGuestUser && (
+                  <Link
+                    to="/backoffice/historyList"
+                    onClick={() => setDrawerOpen(false)}
+                    className="w-full block text-center py-3 rounded-xl border-2 border-brand text-brand font-bold"
+                  >
+                    {t("front.menu.registrationHistory")}
+                  </Link>
+                )}
                 <Link
-                  to={defaultMenu.path}
+                  to="/backoffice/setting"
                   onClick={() => setDrawerOpen(false)}
                   className="w-full block text-center py-3 rounded-xl border-2 border-brand text-brand font-bold"
                 >
@@ -226,7 +269,7 @@ export default function Menu() {
                   {t("front.menu.loginRegister")}
                 </Link>
                 <Link
-                  to="/organizer/login"
+                  to="/organizer/register"
                   onClick={() => setDrawerOpen(false)}
                   className="w-full block text-center py-3 rounded-xl bg-brand text-white font-bold"
                 >
