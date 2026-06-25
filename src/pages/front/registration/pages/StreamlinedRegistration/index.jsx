@@ -22,7 +22,8 @@ import { handleQueryStatus } from "utils";
 import ApplicantForm from "./ApplicantForm";
 import ShirtPicker from "./ShirtPicker";
 import { finalizeApplicants, totalQty, resolvePricing } from "./utils";
-import { primaryBtn } from "./theme";
+import { primaryBtn, phaseBadgeCls } from "./theme";
+import useBilingual from "./useBilingual";
 
 const SECTIONS = ["tickets", "info", "shirt", "shipping"];
 const fmt = (n) => (Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
@@ -65,6 +66,7 @@ const Section = ({ id, step, title, open, reached, onToggle, children }) => {
 
 const StreamlinedRegistration = () => {
   const { t } = useTranslation();
+  const bi = useBilingual();
   const params = useParams();
   const eventKey = params.id || params.name;
   const dispatch = useDispatch();
@@ -132,7 +134,14 @@ const StreamlinedRegistration = () => {
   const eventTypeRows = useMemo(
     () => (event?.eventTypes || []).map((et) => {
       const p = resolvePricing(et, availability);
-      return { ...et, _price: p.price, _available: p.isAvailable };
+      return {
+        ...et,
+        _price: p.price,
+        _available: p.isAvailable,
+        _closed: p.isClosed,
+        _paymentName: p.paymentName,
+        _special: p.isSpecialPrice,
+      };
     }),
     [event, availability]
   );
@@ -158,7 +167,7 @@ const StreamlinedRegistration = () => {
 
   const confirmTickets = () => {
     if (totalQty(tickets) < 1) {
-      message.warning(t("required.eventType"));
+      message.warning(bi("required.eventType"));
       return;
     }
     const prev = form.getFieldValue("applicants") || [];
@@ -187,17 +196,48 @@ const StreamlinedRegistration = () => {
 
   const namePathsFor = (keys) => applicantList.flatMap((_a, i) => keys.map((k) => ["applicants", i, k]));
 
+  // Remove a single applicant card (e.g. registered for self + a friend, then
+  // dropped the friend). Re-index the whole `applicants` array via setFieldsValue
+  // so every field — including the imperative pictureUrl — shifts correctly, and
+  // give the matching ticket count back.
+  const removeApplicant = (i) => {
+    const cur = form.getFieldValue("applicants") || [];
+    const removed = cur[i];
+    const next = cur.filter((_a, idx) => idx !== i);
+    form.setFieldsValue({ applicants: next });
+    setApplicantList(next);
+    if (removed?.eventTypeId) {
+      setTickets((prev) => ({
+        ...prev,
+        [removed.eventTypeId]: Math.max(0, (prev[removed.eventTypeId] || 0) - 1),
+      }));
+    }
+  };
+
+  // After a failed validateFields: scroll to the first offending field and show
+  // its (bilingual) reason so the user knows exactly what to fix and where.
+  const handleValidateError = (errInfo) => {
+    const fields = errInfo?.errorFields || [];
+    if (!fields.length) {
+      message.error(bi("validation.checkForm"));
+      return;
+    }
+    const first = fields[0];
+    form.scrollToField(first.name, { behavior: "smooth", block: "center" });
+    message.error(first.errors?.[0] || bi("validation.checkForm"));
+  };
+
   const confirmInfo = async () => {
     const current = form.getFieldValue("applicants") || [];
     if (applicantList.some((_a, i) => !current[i]?.type)) {
-      message.warning(t("back.reg.common.selectApplicant"));
+      message.warning(bi("back.reg.common.selectApplicant"));
       return;
     }
     try {
       await form.validateFields();
       advanceTo("shirt");
-    } catch {
-      message.error(t("validation.checkForm") || "กรุณากรอกข้อมูลให้ครบถ้วน");
+    } catch (errInfo) {
+      handleValidateError(errInfo);
     }
   };
 
@@ -205,14 +245,14 @@ const StreamlinedRegistration = () => {
     try {
       await form.validateFields(namePathsFor(["shirtTypeId", "shirtSizeId"]));
       advanceTo("shipping");
-    } catch {
-      message.error(t("required.shirtSize"));
+    } catch (errInfo) {
+      handleValidateError(errInfo);
     }
   };
 
   const checkout = () => {
     if (deliveryMethod === "post" && !shippingAddress.trim()) {
-      message.warning(t("back.reg.payment.enterAddress"));
+      message.warning(bi("back.reg.payment.enterAddress"));
       return;
     }
     const raw = form.getFieldValue("applicants") || [];
@@ -301,20 +341,34 @@ const StreamlinedRegistration = () => {
                   const qty = tickets[et.id] || 0;
                   return (
                     <div key={et.id}
-                      className={`border p-4 rounded-lg flex justify-between items-center transition-all ${
-                        qty > 0 ? "border-[#006193] border-2" : "border-[#bfc7d2]"}`}>
-                      <div className="flex-1">
-                        <h3 className="font-bold text-[#181c1e] mb-0.5">{et.name}</h3>
-                        <p className="text-[#006193] font-bold text-lg">{Number(et._price).toLocaleString()} THB</p>
-                        {!et._available && <p className="text-xs text-[#ba1a1a] mt-1">{t("front.eventDetail.quotaFull")}</p>}
+                      className={`border p-4 rounded-lg flex justify-between items-center gap-3 transition-all ${
+                        et._closed ? "border-[#bfc7d2] bg-[#f1f4f6] opacity-80"
+                          : qty > 0 ? "border-[#006193] border-2" : "border-[#bfc7d2]"}`}>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-[#181c1e] mb-1">{et.name}</h3>
+                        {et._closed ? (
+                          <p className="text-sm font-bold text-[#ba1a1a]">ปิดรับสมัครแล้ว / Closed</p>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {et._special && et._paymentName ? (
+                                <span className={phaseBadgeCls}>{et._paymentName}</span>
+                              ) : null}
+                              <span className="text-[#006193] font-bold text-lg">{Number(et._price).toLocaleString()} THB</span>
+                            </div>
+                            {!et._available && <p className="text-xs text-[#ba1a1a] mt-1">{t("front.eventDetail.quotaFull")}</p>}
+                          </>
+                        )}
                       </div>
-                      <div className="flex items-center gap-3 bg-[#ebeef0] rounded-full p-1 border border-[#bfc7d2]">
-                        <button type="button" onClick={() => setQty(et.id, -1)} disabled={qty === 0}
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-[#006193] hover:bg-[#e0e3e5] disabled:text-[#bfc7d2] text-xl font-bold">−</button>
-                        <span className="w-5 text-center font-bold">{qty}</span>
-                        <button type="button" onClick={() => setQty(et.id, 1)} disabled={!et._available}
-                          className="w-10 h-10 rounded-full flex items-center justify-center bg-[#006193] text-white shadow hover:opacity-90 disabled:bg-[#bfc7d2] text-xl font-bold">+</button>
-                      </div>
+                      {et._closed ? null : (
+                        <div className="flex items-center gap-3 bg-[#ebeef0] rounded-full p-1 border border-[#bfc7d2] shrink-0">
+                          <button type="button" onClick={() => setQty(et.id, -1)} disabled={qty === 0}
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-[#006193] hover:bg-[#e0e3e5] disabled:text-[#bfc7d2] text-xl font-bold">−</button>
+                          <span className="w-5 text-center font-bold">{qty}</span>
+                          <button type="button" onClick={() => setQty(et.id, 1)} disabled={!et._available}
+                            className="w-10 h-10 rounded-full flex items-center justify-center bg-[#006193] text-white shadow hover:opacity-90 disabled:bg-[#bfc7d2] text-xl font-bold">+</button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -331,7 +385,8 @@ const StreamlinedRegistration = () => {
                 {applicantList.map((a, i) => (
                   <ApplicantForm key={i} index={i} ticketLabel={a?.eventTypeName} me={me} event={event}
                     form={form} provinceOption={provinceOption} isLoadingProvince={isLoadingProvince}
-                    nationalityOption={nationalityOption} isLoadingNationality={isLoadingNationality} />
+                    nationalityOption={nationalityOption} isLoadingNationality={isLoadingNationality}
+                    canRemove={applicantList.length > 1} onRemove={removeApplicant} />
                 ))}
                 <button type="button" className={primaryBtn} onClick={confirmInfo}>
                   Next <ArrowRightOutlined />

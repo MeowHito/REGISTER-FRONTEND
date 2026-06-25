@@ -22,3 +22,16 @@ export const selectCls =
 
 export const primaryBtn =
   "w-full bg-[#006193] text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50";
+
+// Shared class for every CommonForm.Item on the form. Keeps fields tight, but —
+// unlike a bare `!mb-0` — gives the validation message ("explain") its own
+// in-flow space with a small reserved gap when an error shows, so the red text
+// never collides with / hides behind the next field's box.
+export const fieldItemCls =
+  "!mb-0 [&.ant-form-item-has-error]:!mb-1 " +
+  "[&_.ant-form-item-explain]:!text-xs [&_.ant-form-item-explain]:!leading-snug " +
+  "[&_.ant-form-item-explain]:!pt-1 [&_.ant-form-item-explain]:!min-h-0";
+
+// Phase / payment-type badge shown on a ticket card (e.g. "Early Bird").
+export const phaseBadgeCls =
+  "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#cce5ff] text-[#006193]";

@@ -118,8 +118,22 @@ export const finalizeApplicants = (rawApplicants, event, t) => {
 export const totalQty = (tickets) =>
   Object.values(tickets || {}).reduce((sum, q) => sum + (Number(q) || 0), 0);
 
+/**
+ * Registration for an event type is "closed" when the admin configured payment
+ * phases (pricing rows) but every one of them has already passed its end date —
+ * i.e. there is no current phase and no next phase to fall through to. Event
+ * types with no payment phases at all keep working on the Standard price.
+ */
+export const isEventTypeClosed = (eventType) => {
+  const pricing = eventType?.pricing || [];
+  if (!pricing.length) return false;
+  const now = dayjs();
+  return pricing.every((p) => p.endDate && dayjs(p.endDate).isBefore(now));
+};
+
 /** Resolve the current price for an event type, preferring live availability. */
 export const resolvePricing = (eventType, availability) => {
+  const closed = isEventTypeClosed(eventType);
   const info = (availability || []).find(
     (a) => a.eventTypeId === eventType.id
   );
@@ -129,8 +143,9 @@ export const resolvePricing = (eventType, availability) => {
       paymentName: info.paymentName ?? null,
       pricingId: info.isSpecialPrice ? info.pricingId ?? null : null,
       isSpecialPrice: !!info.isSpecialPrice,
-      isAvailable: info.isAvailable ?? true,
+      isAvailable: !closed && (info.isAvailable ?? true),
       availableQuota: info.availableQuota ?? null,
+      isClosed: closed,
     };
   }
   return {
@@ -138,7 +153,8 @@ export const resolvePricing = (eventType, availability) => {
     paymentName: null,
     pricingId: null,
     isSpecialPrice: false,
-    isAvailable: !eventType.isQuotaFull,
+    isAvailable: !closed && !eventType.isQuotaFull,
     availableQuota: null,
+    isClosed: closed,
   };
 };

@@ -1776,6 +1776,8 @@
         "hideDetail": "Hide Details",
         "delete": "Delete",
         "selectApplicant": "Select Applicant",
+        "removeApplicantTitle": "Remove this applicant?",
+        "removeApplicantConfirm": "This applicant and the information entered will be removed.",
         "applicant": "Applicant",
         "self": "For Myself",
         "friend": "For a Friend",
@@ -2128,6 +2130,7 @@
     "discountExceedsPrice": "Discount must not be greater than base price",
     "ageGroupOverlap": "Age range must not overlap with existing age groups",
     "required": "This field is required",
+    "checkForm": "Please complete all required fields correctly",
     "pricingQuotaExceed": "Total special pricing quota ({{total}}) exceeds event type quota ({{max}})"
   },
   "backOffice": {

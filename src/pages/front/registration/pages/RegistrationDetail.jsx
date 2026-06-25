@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Card, Row, Col, Button, Tag, Checkbox, message, Divider, Collapse } from 'antd';
-import { ExclamationCircleOutlined } from '@ant-design/icons';
+import { Checkbox, message } from 'antd';
+import { LoadingOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import FrontLayout from 'components/frontLayout';
 import RegistrationSteps from '../components/RegistrationSteps';
 import backOfficeServices from "services/backoffice.services";
 import { AlertError, AlertWarning } from 'components/alert';
 import dayjs from 'dayjs';
-import _ from 'lodash';
 import { getImageFileToUpload, getPublicUrl } from 'utils/fileUtils';
 import { useDispatch, useSelector } from 'react-redux';
 import { SET_ORDER } from 'store/reducers/contextSlice';
@@ -20,6 +19,24 @@ function addHoursToNow(hours) {
 	now.setHours(now.getHours() + hours);
 	return now.toISOString();
 }
+
+// Small presentational helpers so the review card reads like the registration
+// form (orange-accented section heading + label/value rows), responsive by default.
+const DetailSection = ({ title, children }) => (
+	<div className="space-y-1.5">
+		<h4 className="text-xs font-bold uppercase tracking-wide text-[#006193] border-l-2 border-[#fe9400] pl-2 mb-2">
+			{title}
+		</h4>
+		{children}
+	</div>
+);
+
+const DetailRow = ({ label, children }) => (
+	<div className="flex flex-wrap gap-x-2 text-sm leading-relaxed">
+		<span className="font-bold text-[#3f4850]">{label}:</span>
+		<span className="text-[#181c1e] break-words">{children}</span>
+	</div>
+);
 
 const RegistrationDetail = () => {
 	const { t } = useTranslation();
@@ -84,7 +101,7 @@ const RegistrationDetail = () => {
 		try {
 			const email = order?.applicants?.[0]?.email;
 			if (!email) {
-				message.error("ไม่พบอีเมลสำหรับส่งยืนยัน");
+				message.error("ไม่พบอีเมลสำหรับส่งยืนยัน / No email found for confirmation");
 				return;
 			}
 
@@ -253,10 +270,10 @@ const RegistrationDetail = () => {
 
 			try {
 				await sendEmail(emailData);
-				message.success("สร้างคำสั่งซื้อสำเร็จ! กำลังไปหน้าชำระเงิน...");
+				message.success("สร้างคำสั่งซื้อสำเร็จ! กำลังไปหน้าชำระเงิน... / Order created! Redirecting to payment...");
 			} catch (err) {
 				console.error("ส่งอีเมลล้มเหลว:", err);
-				message.error("สร้างคำสั่งซื้อสำเร็จ แต่ไม่สามารถส่งอีเมลได้");
+				message.error("สร้างคำสั่งซื้อสำเร็จ แต่ไม่สามารถส่งอีเมลได้ / Order created, but the confirmation email could not be sent");
 			}
 			setTimeout(() => {
 				navigate("/registrationPayment", { replace: true });
@@ -331,297 +348,149 @@ const RegistrationDetail = () => {
 		`${t("back.reg.common.provincePrefix")}${province || "-"} ${zipcode || ""}`;
 
 	return (
-		<FrontLayout>
+		<FrontLayout fullWidth>
 			<RegistrationSteps currentStep={1} />
-			<div style={{ padding: '16px' }}>
-				<div className="text-xl font-semibold text-orange-600 flex items-center gap-2 mb-1">📋 {t("back.reg.common.applicantInfo")}</div>
+			<div className="bg-[#f7fafc] min-h-screen pb-12">
+				<div className="max-w-screen-md lg:max-w-screen-lg mx-auto px-4 py-6">
+					{/* event header */}
+					<div className="mb-6 border-l-4 border-[#fe9400] pl-4">
+						<h2 className="text-2xl font-bold text-[#181c1e] mb-1">
+							{eventData?.name || applicants[0]?.eventName || t("back.reg.common.applicantInfo")}
+						</h2>
+						<p className="text-sm font-bold text-[#3f4850] flex items-center gap-2">
+							📋 {t("back.reg.common.applicantInfo")} / Review &amp; Confirm
+						</p>
+					</div>
 
-				<Tag icon={<ExclamationCircleOutlined />} color="volcano" style={{ marginBottom: 16 }}>
-					{t("back.reg.common.incomplete")}
-				</Tag>
-
-				<Collapse
-					accordion
-					items={applicants.map((applicant, idx) => {
-						const price = Number(applicant.price || 0);
-						const discount = Number(applicant.discountNoShirt || 0);
-						const deliveryFee = applicant.deliveryMethod === 'post' ? applicant.shippingFee : 0;
-						const total = (price - discount) + deliveryFee;
-						return {
-							key: idx.toString(),
-							label: (
-								<Row justify="space-between" style={{ width: '100%' }}>
-									<Col>
-										<div className="font-bold">
-											👤 {t("back.reg.common.applicantNumber")} {idx + 1} / {applicants.length}{" "}
-											<span className="text-gray-500 ml-2">
-												({applicant.firstName} {applicant.lastName})
+					<div className="grid gap-6 lg:grid-cols-3 items-start">
+						{/* ---- left: applicant review cards ---- */}
+						<div className="lg:col-span-2 space-y-4">
+							{applicants.map((applicant, idx) => {
+								const price = Number(applicant.price || 0);
+								const discount = Number(applicant.discountNoShirt || 0);
+								const deliveryFee = applicant.deliveryMethod === 'post' ? applicant.shippingFee : 0;
+								const total = (price - discount) + deliveryFee;
+								return (
+									<div key={idx} className="bg-white border border-[#bfc7d2] rounded-xl overflow-hidden shadow-sm">
+										<div className="flex items-center justify-between gap-2 px-5 py-3 bg-[#f1f4f6] border-b border-[#e5e9eb]">
+											<span className="font-bold text-[#181c1e]">
+												👤 {t("back.reg.common.applicantNumber")} {idx + 1}/{applicants.length}
+												<span className="text-[#3f4850] font-normal ml-1">
+													({applicant.firstName} {applicant.lastName})
+												</span>
+											</span>
+											<span className="text-[#006193] font-bold whitespace-nowrap">
+												{total.toLocaleString()} {t("general.unitBaht")}
 											</span>
 										</div>
-									</Col>
-									<Col>
-										<div className="text-primary text-[16px] font-bold">
-											{total.toLocaleString()} {t("general.unitBaht")}
+
+										<div className="p-5 space-y-5">
+											<DetailSection title={t("back.reg.common.applicantInfo")}>
+												<DetailRow label={t("back.reg.form.firstName")}>{applicant.firstName} {applicant.lastName}</DetailRow>
+												<DetailRow label={t("back.reg.form.birthDate")}>{dayjs(applicant.birthDate).format(SYS_DATE_FORMAT)}</DetailRow>
+												<DetailRow label={t("back.reg.form.email")}>{applicant.email}</DetailRow>
+												{applicant.phone ? <DetailRow label={t("back.reg.form.phone")}>{applicant.phone}</DetailRow> : null}
+											</DetailSection>
+
+											<DetailSection title={t("back.reg.common.eventType")}>
+												<DetailRow label={t("back.reg.common.type")}>{applicant.eventTypeName}</DetailRow>
+												{applicant.teamClub?.trim() ? <DetailRow label={t("back.reg.form.teamClub")}>{applicant.teamClub}</DetailRow> : null}
+												<DetailRow label={t("back.reg.form.ageGroup")}>{applicant.ageGroupName || t("back.reg.form.noCompetitiveAgeGroup")}</DetailRow>
+												{applicant.noShirt ? (
+													<DetailRow label={t("back.reg.payment.shirt")}>
+														{t("back.reg.payment.noReceive")}
+														{(price > 0 && discount > 0) ? (
+															<span className="text-[#3f4850]"> ({t("back.reg.common.discount")} {discount.toLocaleString()} {t("general.unitBaht")})</span>
+														) : null}
+													</DetailRow>
+												) : (
+													<>
+														<DetailRow label={t("back.reg.payment.shirtType")}>{applicant.shirtTypeName}</DetailRow>
+														<DetailRow label={t("back.reg.payment.shirtSize")}>
+															{applicant.shirtSizeName}
+															{(applicant.shirtSizeChestSize || applicant.shirtSizeLength)
+																? ` ( ${t("back.reg.payment.chestSize")} : ${applicant.shirtSizeChestSize || "-"} ${t("back.reg.payment.lengthSize")} : ${applicant.shirtSizeLength || "-"} )`
+																: ""}
+														</DetailRow>
+													</>
+												)}
+												<DetailRow label={t("back.reg.common.price")}>
+													{applicant.price.toLocaleString()} {t("general.unitBaht")}
+													<span className="text-[#3f4850]"> ({applicant.paymentName || t("back.reg.common.normalPrice")})</span>
+												</DetailRow>
+											</DetailSection>
+
+											<DetailSection title={t("back.reg.payment.shipping")}>
+												<DetailRow label={t("back.reg.payment.receiveMethod")}>
+													{applicant.deliveryMethod === 'post' ? t("back.reg.payment.post") : t("back.reg.payment.pickup")}
+												</DetailRow>
+												{applicant.deliveryMethod === 'post' ? (
+													<>
+														<DetailRow label={t("back.reg.payment.shippingFee")}>{deliveryFee} {t("general.unitBaht")}</DetailRow>
+														{(applicant.shippingAddress || applicant.shippingDistrict || applicant.shippingAmphoe || applicant.shippingProvince || applicant.shippingZipcode) ? (
+															<DetailRow label={t("back.reg.payment.shippingAddress")}>
+																{formatAddress(applicant.shippingAddress, applicant.shippingDistrict, applicant.shippingAmphoe, applicant.shippingProvince, applicant.shippingZipcode, t)}
+															</DetailRow>
+														) : null}
+													</>
+												) : null}
+											</DetailSection>
+
+											<div className="border-t border-[#e5e9eb] pt-3 space-y-1 text-sm">
+												<div className="flex justify-between"><span className="text-[#3f4850]">{t("back.reg.common.price")}</span><span>{price.toLocaleString()} {t("general.unitBaht")}</span></div>
+												{discount > 0 ? <div className="flex justify-between"><span className="text-[#3f4850]">{t("back.reg.common.discount")}</span><span className="text-[#ba1a1a]">- {discount.toLocaleString()} {t("general.unitBaht")}</span></div> : null}
+												{deliveryFee > 0 ? <div className="flex justify-between"><span className="text-[#3f4850]">{t("back.reg.payment.shippingFee")}</span><span>{deliveryFee.toLocaleString()} {t("general.unitBaht")}</span></div> : null}
+												<div className="flex justify-between font-bold pt-1"><span>{t("back.reg.payment.total")}</span><span className="text-[#006193]">{total.toLocaleString()} {t("general.unitBaht")}</span></div>
+											</div>
 										</div>
-									</Col>
-								</Row>
-							),
-							children: (
-								<Card
-									style={{
-										marginBottom: 16,
-									}}
-									styles={{
-										body: {
-											padding: 24
-										}
-									}}
-								>
-									<Divider orientation="left">{t("back.reg.common.applicantInfo")}</Divider>
-									<Row gutter={[0, 8]}>
-										<Col span={24}>
-											<div>
-												<span className="font-bold">{t("back.reg.form.firstName")}: </span>
-												{applicant.firstName} {applicant.lastName}
-											</div>
-										</Col>
-										<Col span={24}>
-											<div>
-												<span className="font-bold">{t("back.reg.form.birthDate")}: </span>
-												{dayjs(applicant.birthDate).format(SYS_DATE_FORMAT)}
-											</div>
-										</Col>
-										<Col span={24}>
-											<div>
-												<span className="font-bold">{t("back.reg.form.email")}: </span>
-												{applicant.email}
-											</div>
-										</Col>
-										{applicant.phone && (
-											<Col span={24}>
-												<div>
-													<span className="font-bold">{t("back.reg.form.phone")}: </span>
-													{applicant.phone}
-												</div>
-											</Col>
-										)}
-									</Row>
-
-									<Divider orientation="left">{t("back.reg.common.eventType")}</Divider>
-									<Row gutter={[0, 8]}>
-										<Col span={24}>
-											<div>
-												<span className="font-bold">{t("back.reg.common.type")}: </span>
-												{applicant.eventTypeName}
-											</div>
-										</Col>
-										{applicant.teamClub?.trim() ? (
-											<Col span={24}>
-												<div>
-													<span className="font-bold">{t("back.reg.form.teamClub")}: </span>
-													{applicant.teamClub}
-												</div>
-											</Col>
-										) : null}
-										<Col span={24}>
-											<div>
-												<span className="font-bold">{t("back.reg.form.ageGroup")}: </span>
-												{applicant.ageGroupName || t("back.reg.form.noCompetitiveAgeGroup")}
-											</div>
-										</Col>
-										{applicant.noShirt ? (
-											<Col span={24}>
-												<div>
-													<span className="font-bold">{t("back.reg.payment.shirt")}: </span>{t("back.reg.payment.noReceive")}{' '}
-													{(price > 0 && discount > 0) && (
-														<span className="text-gray-500">
-															({t("back.reg.common.discount")} {discount.toLocaleString()} {t("general.unitBaht")})
-														</span>
-													)}
-												</div>
-											</Col>
-										) : (
-											<>
-												<Col span={24}>
-													<div>
-														<span className="font-bold">{t("back.reg.payment.shirtType")}: </span> {applicant.shirtTypeName}
-													</div>
-												</Col>
-												<Col span={24}>
-													{(applicant.shirtSizeChestSize || applicant.shirtSizeLength) ? (
-														<div>
-															<span className="font-bold">{t("back.reg.payment.shirtSize")}: </span> {applicant.shirtSizeName}
-															{` ( ${t("back.reg.payment.chestSize")} : ${applicant.shirtSizeChestSize || "-"} ${t("back.reg.payment.lengthSize")} : ${applicant.shirtSizeLength || "-"} )`}
-														</div>
-													) : (
-														<div>
-															<span className="font-bold">{t("back.reg.payment.shirtSize")}: </span> {applicant.shirtSizeName}
-														</div>
-													)}
-												</Col>
-											</>
-										)}
-										<Col span={24}>
-											<div>
-												<span className="font-bold">{t("back.reg.common.price")}:</span>{' '}
-												<span>
-													{applicant.price.toLocaleString()} {t("general.unitBaht")}{' '}
-													<span className="text-gray-500">
-														({applicant.paymentName ? applicant.paymentName || t("general.unknown") : t("back.reg.common.normalPrice")})
-													</span>
-												</span>
-											</div>
-										</Col>
-									</Row>
-
-									<Divider orientation="left">{t("back.reg.payment.shipping")}</Divider>
-									<Row gutter={[0, 8]}>
-										<Col span={24}>
-											<div>
-												<span className="font-bold">{t("back.reg.payment.receiveMethod")}: </span>{' '}
-												{applicant.deliveryMethod === 'post' ? t("back.reg.payment.post") : t("back.reg.payment.pickup")}
-											</div>
-										</Col>
-										{applicant.deliveryMethod === 'post' && (
-											<>
-												<Col span={24}>
-													<div>
-														<span className="font-bold">{t("back.reg.payment.shippingFee")}: </span>{' '}
-														<span>{deliveryFee} {t("general.unitBaht")}</span>
-													</div>
-												</Col>
-												{(applicant.shippingAddress ||
-													applicant.shippingDistrict ||
-													applicant.shippingAmphoe ||
-													applicant.shippingProvince ||
-													applicant.shippingZipcode) && (
-														<Col span={24}>
-															<div>
-																<span className="font-bold">{t("back.reg.payment.shippingAddress")}: </span>{" "}
-																{formatAddress(
-																	applicant.shippingAddress,
-																	applicant.shippingDistrict,
-																	applicant.shippingAmphoe,
-																	applicant.shippingProvince,
-																	applicant.shippingZipcode,
-																	t
-																)}
-															</div>
-														</Col>
-													)}
-											</>
-										)}
-									</Row>
-									<Divider orientation="left"></Divider>
-									<Row gutter={[16, 8]} justify="end" style={{ textAlign: 'right' }}>
-										<Col span={12}>
-											<div>{t("back.reg.common.price")}: </div>
-										</Col>
-										<Col span={6}>
-											<div>{price.toLocaleString()} {t("general.unitBaht")}</div>
-										</Col>
-
-										{discount > 0 && (
-											<>
-												<Col span={12}>
-													<div>{t("back.reg.common.discount")}: </div>
-												</Col>
-												<Col span={6}>
-													<div className="text-danger">- {discount.toLocaleString()} {t("general.unitBaht")}</div>
-												</Col>
-											</>
-										)}
-
-										{deliveryFee > 0 && (
-											<>
-												<Col span={12}>
-													<div>{t("back.reg.payment.shippingFee")}: </div>
-												</Col>
-												<Col span={6}>
-													<div>{deliveryFee.toLocaleString()} {t("general.unitBaht")}</div>
-												</Col>
-											</>
-										)}
-
-										<Col span={12}>
-											<div className="font-bold text-base">{t("back.reg.payment.total")}: </div>
-										</Col>
-										<Col span={6}>
-											<div className="font-bold text-base text-primary">{total.toLocaleString()} {t("general.unitBaht")}</div>
-										</Col>
-									</Row>
-
-								</Card>
-							),
-						};
-					})}
-				/>
-				{/* รวมยอดทุกอย่าง */}
-				<Row justify="end" className="mt-8">
-					<Col>
-						<div className="p-4 min-w-[320px] text-sm text-gray-800">
-							<div className="flex justify-between mb-3 font-semibold">
-								<span>{t("back.reg.payment.totalApplicants")}</span>
-								<span>
-									{applicants.length}{" "}
-									{t(applicants.length > 1 ? "back.reg.common.persons" : "back.reg.common.person")}
-								</span>
-							</div>
-							<div className="flex justify-between mb-2">
-								<span>{t("back.reg.payment.totalFee")}</span>
-								<span className="font-semibold">{totalEventType.toLocaleString()} {t("general.unitBaht")}</span>
-							</div>
-							<div className="flex justify-between mb-2">
-								<span>{t("back.reg.payment.discountNoShirt")}</span>
-								<span className="font-semibold text-danger">-{totalDiscount.toLocaleString()} {t("general.unitBaht")}</span>
-							</div>
-							<div className="flex justify-between mb-3">
-								<span>{t("back.reg.payment.totalShippingFee")}</span>
-								<span className="font-semibold">{totalShipping.toLocaleString()} {t("general.unitBaht")}</span>
-							</div>
-							<Divider style={{ margin: '12px 0' }} />
-							<div className="flex justify-between text-lg font-bold">
-								<span>{t("back.reg.payment.grandTotal")}</span>
-								<span className="text-primary">{grandTotal.toLocaleString()} {t("general.unitBaht")}</span>
-							</div>
+									</div>
+								);
+							})}
 						</div>
-					</Col>
-				</Row>
-				{order?.eventConditions?.length > 0 && (
-					<>
-						<div className="text-base font-semibold text-gray-800 my-2">{t("back.reg.payment.checkBeforePay")}</div>
-						<Checkbox.Group
-							options={checkboxOptions}
-							onChange={handleCheckboxChange}
-							style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}
-						/>
-					</>
-				)}
-				<Row justify="space-between">
-					<Col>
-						{!order?.orderNo && (
-							<Button onClick={() => navigate(`/registrationInfo/${order?.eventId}`)}>
-								{t("general.back")}
-							</Button>
-						)}
-					</Col>
-					<Col>
-						<Button
-							type="primary"
-							disabled={
-								isSubmitting ||
-								(order?.eventConditions?.length > 0
-									? checkedValues.length !== checkboxOptions.length
-									: false)
-							}
-							style={{ backgroundColor: "#FFB946", borderColor: "#FFB946" }}
-							onClick={processOrder}
-							loading={isSubmitting}
-						>
-							{t("general.next")}
-						</Button>
-					</Col>
-				</Row>
+
+						{/* ---- right: order summary + confirm ---- */}
+						<aside className="lg:col-span-1">
+							<div className="lg:sticky lg:top-6 space-y-4">
+								<div className="bg-white border border-[#bfc7d2] rounded-xl shadow-sm p-5">
+									<h3 className="font-bold text-[#181c1e] mb-4">{t("back.reg.payment.grandTotal")}</h3>
+									<div className="space-y-2 text-sm">
+										<div className="flex justify-between"><span className="text-[#3f4850]">{t("back.reg.payment.totalApplicants")}</span><span className="font-bold">{applicants.length} {t(applicants.length > 1 ? "back.reg.common.persons" : "back.reg.common.person")}</span></div>
+										<div className="flex justify-between"><span className="text-[#3f4850]">{t("back.reg.payment.totalFee")}</span><span className="font-bold">{totalEventType.toLocaleString()} {t("general.unitBaht")}</span></div>
+										{totalDiscount > 0 ? <div className="flex justify-between"><span className="text-[#3f4850]">{t("back.reg.payment.discountNoShirt")}</span><span className="font-bold text-[#ba1a1a]">-{totalDiscount.toLocaleString()} {t("general.unitBaht")}</span></div> : null}
+										<div className="flex justify-between"><span className="text-[#3f4850]">{t("back.reg.payment.totalShippingFee")}</span><span className="font-bold">{totalShipping.toLocaleString()} {t("general.unitBaht")}</span></div>
+									</div>
+									<div className="border-t border-[#e5e9eb] mt-3 pt-3 flex justify-between items-center">
+										<span className="font-bold text-[#181c1e]">{t("back.reg.payment.grandTotal")}</span>
+										<span className="text-2xl font-bold text-[#006193]">{grandTotal.toLocaleString()} {t("general.unitBaht")}</span>
+									</div>
+								</div>
+
+								{order?.eventConditions?.length > 0 ? (
+									<div className="bg-white border border-[#bfc7d2] rounded-xl shadow-sm p-5">
+										<div className="font-bold text-[#181c1e] mb-3">{t("back.reg.payment.checkBeforePay")}</div>
+										<Checkbox.Group options={checkboxOptions} value={checkedValues} onChange={handleCheckboxChange}
+											style={{ display: 'flex', flexDirection: 'column', gap: 10 }} />
+									</div>
+								) : null}
+
+								<div className="flex flex-col gap-3">
+									<button type="button" onClick={processOrder}
+										disabled={isSubmitting || (order?.eventConditions?.length > 0 ? checkedValues.length !== checkboxOptions.length : false)}
+										className="w-full bg-[#fe9400] text-[#633700] font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+										{isSubmitting ? <LoadingOutlined /> : null}
+										{t("general.next")}
+									</button>
+									{!order?.orderNo ? (
+										<button type="button" onClick={() => navigate(`/registrationInfo/${order?.eventId}`)}
+											className="w-full bg-white border border-[#bfc7d2] text-[#3f4850] font-bold py-3 rounded-xl hover:border-[#006193] transition-all">
+											{t("general.back")}
+										</button>
+									) : null}
+								</div>
+							</div>
+						</aside>
+					</div>
+				</div>
 			</div>
 		</FrontLayout>
 	);

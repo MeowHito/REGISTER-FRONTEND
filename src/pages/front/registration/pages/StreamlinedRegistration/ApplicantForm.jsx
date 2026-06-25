@@ -1,6 +1,8 @@
 import React from "react";
-import { Input, Select } from "antd";
-import { UserOutlined, UsergroupAddOutlined } from "@ant-design/icons";
+import { Input, Select, Modal } from "antd";
+import {
+  UserOutlined, UsergroupAddOutlined, DeleteOutlined, ExclamationCircleOutlined,
+} from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import CommonForm from "components/commonForm";
@@ -8,7 +10,8 @@ import ImageUpload from "components/imageUpload";
 import { bloodGroupOption } from "constants/options/bloodGroupOption";
 import BoxRadio from "./BoxRadio";
 import DobSelect from "./DobSelect";
-import { inputCls, selectCls } from "./theme";
+import { inputCls, selectCls, fieldItemCls } from "./theme";
+import useBilingual from "./useBilingual";
 
 const PERSONAL_KEYS = [
   "firstName", "lastName", "firstNameEn", "lastNameEn", "gender", "birthDate",
@@ -51,9 +54,24 @@ const ApplicantForm = ({
   isLoadingProvince,
   nationalityOption,
   isLoadingNationality,
+  canRemove,
+  onRemove,
 }) => {
   const { t } = useTranslation();
+  const bi = useBilingual();
   const prefix = "userData";
+
+  const confirmRemove = () => {
+    Modal.confirm({
+      title: bi("back.reg.common.removeApplicantTitle"),
+      icon: <ExclamationCircleOutlined />,
+      content: bi("back.reg.common.removeApplicantConfirm"),
+      okText: bi("general.delete"),
+      okButtonProps: { danger: true },
+      cancelText: bi("general.cancel"),
+      onOk: () => onRemove?.(index),
+    });
+  };
 
   const type = CommonForm.useWatch(["applicants", index, "type"], form);
   // `pictureUrl` is set imperatively (no Form.Item wraps it) and this page has no
@@ -95,15 +113,24 @@ const ApplicantForm = ({
 
   return (
     <div className="rounded-xl border border-[#bfc7d2] bg-white overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-3 border-b border-[#e5e9eb] bg-[#f1f4f6]">
+      <div className="flex items-center justify-between gap-2 px-5 py-3 border-b border-[#e5e9eb] bg-[#f1f4f6]">
         <span className="font-bold text-[#181c1e]">
           {t("back.reg.common.applicantInfo")} #{index + 1}
         </span>
-        {ticketLabel ? (
-          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#cce5ff] text-[#006193]">
-            {ticketLabel}
-          </span>
-        ) : null}
+        <div className="flex items-center gap-2">
+          {ticketLabel ? (
+            <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#cce5ff] text-[#006193]">
+              {ticketLabel}
+            </span>
+          ) : null}
+          {canRemove ? (
+            <button type="button" onClick={confirmRemove}
+              title={bi("general.delete")}
+              className="flex items-center justify-center w-8 h-8 rounded-full text-[#ba1a1a] hover:bg-[#ffdad6] transition-colors">
+              <DeleteOutlined />
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <div className="p-5 space-y-6">
@@ -145,34 +172,34 @@ const ApplicantForm = ({
 
             <div>
               <Label required>ชื่อ (ไทย) / First Name (Thai)</Label>
-              <CommonForm.Item name={["applicants", index, "firstName"]} className="!mb-0"
-                rules={[{ required: true, message: t("required.firstName") }]}>
+              <CommonForm.Item name={["applicants", index, "firstName"]} className={fieldItemCls}
+                rules={[{ required: true, message: bi("required.firstName") }]}>
                 <Input className={inputCls} placeholder="ชื่อ" allowClear />
               </CommonForm.Item>
             </div>
             <div>
               <Label required>นามสกุล (ไทย) / Last Name (Thai)</Label>
-              <CommonForm.Item name={["applicants", index, "lastName"]} className="!mb-0"
-                rules={[{ required: true, message: t("required.lastName") }]}>
+              <CommonForm.Item name={["applicants", index, "lastName"]} className={fieldItemCls}
+                rules={[{ required: true, message: bi("required.lastName") }]}>
                 <Input className={inputCls} placeholder="นามสกุล" allowClear />
               </CommonForm.Item>
             </div>
             <div>
               <Label required>ชื่อ (อังกฤษ) / First Name (English)</Label>
-              <CommonForm.Item name={["applicants", index, "firstNameEn"]} className="!mb-0"
+              <CommonForm.Item name={["applicants", index, "firstNameEn"]} className={fieldItemCls}
                 rules={[
-                  { required: true, message: t("required.firstNameEn") },
-                  { pattern: /^[A-Za-z\s]+$/, message: t("validation.en") },
+                  { required: true, message: bi("required.firstNameEn") },
+                  { pattern: /^[A-Za-z\s]+$/, message: bi("validation.en") },
                 ]}>
                 <Input className={inputCls} placeholder="First Name" allowClear />
               </CommonForm.Item>
             </div>
             <div>
               <Label required>นามสกุล (อังกฤษ) / Last Name (English)</Label>
-              <CommonForm.Item name={["applicants", index, "lastNameEn"]} className="!mb-0"
+              <CommonForm.Item name={["applicants", index, "lastNameEn"]} className={fieldItemCls}
                 rules={[
-                  { required: true, message: t("required.lastNameEn") },
-                  { pattern: /^[A-Za-z\s]+$/, message: t("validation.en") },
+                  { required: true, message: bi("required.lastNameEn") },
+                  { pattern: /^[A-Za-z\s]+$/, message: bi("validation.en") },
                 ]}>
                 <Input className={inputCls} placeholder="Last Name" allowClear />
               </CommonForm.Item>
@@ -180,8 +207,8 @@ const ApplicantForm = ({
 
             <div>
               <Label required>เพศ / Gender</Label>
-              <CommonForm.Item name={["applicants", index, "gender"]} className="!mb-0"
-                rules={[{ required: true, message: t("required.selectGender") }]}>
+              <CommonForm.Item name={["applicants", index, "gender"]} className={fieldItemCls}
+                rules={[{ required: true, message: bi("required.selectGender") }]}>
                 <BoxRadio columns={2} options={[
                   { value: "male", label: "ชาย (Male)", icon: "♂" },
                   { value: "female", label: "หญิง (Female)", icon: "♀" },
@@ -191,17 +218,17 @@ const ApplicantForm = ({
 
             <div>
               <Label required>วัน/เดือน/ปีเกิด / Date of Birth</Label>
-              <CommonForm.Item name={["applicants", index, "birthDate"]} className="!mb-0"
-                rules={[{ required: true, message: t("required.selectBirthDate") }]}>
+              <CommonForm.Item name={["applicants", index, "birthDate"]} className={fieldItemCls}
+                rules={[{ required: true, message: bi("required.selectBirthDate") }]}>
                 <DobSelect />
               </CommonForm.Item>
             </div>
 
             <div>
               <Label required>เลขบัตรประชาชน/พาสปอร์ต / ID Card or Passport</Label>
-              <CommonForm.Item name={["applicants", index, "idNo"]} className="!mb-0"
+              <CommonForm.Item name={["applicants", index, "idNo"]} className={fieldItemCls}
                 rules={[
-                  { required: true, message: t("required.idNo") },
+                  { required: true, message: bi("required.idNo") },
                   {
                     validator: (_r, value) => {
                       if (!value) return Promise.resolve();
@@ -210,7 +237,7 @@ const ApplicantForm = ({
                       const isThaiId = /^\d{13}$/.test(v);
                       const isPassport = /^[A-Za-z0-9]{6,20}$/.test(v);
                       if (isThaiId || isPassport) return Promise.resolve();
-                      return Promise.reject(new Error(t("validation.idNoAndPassport")));
+                      return Promise.reject(new Error(bi("validation.idNoAndPassport")));
                     },
                   },
                 ]}>
@@ -221,20 +248,20 @@ const ApplicantForm = ({
 
             <div>
               <Label required>อีเมล / Email Address</Label>
-              <CommonForm.Item name={["applicants", index, "email"]} className="!mb-0"
+              <CommonForm.Item name={["applicants", index, "email"]} className={fieldItemCls}
                 rules={[
-                  { required: true, message: t("required.email") },
-                  { type: "email", message: t("validation.email") },
+                  { required: true, message: bi("required.email") },
+                  { type: "email", message: bi("validation.email") },
                 ]}>
                 <Input className={inputCls} placeholder="runner@example.com" allowClear />
               </CommonForm.Item>
             </div>
             <div>
               <Label required>โทรศัพท์ / Phone Number</Label>
-              <CommonForm.Item name={["applicants", index, "phone"]} className="!mb-0"
+              <CommonForm.Item name={["applicants", index, "phone"]} className={fieldItemCls}
                 rules={[
-                  { required: true, message: t("required.phone") },
-                  { pattern: /^0\d{9}$/, message: t("validation.phone") },
+                  { required: true, message: bi("required.phone") },
+                  { pattern: /^0\d{9}$/, message: bi("validation.phone") },
                 ]}>
                 <Input className={inputCls} placeholder="08x-xxx-xxxx" allowClear />
               </CommonForm.Item>
@@ -242,8 +269,8 @@ const ApplicantForm = ({
 
             <div>
               <Label required>จังหวัด / Province</Label>
-              <CommonForm.Item name={["applicants", index, "province"]} className="!mb-0"
-                rules={[{ required: true, message: t("required.province") }]}>
+              <CommonForm.Item name={["applicants", index, "province"]} className={fieldItemCls}
+                rules={[{ required: true, message: bi("required.province") }]}>
                 <Select className={selectCls} placeholder="เลือกจังหวัด / Select Province"
                   options={provinceOption} disabled={isLoadingProvince} showSearch allowClear
                   getPopupContainer={(n) => n.parentNode}
@@ -255,8 +282,8 @@ const ApplicantForm = ({
             </div>
             <div>
               <Label required>สัญชาติ / Nationality</Label>
-              <CommonForm.Item name={["applicants", index, "nationality"]} className="!mb-0"
-                rules={[{ required: true, message: t("required.nationality") }]}>
+              <CommonForm.Item name={["applicants", index, "nationality"]} className={fieldItemCls}
+                rules={[{ required: true, message: bi("required.nationality") }]}>
                 <Select className={selectCls} placeholder="Thai" options={nationalityOption}
                   disabled={isLoadingNationality} showSearch allowClear getPopupContainer={(n) => n.parentNode} />
               </CommonForm.Item>
@@ -264,15 +291,15 @@ const ApplicantForm = ({
 
             <div>
               <Label required>หมู่เลือด / Blood Type</Label>
-              <CommonForm.Item name={["applicants", index, "bloodType"]} className="!mb-0"
-                rules={[{ required: true, message: t("required.bloodType") }]}>
+              <CommonForm.Item name={["applicants", index, "bloodType"]} className={fieldItemCls}
+                rules={[{ required: true, message: bi("required.bloodType") }]}>
                 <Select className={selectCls} placeholder={t("back.reg.form.selectBloodType")}
                   options={bloodGroupOption} allowClear getPopupContainer={(n) => n.parentNode} />
               </CommonForm.Item>
             </div>
             <div>
               <Label>ปัญหาสุขภาพ / แพ้อาหาร / Health / Allergies</Label>
-              <CommonForm.Item name={["applicants", index, "healthIssues"]} className="!mb-0">
+              <CommonForm.Item name={["applicants", index, "healthIssues"]} className={fieldItemCls}>
                 <Input className={inputCls} placeholder="กรอกข้อมูลสุขภาพ (ถ้ามี)" allowClear />
               </CommonForm.Item>
             </div>
@@ -283,24 +310,24 @@ const ApplicantForm = ({
               <div className="space-y-4">
                 <div>
                   <Label required>ชื่อ-นามสกุล / Name</Label>
-                  <CommonForm.Item name={["applicants", index, "emergencyContact"]} className="!mb-0"
-                    rules={[{ required: true, message: t("required.emergencyContact") }]}>
+                  <CommonForm.Item name={["applicants", index, "emergencyContact"]} className={fieldItemCls}
+                    rules={[{ required: true, message: bi("required.emergencyContact") }]}>
                     <Input className={inputCls} placeholder="ชื่อ-นามสกุล" allowClear />
                   </CommonForm.Item>
                 </div>
                 <div>
                   <Label required>ความสัมพันธ์ / Relationship</Label>
-                  <CommonForm.Item name={["applicants", index, "emergencyRelation"]} className="!mb-0"
-                    rules={[{ required: true, message: t("required.emergencyRelation") }]}>
+                  <CommonForm.Item name={["applicants", index, "emergencyRelation"]} className={fieldItemCls}
+                    rules={[{ required: true, message: bi("required.emergencyRelation") }]}>
                     <Input className={inputCls} placeholder="เช่น บิดา, มารดา, เพื่อน" allowClear />
                   </CommonForm.Item>
                 </div>
                 <div>
                   <Label required>เบอร์โทรฉุกเฉิน / Emergency Phone</Label>
-                  <CommonForm.Item name={["applicants", index, "emergencyPhone"]} className="!mb-0"
+                  <CommonForm.Item name={["applicants", index, "emergencyPhone"]} className={fieldItemCls}
                     rules={[
-                      { required: true, message: t("required.emergencyPhone") },
-                      { pattern: /^0\d{9}$/, message: t("validation.phone") },
+                      { required: true, message: bi("required.emergencyPhone") },
+                      { pattern: /^0\d{9}$/, message: bi("validation.phone") },
                     ]}>
                     <Input className={inputCls} placeholder="08x-xxx-xxxx" allowClear />
                   </CommonForm.Item>
@@ -310,7 +337,7 @@ const ApplicantForm = ({
 
             <div>
               <Label>ชื่อชมรม/ทีม / Club or Team Name</Label>
-              <CommonForm.Item name={["applicants", index, "teamClub"]} className="!mb-0">
+              <CommonForm.Item name={["applicants", index, "teamClub"]} className={fieldItemCls}>
                 <Input className={inputCls} placeholder="กรอกชื่อชมรม/ทีม (ถ้ามี)" allowClear />
               </CommonForm.Item>
             </div>
