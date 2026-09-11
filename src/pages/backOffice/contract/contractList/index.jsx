@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Input, Button, Space, Spin, message } from 'antd';
-import { FileTextOutlined, FormOutlined, SearchOutlined } from '@ant-design/icons';
+import { Input, Button, Space, Spin, Tag, message } from 'antd';
+import { FileTextOutlined, FormOutlined, SearchOutlined, SendOutlined, ToolOutlined, UndoOutlined } from '@ant-design/icons';
+import { useSearchParams } from 'react-router-dom';
+import RegeneratePdfModal from '../regeneratePdfModal';
 import { useTranslation } from 'react-i18next';
 import Highlighter from 'react-highlight-words';
 import Contract from '../contractInfoForm';
@@ -33,6 +35,9 @@ const ContractList = () => {
     } = useMe({ retry: 0 });
     const roleUser = me?.role?.roleType;
 
+    const [searchParams] = useSearchParams();
+    const isDeveloperMode = searchParams.get("mode") === "developer";
+
     const {
         open: openContract,
         handleOpen: handleOpenContract,
@@ -49,6 +54,12 @@ const ContractList = () => {
         handleOpen: handleOpenContractSignature,
         handleClose: handleCloseContractSignature,
     } = UseModalHook();
+    const {
+        open: openRepair,
+        handleOpen: handleOpenRepair,
+        handleClose: handleCloseRepair,
+    } = UseModalHook();
+    const [repairRecord, setRepairRecord] = useState(null);
 
     const { refetch: refetchContract, isFetching: isLoadingData, data: dataContract } = backOfficeServices.useQueryGetAllContract({
         paging: {
@@ -70,6 +81,37 @@ const ContractList = () => {
             AlertError({ text: errorToMessage(err) });
         }
     );
+
+    const { mutate: markReadyForSign, isLoading: isMarking } = backOfficeServices.useMutationMarkContractReadyForSign(
+        () => {
+            message.success(t("general.alertSuccess"));
+            refetchContract();
+        },
+        (err) => {
+            AlertError({ text: errorToMessage(err?.response?.data?.message || err) });
+        }
+    );
+
+    const handleSendForSign = (record, ready) => {
+        AlertConfirm({
+            text: ready
+                ? t("back.contractList.confirmSendForSign")
+                : t("back.contractList.confirmRevertDraft"),
+            onOk: () => {
+                markReadyForSign({ uuid: record.id, ready });
+            },
+        });
+    };
+
+    const renderStatusTag = (record) => {
+        if (record?.customerSignature || record?.isUploadContract) {
+            return <Tag color="green">{t("back.contractList.statusSigned")}</Tag>;
+        }
+        if (record?.isReadyForSign) {
+            return <Tag color="blue">{t("back.contractList.statusReady")}</Tag>;
+        }
+        return <Tag>{t("back.contractList.statusDraft")}</Tag>;
+    };
 
     useEffect(() => {
         if (dataContract?.content?.length > 0) {
@@ -95,6 +137,11 @@ const ContractList = () => {
         });
         setMode("edit")
         handleOpenContractSignature();
+    };
+
+    const handleRepairClick = (record) => {
+        setRepairRecord(record);
+        handleOpenRepair();
     };
 
     const handleDelete = (id) => {
@@ -179,6 +226,13 @@ const ContractList = () => {
             dataIndex: 'tel',
             key: 'tel',
         },
+        ...(roleUser === "admin" ? [{
+            title: t("back.contractList.statusReady"),
+            key: 'status',
+            align: 'center',
+            fixed: 'right',
+            render: (_text, record) => renderStatusTag(record),
+        }] : []),
     ];
 
     const handleChange = (pagination, filters, sorter) => {
@@ -303,6 +357,36 @@ const ContractList = () => {
                                 {t("back.contractList.buttonContractForm")}
                             </Button>
                         )),
+                        (roleUser === "admin"
+                            && !!record?.contractPath
+                            && !record?.customerSignature
+                            && !record?.isReadyForSign
+                            && (
+                                <Button
+                                    variant="link"
+                                    color="default"
+                                    icon={<SendOutlined />}
+                                    loading={isMarking}
+                                    onClick={() => handleSendForSign(record, true)}
+                                >
+                                    {t("back.contractList.buttonSendForSign")}
+                                </Button>
+                            )),
+                        (roleUser === "admin"
+                            && !!record?.isReadyForSign
+                            && !record?.customerSignature
+                            && !record?.isUploadContract
+                            && (
+                                <Button
+                                    variant="link"
+                                    color="default"
+                                    icon={<UndoOutlined />}
+                                    loading={isMarking}
+                                    onClick={() => handleSendForSign(record, false)}
+                                >
+                                    {t("back.contractList.buttonRevertDraft")}
+                                </Button>
+                            )),
                         !!record?.contractPath && (
                             <Button
                                 variant="link"
@@ -314,7 +398,18 @@ const ContractList = () => {
                             >
                                 {t("back.contractList.buttonContractDocument")}
                             </Button>
-                        )
+                        ),
+                        (roleUser === "admin" && isDeveloperMode && !!record?.contractPath && (
+                            <Button
+                                variant="link"
+                                color="default"
+                                danger
+                                icon={<ToolOutlined />}
+                                onClick={() => handleRepairClick(record)}
+                            >
+                                {t("back.contractList.buttonRepairPdf")}
+                            </Button>
+                        )),
 
                     ].filter(Boolean)}
                 />
@@ -339,6 +434,12 @@ const ContractList = () => {
                 open={openContractSignature}
                 onCancel={handleCloseContractSignature}
                 refetch={refetchContract}
+            />
+            <RegeneratePdfModal
+                record={repairRecord}
+                open={openRepair}
+                onCancel={handleCloseRepair}
+                onSuccess={refetchContract}
             />
         </>
     );

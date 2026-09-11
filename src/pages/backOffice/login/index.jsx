@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { HomeOutlined, SettingOutlined } from "@ant-design/icons";
 import GoogleLogin from "./googleLogin";
 import LineLogin from "./lineLogin";
+import FacebookLogin from "./facebookLogin";
 import "./LoginButton.css";
 import FloatingLabel from "components/floatingLabel";
 import { useQueryClient } from "@tanstack/react-query";
@@ -128,6 +129,7 @@ function Login({ organizerMode = false }) {
                       <div className="flex flex-col gap-3 w-full">
                         <GoogleLogin />
                         <LineLogin />
+                        <FacebookLogin />
                       </div>
                       <div className="text-center mt-6">
                         <p className="mb-2">

@@ -36,6 +36,7 @@ import ParticipantList from 'pages/backOffice/event/participantList';
 import ReportList from 'pages/backOffice/report';
 import InviteAccept from 'pages/front/inviteAccept';
 import Operations from 'pages/backOffice/operations';
+import Event from 'pages/front/event';
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import { useEffect } from 'react';
@@ -57,6 +58,7 @@ function App() {
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Home />} />
             <Route path="contact" element={<Contact />} />
+            <Route path="event" element={<Event />} />
             <Route path="eventCalendar" element={<EventCalendar />} />
             <Route path="eventDetail/:name" element={<EventDetail />} />
             <Route path="participantSearch/:eventId" element={<ParticipantSearch />} />

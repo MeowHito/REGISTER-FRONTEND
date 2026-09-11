@@ -5,6 +5,8 @@ import HelpRequestList from "pages/backOffice/helpRequests";
 import JobMonitoring from "pages/backOffice/setting/jobMonitoring";
 import EmailQueue from "pages/backOffice/emailQueue";
 import PendingOrganizers from "pages/backOffice/operations/PendingOrganizers";
+import PaymentMismatch from "pages/backOffice/paymentMismatch";
+import ResendConfirmation from "pages/backOffice/resendConfirmation";
 
 export default function Operations() {
   const { t } = useTranslation();
@@ -29,6 +31,16 @@ export default function Operations() {
       key: "3",
       label: t("back.operations.tab.emailQueue"),
       children: <EmailQueue />,
+    },
+    {
+      key: "4",
+      label: t("back.operations.tab.paymentMismatch"),
+      children: <PaymentMismatch />,
+    },
+    {
+      key: "5",
+      label: t("back.operations.tab.resendConfirmation"),
+      children: <ResendConfirmation />,
     },
   ];
 

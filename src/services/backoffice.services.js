@@ -1909,6 +1909,125 @@ const backOfficeServices = {
       onError,
     });
   },
+
+  useQueryGetPaymentReviews() {
+    return useQuery({
+      queryKey: ["getPaymentReviews"],
+      queryFn: async () => {
+        const res = await createRequest.get("admin/orders/reviews");
+        return res.data;
+      },
+      refetchOnWindowFocus: false,
+    });
+  },
+
+  useQueryGetPaymentReviewContext({ orderNo }) {
+    return useQuery({
+      queryKey: ["getPaymentReviewContext", orderNo],
+      queryFn: async () => {
+        const res = await createRequest.get(`admin/orders/${orderNo}/review-context`);
+        return res.data;
+      },
+      enabled: !!orderNo,
+      refetchOnWindowFocus: false,
+    });
+  },
+
+  useMutationResolvePaymentReview(onSuccess, onError) {
+    return useMutation({
+      mutationFn: async ({ orderNo, payload }) => {
+        const res = await createRequest.post(`admin/orders/${orderNo}/resolve-review`, payload);
+        return res.data;
+      },
+      onSuccess,
+      onError,
+    });
+  },
+
+  useQueryGetPendingConfirmations() {
+    return useQuery({
+      queryKey: ["getPendingConfirmations"],
+      queryFn: async () => {
+        const res = await createRequest.get("admin/orders/pending-confirmation");
+        return res.data;
+      },
+      refetchOnWindowFocus: false,
+    });
+  },
+
+  useQueryGetConfirmationPreview({ orderNo }) {
+    return useQuery({
+      queryKey: ["getConfirmationPreview", orderNo],
+      queryFn: async () => {
+        const res = await createRequest.get(`admin/orders/${orderNo}/confirmation-preview`);
+        return res.data;
+      },
+      enabled: !!orderNo,
+      refetchOnWindowFocus: false,
+    });
+  },
+
+  useMutationResendConfirmation(onSuccess, onError) {
+    return useMutation({
+      mutationFn: async ({ orderNo, testRecipient }) => {
+        const res = await createRequest.post(
+          `admin/orders/${orderNo}/resend-confirmation`,
+          testRecipient ? { testRecipient } : {}
+        );
+        return res.data;
+      },
+      onSuccess,
+      onError,
+    });
+  },
+
+  useMutationResendConfirmationBulk(onSuccess, onError) {
+    return useMutation({
+      mutationFn: async (orderNos) => {
+        const res = await createRequest.post("admin/orders/resend-confirmation", { orderNos });
+        return res.data;
+      },
+      onSuccess,
+      onError,
+    });
+  },
+
+  useMutationRegenerateContractPdf(onSuccess, onError) {
+    return useMutation({
+      mutationFn: async ({ uuid }) => {
+        const res = await createRequest.post(`/api/contracts/${uuid}/regeneratePdf`);
+        return res.data;
+      },
+      onSuccess,
+      onError,
+    });
+  },
+
+  useMutationMarkContractReadyForSign(onSuccess, onError) {
+    return useMutation({
+      mutationFn: async ({ uuid, ready = true }) => {
+        const res = await createRequest.put(`/api/contracts/${uuid}/markReadyForSign`, null, {
+          params: { ready },
+        });
+        return res.data;
+      },
+      onSuccess,
+      onError,
+    });
+  },
+
+  useMutationUpdateEmailLogRecipient(onSuccess, onError) {
+    return useMutation({
+      mutationFn: async ({ emailLogId, recipientTo }) => {
+        const res = await createRequest.patch(`api/email-logs/${emailLogId}`, {
+          recipientTo,
+        });
+        return res.data;
+      },
+      onSuccess,
+      onError,
+    });
+  },
 };
 
 export default backOfficeServices;

@@ -147,7 +147,20 @@
       "discount": "ส่วนลด",
       "shippingFeeLabel": "ค่าจัดส่ง",
       "totalPrice": "รวมทั้งสิ้น",
-      "fullDetailRemark": "ข้อมูลบางส่วนถูกปิดไว้ หากต้องการดูข้อมูลครบถ้วน กรุณาเข้าสู่ระบบและผูกเลขบัตรประชาชน"
+      "fullDetailRemark": "ข้อมูลบางส่วนถูกปิดไว้ หากต้องการดูข้อมูลครบถ้วน กรุณาเข้าสู่ระบบและผูกเลขบัตรประชาชน",
+      "notFound": {
+        "title": "ไม่พบกิจกรรมที่คุณกำลังมองหา",
+        "description": "ลิงก์นี้อาจพิมพ์ผิด ถูกเปลี่ยนแปลง หรือกิจกรรมถูกปิดไปแล้ว",
+        "didYouMean": "คุณกำลังมองหา “{{name}}” อยู่ไหม?",
+        "similarTitle": "กิจกรรมที่ใกล้เคียงกับที่คุณค้นหา",
+        "otherMatches": "หรือลองดูกิจกรรมใกล้เคียงเหล่านี้",
+        "upcomingTitle": "กิจกรรมที่กำลังเปิดรับสมัคร",
+        "searchHint": "ค้นหากิจกรรมที่คุณต้องการ",
+        "allEvents": "ดูกิจกรรมทั้งหมด",
+        "errorTitle": "ระบบขัดข้องชั่วคราว",
+        "errorDescription": "ไม่สามารถโหลดข้อมูลกิจกรรมได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง",
+        "retry": "ลองใหม่อีกครั้ง"
+      }
     },
     "home": {
       "upcomingEvents": "อีเว้นท์ที่กำลังจะมาถึง",
@@ -557,7 +570,21 @@
       "download": "ดาวน์โหลด",
       "manage": "จัดการ",
       "buttonContractForm": "แบบฟอร์มสัญญา",
-      "buttonContractDocument": "ใบสัญญา"
+      "buttonContractDocument": "ใบสัญญา",
+      "repairConfirmButton": "ยืนยันซ่อมไฟล์",
+      "repairConfirmLabel": "พิมพ์เลขที่เอกสาร \"{{runNo}}\" เพื่อยืนยัน",
+      "repairConfirmPlaceholder": "พิมพ์เลขที่เอกสาร",
+      "repairDescription": "ระบบจะ render PDF ใหม่จากข้อมูลใน DB ปัจจุบัน แล้วทับไฟล์เดิมใน S3 — ลายเซ็นเดิมจะถูกเก็บไว้ทั้งหมด",
+      "repairTitle": "ซ่อมไฟล์ PDF — {{runNo}}",
+      "repairWarning": "ใช้เฉพาะกรณีจำเป็นเท่านั้น เช่น ซ่อมข้อมูลเก่าที่มี defect — ลายเซ็นเดิมจะถูกเก็บไว้",
+      "buttonRepairPdf": "ซ่อมไฟล์ PDF",
+      "buttonRevertDraft": "ยกเลิกส่ง",
+      "buttonSendForSign": "ส่งให้ลูกค้าเซ็น",
+      "confirmRevertDraft": "ยกเลิกการส่ง? ลูกค้าจะไม่เห็นสัญญานี้อีก",
+      "confirmSendForSign": "ยืนยันส่งสัญญาให้ลูกค้าเซ็น? หลังจากนี้ลูกค้าจะเห็นและเซ็นได้",
+      "statusDraft": "ฉบับร่าง",
+      "statusReady": "รอลูกค้าเซ็น",
+      "statusSigned": "เซ็นแล้ว"
     },
     "contract": {
       "new": "สร้างสัญญา",
@@ -1884,7 +1911,9 @@
         "helpRequests": "คำร้องขอความช่วยเหลือ",
         "jobMonitoring": "ตรวจสอบงาน",
         "emailQueue": "คิวอีเมล",
-        "pendingOrganizers": "ผู้จัดงานรออนุมัติ"
+        "pendingOrganizers": "ผู้จัดงานรออนุมัติ",
+        "paymentMismatch": "จ่ายเงินไม่ตรง",
+        "resendConfirmation": "ส่งเมลยืนยันซ้ำ"
       },
       "pendingOrganizers": {
         "name": "ชื่อ",

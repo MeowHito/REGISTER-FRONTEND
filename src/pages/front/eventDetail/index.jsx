@@ -6,7 +6,8 @@ import FrontLayout from 'components/frontLayout';
 import React, { useEffect, useRef, useState } from 'react';
 import DOMPurify from 'dompurify';
 import { useNavigate, useParams } from 'react-router-dom';
-import generalService from 'services/general.services';
+import generalService, { isEventNotFoundError } from 'services/general.services';
+import EventNotFound from './notFound';
 import { getPublicUrl, convertStorageToHtml } from 'utils/fileUtils';
 import { RiMapPin2Line } from "react-icons/ri";
 import { useTranslation } from 'react-i18next';
@@ -28,7 +29,11 @@ function EventDetail({ eventId, setView }) {
     const [paymentTypeMap, setPaymentTypeMap] = useState({});
     const [detail, setDetail] = useState([]);
     const [details, setDetails] = useState([]);
-    const { data, isFetching, ...other } = generalService.useQueryGetEventDetailByURL({ url: eventId || name });
+    const { data, isFetching, isError, error, refetch, ...other } = generalService.useQueryGetEventDetailByURL({ url: eventId || name });
+    const slug = eventId || name;
+    const isOffline = other.fetchStatus === "paused";
+    const showNotFound = !isFetching && (isError || !data);
+    const isServerError = isOffline || (isError && !isEventNotFoundError(error));
     const stickyRef = useRef(null);
     const [isStuck, setIsStuck] = useState(false);
     const [countdownTime, setCountdownTime] = useState(null);
@@ -163,7 +168,14 @@ function EventDetail({ eventId, setView }) {
             <Spin spinning={isFetching}>
                 <SelectLayout {...(eventId ? {} : { title: t("front.eventDetail.title") })}>
                     {
-                        !isFetching && <div className="flex flex-col lg:flex-row max-w-screen-lg mx-auto">
+                        !isFetching && (showNotFound ? (
+                            <EventNotFound
+                                slug={slug}
+                                isServerError={isServerError}
+                                onRetry={refetch}
+                                embedded={Boolean(eventId)}
+                            />
+                        ) : <div className="flex flex-col lg:flex-row max-w-screen-lg mx-auto">
                             <div className="w-full md:px-4 pb-5">
                                 <div className="w-full mb-4">
                                     <img
@@ -455,7 +467,7 @@ function EventDetail({ eventId, setView }) {
                                     </React.Fragment>
                                 ))}
                             </div>
-                        </div>
+                        </div>)
                     }
                 </SelectLayout>
             </Spin>

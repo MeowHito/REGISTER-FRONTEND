@@ -147,7 +147,20 @@
       "discount": "Discount",
       "shippingFeeLabel": "Shipping Fee",
       "totalPrice": "Total",
-      "fullDetailRemark": "Some information is hidden. To view full details, please log in and link your ID number."
+      "fullDetailRemark": "Some information is hidden. To view full details, please log in and link your ID number.",
+      "notFound": {
+        "title": "We couldn't find that event",
+        "description": "This link may be mistyped, changed, or the event is no longer available.",
+        "didYouMean": "Were you looking for “{{name}}”?",
+        "similarTitle": "Events close to what you searched for",
+        "otherMatches": "Or take a look at these similar events",
+        "upcomingTitle": "Events open for registration",
+        "searchHint": "Search for the event you want",
+        "allEvents": "Browse all events",
+        "errorTitle": "Something went wrong",
+        "errorDescription": "We couldn't load this event right now. Please try again.",
+        "retry": "Try again"
+      }
     },
     "home": {
       "upcomingEvents": "Upcoming Events",
@@ -556,7 +569,21 @@
       "download": "Download",
       "manage": "Manage",
       "buttonContractForm": "Contract Form",
-      "buttonContractDocument": "Contract Document"
+      "buttonContractDocument": "Contract Document",
+      "repairConfirmButton": "Confirm Repair",
+      "repairConfirmLabel": "Type the document number \"{{runNo}}\" to confirm",
+      "repairConfirmPlaceholder": "Document number",
+      "repairDescription": "The system will re-render the PDF from current DB data and overwrite the existing file in S3 — the original signature is preserved.",
+      "repairTitle": "Repair PDF — {{runNo}}",
+      "repairWarning": "Use only when necessary, e.g. fixing legacy data defects — the original signature is preserved.",
+      "buttonRepairPdf": "Repair PDF",
+      "buttonRevertDraft": "Revert to Draft",
+      "buttonSendForSign": "Send for Signing",
+      "confirmRevertDraft": "Revert to draft? The customer will no longer see this contract.",
+      "confirmSendForSign": "Send this contract to the customer for signing? They will be able to view and sign it.",
+      "statusDraft": "Draft",
+      "statusReady": "Awaiting Signature",
+      "statusSigned": "Signed"
     },
     "contract": {
       "new": "Create Contract",
@@ -1891,7 +1918,9 @@
         "helpRequests": "Help Requests",
         "jobMonitoring": "Job Monitoring",
         "emailQueue": "Email Queue",
-        "pendingOrganizers": "Pending organizers"
+        "pendingOrganizers": "Pending organizers",
+        "paymentMismatch": "Payment mismatch",
+        "resendConfirmation": "Resend confirmation"
       },
       "pendingOrganizers": {
         "name": "Name",

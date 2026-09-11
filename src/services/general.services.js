@@ -28,6 +28,13 @@ function useQueryWithCallbacks(options, { onSuccess, onError } = {}) {
   return query;
 }
 
+export const isEventNotFoundError = (error) => {
+  const status = error?.response?.status;
+  if (status === 404) return true;
+  if (status >= 400 && status < 500) return true;
+  return /not found/i.test(error?.response?.data?.message || "");
+};
+
 const generalService = {
   useQueryGetEventDatesInMonth({ date, onSuccess, onError }) {
     return useQueryWithCallbacks(
@@ -352,6 +359,24 @@ const generalService = {
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
       staleTime: 5 * 60 * 1000,
+    });
+  },
+
+  useQuerySuggestedEvents({ enabled = true, limit = 60 }) {
+    return useQuery({
+      queryKey: ["suggestedEvents", limit],
+      queryFn: async () => {
+        const path = `${PUBLIC_API}/event/getAllEvents`;
+        const payload = { paging: { size: limit, page: 0, search: [] } };
+        const res = await createRequest.post(path, payload);
+        return res.data.data?.content || [];
+      },
+      enabled,
+      retry: 1,
+      networkMode: "always",
+      staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
     });
   },
 };
