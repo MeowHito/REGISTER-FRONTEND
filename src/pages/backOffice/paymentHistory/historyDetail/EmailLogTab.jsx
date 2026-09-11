@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import DOMPurify from "dompurify";
-import { Table, Tag, Button, Modal, message, Tooltip, Typography } from "antd";
+import { Table, Tag, Button, Modal, message, Tooltip, Typography, Form, Input } from "antd";
 import { ReloadOutlined, SendOutlined, EyeOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import { SYS_DATE_FULL_TIME_FORMAT } from "constants/helper";
 import backOfficeServices from "services/backoffice.services";
+import useMe from "hooks/useMe";
 
 const { Text } = Typography;
 
@@ -21,6 +22,11 @@ const EmailLogTab = React.memo(({ orderId }) => {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [previewLog, setPreviewLog] = useState(null);
+  const [resendLog, setResendLog] = useState(null);
+  const [form] = Form.useForm();
+  const { data: me } = useMe();
+  // Resend and recipient update are ADMIN-only on the backend
+  const isAdmin = me?.role?.roleType === "admin";
 
   const { data: emailLogs, isFetching, refetch } = backOfficeServices.useQueryGetEmailLogsByOrder({
     orderId,
@@ -38,14 +44,31 @@ const EmailLogTab = React.memo(({ orderId }) => {
     }
   );
 
+  const updateRecipientMutation = backOfficeServices.useMutationUpdateEmailLogRecipient();
+
   const handleResend = (record) => {
-    Modal.confirm({
-      title: t("back.history.emailLog.resend.confirmTitle"),
-      content: t("back.history.emailLog.resend.confirmContent", { email: record.recipientTo }),
-      okText: t("back.history.emailLog.resend.ok"),
-      cancelText: t("back.history.emailLog.resend.cancel"),
-      onOk: () => resendMutation.mutate(record.id),
-    });
+    setResendLog(record);
+  };
+
+  const handleSubmitResend = async (values) => {
+    const emailLogId = resendLog.id;
+    const recipientTo = values.recipientTo.trim();
+    if (recipientTo !== resendLog.recipientTo) {
+      try {
+        await updateRecipientMutation.mutateAsync({ emailLogId, recipientTo });
+      } catch {
+        message.error(t("back.history.emailLog.update.failed"));
+        return;
+      }
+    }
+    try {
+      await resendMutation.mutateAsync(emailLogId);
+      setResendLog(null);
+    } catch {
+      // error toast is shown by the mutation's onError
+    } finally {
+      refetch();
+    }
   };
 
   const columns = [
@@ -109,7 +132,7 @@ const EmailLogTab = React.memo(({ orderId }) => {
               onClick={() => setPreviewLog(record)}
             />
           </Tooltip>
-          {["FAILED", "SENT"].includes(record.sendStatus) && record.retryCount < 3 && (
+          {isAdmin && ["FAILED", "SENT"].includes(record.sendStatus) && record.retryCount < 3 && (
             <Tooltip title={t("back.history.emailLog.action.resend")}>
               <Button
                 icon={<SendOutlined />}
@@ -199,6 +222,39 @@ const EmailLogTab = React.memo(({ orderId }) => {
             />
           </div>
         )}
+      </Modal>
+
+      <Modal
+        title={t("back.history.emailLog.resend.confirmTitle")}
+        open={!!resendLog}
+        onCancel={() => setResendLog(null)}
+        onOk={() => form.submit()}
+        okText={t("back.history.emailLog.resend.ok")}
+        cancelText={t("back.history.emailLog.resend.cancel")}
+        confirmLoading={updateRecipientMutation.isPending || resendMutation.isPending}
+        destroyOnHidden
+      >
+        <div className="mb-3">
+          <Text type="secondary">{t("back.history.emailLog.resend.editDescription")}</Text>
+        </div>
+        <Form
+          form={form}
+          layout="vertical"
+          preserve={false}
+          initialValues={{ recipientTo: resendLog?.recipientTo }}
+          onFinish={handleSubmitResend}
+        >
+          <Form.Item
+            name="recipientTo"
+            label={t("back.history.emailLog.resend.editLabel")}
+            rules={[
+              { required: true, message: t("required.email") },
+              { type: "email", message: t("validation.email") },
+            ]}
+          >
+            <Input placeholder={t("back.history.emailLog.resend.placeholder")} />
+          </Form.Item>
+        </Form>
       </Modal>
     </>
   );

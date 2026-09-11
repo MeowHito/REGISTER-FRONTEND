@@ -9,6 +9,11 @@ import { SET_ORDER } from "store/reducers/contextSlice";
 
 const { Text, Paragraph } = Typography;
 
+const POLL_INTERVAL_MS = 3000;
+const MAX_POLLS = 10;
+
+const SCB_PAYMENT_METHODS = new Set(["qrcode", "alipay", "wechatpay"]);
+
 function decode2c2pPayload(payload) {
     if (!payload) return null;
 
@@ -54,25 +59,37 @@ const RegistrationPaymentResult = () => {
     const isDirectSuccess = !payload && !invoiceNo;
     const needs2c2pVerify = !isDirectSuccess;
 
+    const orderDetail = backOfficeServices.useQuerygetHistoryDetail({ orderId: invoiceNo });
+
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(needs2c2pVerify);
+    const [pollCount, setPollCount] = useState(0);
 
-    const inquire = async () => {
+    const orderResolved = !orderDetail.isLoading;
+    const paymentMethod = orderDetail?.data?.paymentMethod || order?.paymentType || null;
+    const isScbOrder = SCB_PAYMENT_METHODS.has(paymentMethod);
+
+    const inquire = async ({ silent = false } = {}) => {
         if (!invoiceNo) {
             message.warning(t("back.reg.payment.missingInvoiceNo"));
             return;
         }
 
-        setLoading(true);
+        if (isScbOrder) {
+            if (!silent) setLoading(false);
+            return;
+        }
+
+        if (!silent) setLoading(true);
         try {
-            const resolved2c2pType = order?.paymentType === 'ewallet' ? 'LINE_TRUEMONEY' : 'CREDIT_CARD';
+            const resolved2c2pType = paymentMethod === 'ewallet' ? 'LINE_TRUEMONEY' : 'CREDIT_CARD';
             const res = await verifyPaymentMutation.mutateAsync({
                 paymentType: resolved2c2pType,
                 invoiceNo,
             });
             setResult(res);
         } catch (e) {
-            setResult({
+            setResult((prev) => prev || {
                 status: "PENDING",
                 settled: false,
                 respCode: "",
@@ -80,8 +97,13 @@ const RegistrationPaymentResult = () => {
                 error: true,
             });
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
+    };
+
+    const refresh = () => {
+        orderDetail.refetch?.();
+        inquire();
     };
 
     useEffect(() => {
@@ -96,28 +118,47 @@ const RegistrationPaymentResult = () => {
             setLoading(false);
             return;
         }
+
+        if (!orderResolved) return;
+
+        if (isScbOrder) {
+            setLoading(false);
+            return;
+        }
+
         inquire();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [invoiceNo, needs2c2pVerify]);
+    }, [invoiceNo, needs2c2pVerify, orderResolved, isScbOrder]);
 
-    const status = String(result?.status || "").toUpperCase();
-    const settled = result?.settled === true;
+    const dbStatus = String(orderDetail?.data?.status || "").toUpperCase();
+    const inqStatus = String(result?.status || "").toUpperCase();
+    const inqSettled = result?.settled === true;
 
-    const isSuccess = isDirectSuccess || (settled && status === "SUCCESS");
-    const isPending = !isDirectSuccess && !settled && status === "PENDING";
-    const isReview = !isSuccess && !isPending && status === "REVIEW";
-    const isFailed = !isSuccess && !isPending && !isReview;
+    const isSuccess = isDirectSuccess || dbStatus === "SUCCESS" || (inqSettled && inqStatus === "SUCCESS");
+    const isReview = !isSuccess && (dbStatus === "REVIEW" || inqStatus === "REVIEW");
+    const isFailed = !isSuccess && !isReview && (dbStatus === "FAILED" || dbStatus === "CANCELLED");
+    const isPending = !isSuccess && !isReview && !isFailed;
 
     const respDesc = result?.respDesc || "";
 
-    const orderDetail = backOfficeServices.useQuerygetHistoryDetail({
-        orderId: invoiceNo,
-        enabled: needs2c2pVerify && !!invoiceNo,
-    });
+    const showSpinner = loading || (needs2c2pVerify && !orderResolved);
 
     useEffect(() => {
         if (!needs2c2pVerify) return;
-        const raw = orderDetail?.data;
+        if (!isPending) return;
+        if (pollCount >= MAX_POLLS) return;
+        const id = setTimeout(() => {
+            orderDetail.refetch?.();
+            inquire({ silent: true });
+            setPollCount((c) => c + 1);
+        }, POLL_INTERVAL_MS);
+        return () => clearTimeout(id);
+    }, [needs2c2pVerify, isPending, pollCount]);
+
+    const orderData = orderDetail?.data;
+
+    useEffect(() => {
+        if (!needs2c2pVerify) return;
+        const raw = orderData;
         if (!raw?.orderNo) return;
 
         const toNumber = (v) => {
@@ -146,7 +187,7 @@ const RegistrationPaymentResult = () => {
                 applicants,
             })
         );
-    }, [orderDetail?.data?.orderNo, dispatch, needs2c2pVerify]);
+    }, [orderData?.orderNo, dispatch, needs2c2pVerify]);
 
     const successContent = (
         <Result
@@ -206,7 +247,7 @@ const RegistrationPaymentResult = () => {
                     boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                 }}
             >
-                {loading ? (
+                {showSpinner ? (
                     <Row justify="center" style={{ marginBottom: 24 }}>
                         <Spin size="large" />
                         <div style={{ width: "100%", textAlign: "center", marginTop: 12 }}>
@@ -231,23 +272,26 @@ const RegistrationPaymentResult = () => {
                                                 {t("back.reg.payment.orderNo")}: <strong>{invoiceNo}</strong>
                                             </Text>
                                         </div>
-                                        {!!respDesc && (
-                                            <div style={{ marginTop: 8 }}>
-                                                <Text type="secondary">
-                                                    ({respDesc})
-                                                </Text>
-                                            </div>
-                                        )}
                                     </div>
                                 }
                                 extra={
-                                    <Button
-                                        icon={<ReloadOutlined />}
-                                        size="large"
-                                        onClick={inquire}
-                                    >
-                                        {t("back.reg.payment.checkAgain")}
-                                    </Button>
+                                    <>
+                                        <Button
+                                            icon={<ReloadOutlined />}
+                                            size="large"
+                                            loading={verifyPaymentMutation.isPending || orderDetail.isFetching}
+                                            onClick={refresh}
+                                        >
+                                            {t("back.reg.payment.checkAgain")}
+                                        </Button>
+
+                                        <Divider />
+
+                                        <Text type="secondary" style={{ fontFamily: "inherit" }}>
+                                            {t("back.reg.common.contactUsIfQuestions")}{" "}
+                                            <a href="mailto:action.in.th@gmail.com">action.in.th@gmail.com</a>
+                                        </Text>
+                                    </>
                                 }
                             />
                         )}

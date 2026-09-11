@@ -18,9 +18,59 @@ const LOG_LEVELS = {
 
 const LOG_ENDPOINT = 'api/log/frontend-error';
 
-/**
- * Build structured log payload
- */
+const REDACTED = '[REDACTED]';
+const OMITTED = '[OMITTED]';
+
+const CREDENTIAL_ENDPOINTS = [
+    '/public-api/register',
+    '/public-api/login',
+    '/public-api/checkUserEmail',
+    '/public-api/updateUserToken',
+    '/api/user/updatePassword',
+    '/api/user/resetPassword'
+];
+
+const isCredentialEndpoint = (url) =>
+    CREDENTIAL_ENDPOINTS.some((endpoint) => (url || '').toLowerCase().includes(endpoint.toLowerCase()));
+
+const SENSITIVE_KEY_EXACT = /^(pin|otp|cvv|npw|pwd|token|secret|password|authorization)$/i;
+
+const SENSITIVE_KEY_PART = /(password|passwd|token|secret|cardnumber|idno|idcard|citizenid|accesskey|apikey|authorization)/i;
+
+const isSensitiveKey = (key) => {
+    const normalized = String(key).replace(/[_-]/g, '');
+    return SENSITIVE_KEY_EXACT.test(normalized) || SENSITIVE_KEY_PART.test(normalized);
+};
+
+const redactValue = (value) => {
+    if (Array.isArray(value)) return value.map(redactValue);
+
+    if (value && typeof value === 'object') {
+        return Object.fromEntries(
+            Object.entries(value).map(([key, val]) => [
+                key,
+                isSensitiveKey(key) ? REDACTED : redactValue(val)
+            ])
+        );
+    }
+
+    return value;
+};
+
+const redactPayload = (data) => {
+    if (data == null) return data;
+
+    if (typeof data === 'string') {
+        try {
+            return JSON.stringify(redactValue(JSON.parse(data)));
+        } catch {
+            return SENSITIVE_KEY_PART.test(data.replace(/[_-]/g, '')) ? REDACTED : data;
+        }
+    }
+
+    return redactValue(data);
+};
+
 const buildLogPayload = (level, context, message, meta = {}) => {
     return {
         level,
@@ -34,12 +84,10 @@ const buildLogPayload = (level, context, message, meta = {}) => {
     };
 };
 
-/**
- * Send log to backend (fire-and-forget)
- */
-const sendToBackend = async (payload) => {
+const sendToBackend = async (rawPayload) => {
     const url = `${CONTEXT_URL}/${LOG_ENDPOINT}`;
-    
+    const payload = redactValue(rawPayload);
+
     try {
         const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
         const sent = navigator.sendBeacon(url, blob);
@@ -97,19 +145,15 @@ const errorLogger = {
         return payload;
     },
 
-    /**
-     * Log API error with structured format
-     * @param {object} axiosError - Axios error object
-     * @param {object} meta - Additional context
-     */
     apiError: (axiosError, meta = {}) => {
+        const url = axiosError?.config?.url;
         const payload = buildLogPayload(LOG_LEVELS.ERROR, 'API_ERROR', axiosError?.message, {
-            url: axiosError?.config?.url,
+            url,
             method: axiosError?.config?.method?.toUpperCase(),
             status: axiosError?.response?.status,
             statusText: axiosError?.response?.statusText,
-            responseData: axiosError?.response?.data,
-            requestData: axiosError?.config?.data,
+            responseData: redactPayload(axiosError?.response?.data),
+            requestData: isCredentialEndpoint(url) ? OMITTED : redactPayload(axiosError?.config?.data),
             ...meta
         });
         console.error('[API_ERROR]', payload);

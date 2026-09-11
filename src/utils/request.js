@@ -17,6 +17,12 @@ const shouldIgnoreLog = (url) => {
   return IGNORE_LOG_ENDPOINTS.some(endpoint => url?.includes(endpoint));
 };
 
+const isExpectedNotFound = (err) => {
+  const url = err?.config?.url;
+  if (!/\/public-api\/event\/[^/]+$/.test(url || "")) return false;
+  return err?.response?.status === 404 || /not found/i.test(err?.response?.data?.message || "");
+};
+
 createRequest.interceptors.request.use(
   (config) => {
     return config;
@@ -29,7 +35,7 @@ createRequest.interceptors.response.use(
   async (err) => {
     const requestUrl = err?.config?.url;
     
-    if (err?.response?.status !== 401 && !shouldIgnoreLog(requestUrl)) {
+    if (err?.response?.status !== 401 && !shouldIgnoreLog(requestUrl) && !isExpectedNotFound(err)) {
       errorLogger.apiError(err);
     }
 

@@ -647,7 +647,37 @@
       "customerName": "ชื่อผู้รับบริการ",
       "customerCompany": "บริษัทผู้รับบริการ",
       "signature": "ลายเซ็น",
-      "takeSignature": "เขียน"
+      "takeSignature": "เขียน",
+      "titleContractWithRunNo": "เซ็นสัญญา — {{runNo}}",
+      "finalVersionWarning": "เมื่อกดบันทึก เอกสารฉบับนี้จะถือเป็นสัญญาฉบับสมบูรณ์และไม่สามารถแก้ไขได้อีก",
+      "requireCustomerName": "กรุณากรอกชื่อผู้รับบริการ",
+      "requireCustomerCompany": "กรุณากรอกบริษัทผู้รับบริการ",
+      "requireSignature": "กรุณาเซ็นหรืออัปโหลดลายเซ็น",
+      "summary": "สรุปข้อมูล",
+      "summaryEvent": "อีเว้นท์",
+      "summaryRunNo": "เลขที่เอกสาร",
+      "summaryContractDate": "วันที่ออกสัญญา",
+      "summaryOrganizer": "ผู้จัด",
+      "methodSystem": "ระบบจะรวมลายเซ็นเข้าไปใน PDF ให้",
+      "methodUpload": "อัปโหลดสำเนาสัญญาที่เซ็นแล้ว",
+      "signatureRecorded": "มีลายเซ็นบันทึกไว้แล้ว",
+      "signatureNoPreview": "มีลายเซ็นบันทึกไว้แล้ว แต่ไม่สามารถแสดงตัวอย่างได้",
+      "replaceSignature": "เปลี่ยนลายเซ็น",
+      "cancelReplace": "ยกเลิก กลับไปใช้ลายเซ็นเดิม",
+      "openPdfNewTab": "เปิดใน Tab ใหม่",
+      "signatureDrawHint": "วาดด้วยปากกา/นิ้ว ในกรอบด้านล่าง",
+      "savingPleaseWait": "กำลังบันทึกสัญญา ห้ามปิดหน้าต่างนี้",
+      "loadingPreview": "กำลังสร้างตัวอย่าง...",
+      "previewReady": "ตัวอย่างพร้อมแล้ว",
+      "tabPdf": "เอกสาร",
+      "tabForm": "ข้อมูล/ลายเซ็น",
+      "alreadySigned": "สัญญานี้ถูกเซ็นแล้ว — เปิดดูเอกสารได้อย่างเดียว",
+      "signedBy": "เซ็นโดย",
+      "hintNeedPreview": "กรอกข้อมูลและลายเซ็นให้ครบ จากนั้นกด \"ดูตัวอย่าง\" เพื่อตรวจสอบเอกสารก่อนบันทึก",
+      "tooltipSaveDisabled": "กรุณากดดูตัวอย่างก่อนเพื่อยืนยันเอกสาร",
+      "unsavedChangesWarning": "มีข้อมูลที่ยังไม่ได้บันทึก ออกจากหน้านี้แน่ใจ?",
+      "draftRestored": "กู้ข้อมูลที่กรอกค้างไว้แล้ว",
+      "ariaSignatureCanvas": "พื้นที่สำหรับวาดลายเซ็น"
     },
     "announcementList": {
       "allAnnouncements": "ฝากข่าวประชาสัมพันธ์ทั้งหมด",
@@ -1033,7 +1063,13 @@
           "confirmTitle": "ยืนยันการส่งอีเมลอีกครั้ง",
           "confirmContent": "ต้องการส่งอีเมลไปยัง {{email}} อีกครั้งหรือไม่?",
           "ok": "ยืนยัน",
-          "cancel": "ยกเลิก"
+          "cancel": "ยกเลิก",
+          "editDescription": "ตรวจสอบหรือแก้ไขอีเมลผู้รับ แล้วส่งอีกครั้ง",
+          "editLabel": "อีเมลผู้รับ",
+          "placeholder": "กรอกอีเมลผู้รับ"
+        },
+        "update": {
+          "failed": "ไม่สามารถอัปเดตอีเมลผู้รับได้"
         }
       }
     },
@@ -2020,7 +2056,8 @@
     "upTo": "ไม่เกิน",
     "above": "ปีขึ้นไป",
     "duplicate": "ทำซ้ำ",
-    "somethingWrong": "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง"
+    "somethingWrong": "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง",
+    "buttonClose": "ปิด"
   },
   "month": {
     "jan": "มกราคม",

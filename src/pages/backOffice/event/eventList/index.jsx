@@ -274,7 +274,7 @@ const EventList = () => {
                         columns={columns.map((col) =>
                             col.search ? { ...col, ...getColumnSearchProps(col.dataIndex) } : col
                         )}
-                        dataSource={eventData}
+                        dataSource={eventDataWithPerm}
                         bordered
                         scroll={{ x: true }}
                         pagination={{
@@ -362,6 +362,17 @@ const EventList = () => {
         }
         return null;
     };
+
+    const eventDataWithPerm = useMemo(() =>
+        eventData.map((e) => ({
+            ...e,
+            permission: {
+                ...e.permission,
+                canDelete: roleUser === 'admin' ? true : e.permission?.canDelete,
+            }
+        })),
+        [eventData, roleUser]
+    );
 
     return (
         <>

@@ -646,7 +646,37 @@
       "customerName": "Customer Name",
       "customerCompany": "Customer Company",
       "signature": "Signature",
-      "takeSignature": "Write"
+      "takeSignature": "Write",
+      "titleContractWithRunNo": "Sign Contract — {{runNo}}",
+      "finalVersionWarning": "Once saved, this document becomes the final contract and cannot be edited.",
+      "requireCustomerName": "Please enter the customer name",
+      "requireCustomerCompany": "Please enter the customer company",
+      "requireSignature": "Please draw or upload your signature",
+      "summary": "Summary",
+      "summaryEvent": "Event",
+      "summaryRunNo": "Document No.",
+      "summaryContractDate": "Contract Date",
+      "summaryOrganizer": "Organizer",
+      "methodSystem": "System will embed signature into the PDF",
+      "methodUpload": "Upload a signed copy of the contract",
+      "signatureRecorded": "Signature on file",
+      "signatureNoPreview": "Signature on file, but preview is not available",
+      "replaceSignature": "Replace signature",
+      "cancelReplace": "Cancel, keep existing signature",
+      "openPdfNewTab": "Open in new tab",
+      "signatureDrawHint": "Draw with pen or finger in the box below",
+      "savingPleaseWait": "Saving contract. Please don't close this window",
+      "loadingPreview": "Generating preview...",
+      "previewReady": "Preview ready",
+      "tabPdf": "Document",
+      "tabForm": "Info / Signature",
+      "alreadySigned": "This contract has been signed — view only.",
+      "signedBy": "Signed by",
+      "hintNeedPreview": "Complete the fields and your signature, then click \"Preview\" to review the document before saving.",
+      "tooltipSaveDisabled": "Click Preview first to confirm the document",
+      "unsavedChangesWarning": "You have unsaved changes. Leave this page?",
+      "draftRestored": "Restored your unsaved draft",
+      "ariaSignatureCanvas": "Signature canvas"
     },
     "announcementList": {
       "allAnnouncements": "All Announcements",
@@ -1032,7 +1062,13 @@
           "confirmTitle": "Confirm Resend Email",
           "confirmContent": "Resend email to {{email}}?",
           "ok": "Confirm",
-          "cancel": "Cancel"
+          "cancel": "Cancel",
+          "editDescription": "Review or edit the recipient email address, then resend.",
+          "editLabel": "Recipient email",
+          "placeholder": "Enter recipient email"
+        },
+        "update": {
+          "failed": "Failed to update recipient email"
         }
       }
     },
@@ -2027,7 +2063,8 @@
     "upTo": "Up to",
     "above": "years and above",
     "duplicate": "Duplicate",
-    "somethingWrong": "Something went wrong. Please try again."
+    "somethingWrong": "Something went wrong. Please try again.",
+    "buttonClose": "Close"
   },
   "month": {
     "jan": "January",
