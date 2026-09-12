@@ -344,6 +344,7 @@ const HistoryDetail = ({ paymentId, setMode }) => {
         ownerUuid: data.ownerUuid || null,
         uuid: data.uuid || null,
         reviewReason: data.reviewReason || null,
+        addOns: data.addOns || [],
         applicants: (data.details || []).map((d, idx) => ({
           key: d.id || idx,
           firstName: d.firstName || "",
@@ -463,7 +464,9 @@ const HistoryDetail = ({ paymentId, setMode }) => {
     },
     { registration: 0, discount: 0, shipping: 0 }
   );
-  const grandTotal = totals.registration - totals.discount + totals.shipping;
+  const addOns = order?.addOns || [];
+  const addOnTotal = addOns.reduce((sum, a) => sum + (Number(a.totalPrice) || 0), 0);
+  const grandTotal = totals.registration - totals.discount + totals.shipping + addOnTotal;
 
   return (
     <Spin className="block mt-24" spinning={isFetching}>
@@ -594,6 +597,31 @@ const HistoryDetail = ({ paymentId, setMode }) => {
                       }))}
                     />
 
+                    {/* Purchased add-ons — who booked the hotel room, who bought photos */}
+                    {addOns.length > 0 && (
+                      <Card className="mb-4!" title={`🎁 ${t("back.reg.addOn.title")}`}>
+                        {addOns.map((a, i) => (
+                          <div
+                            key={a.id || i}
+                            className="flex justify-between gap-3 py-2 border-b border-gray-100 last:border-0"
+                          >
+                            <div className="min-w-0">
+                              <Text strong>{a.name}</Text>
+                              <div className="text-xs text-gray-500">
+                                {a.applicantName
+                                  ? a.applicantName
+                                  : `${t("back.reg.addOn.qty")}: ${a.qty}`}
+                                {a.note ? ` • 📝 ${a.note}` : ""}
+                              </div>
+                            </div>
+                            <Text className="whitespace-nowrap">
+                              {(Number(a.totalPrice) || 0).toLocaleString("th-TH")} {t("general.unitBaht")}
+                            </Text>
+                          </div>
+                        ))}
+                      </Card>
+                    )}
+
                     {/* Order Summary Card */}
                     <Card className="mb-4!">
                       <div className="flex justify-end">
@@ -616,6 +644,12 @@ const HistoryDetail = ({ paymentId, setMode }) => {
                             <div className="flex justify-between py-1.5">
                               <Text type="secondary">{t("back.history.historyDetail.breakdown.fee.shipping")}</Text>
                               <Text>{totals.shipping.toLocaleString("th-TH")} {t("general.unitBaht")}</Text>
+                            </div>
+                          )}
+                          {addOnTotal > 0 && (
+                            <div className="flex justify-between py-1.5">
+                              <Text type="secondary">{t("back.reg.addOn.title")}</Text>
+                              <Text>{addOnTotal.toLocaleString("th-TH")} {t("general.unitBaht")}</Text>
                             </div>
                           )}
                           <Divider className="my-2!" />

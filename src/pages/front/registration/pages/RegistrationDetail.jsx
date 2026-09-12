@@ -45,13 +45,15 @@ const RegistrationDetail = () => {
 	const eventData = useSelector(state => state.context.eventData)
 	const navigate = useNavigate();
 	const [applicants, setApplicants] = useState([]);
+	const [addOns, setAddOns] = useState([]);
 	const [checkedValues, setCheckedValues] = useState([]);
 	const [checkboxOptions, setCheckboxOptions] = useState([]);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const totalEventType = applicants.reduce((sum, a) => sum + (Number(a.price) || 0), 0);
 	const totalDiscount = applicants.reduce((sum, a) => sum + (Number(a.discountNoShirt) || 0), 0);
 	const totalShipping = applicants.reduce((sum, a) => sum + (a.deliveryMethod === 'post' ? a.shippingFee : 0), 0);
-	const grandTotal = totalEventType - totalDiscount + totalShipping;
+	const totalAddOns = addOns.reduce((sum, a) => sum + (Number(a.totalPrice) || 0), 0);
+	const grandTotal = totalEventType - totalDiscount + totalShipping + totalAddOns;
 	const prefix = "userData"
 
 	const { mutateAsync: createOrder } = backOfficeServices.useMutationCreateOrder();
@@ -70,6 +72,7 @@ const RegistrationDetail = () => {
 		}
 
 		setApplicants(order.applicants || []);
+		setAddOns(order.addOns || []);
 
 		let conditions = [];
 		if (order.eventConditions && Array.isArray(order.eventConditions)) {
@@ -107,7 +110,8 @@ const RegistrationDetail = () => {
 
 			const totalEventTypePrice = order.applicants.reduce((sum, applicant) => sum + (applicant.price || 0), 0);
 			const totalShippingFee = totalShipping || 0;
-			const finalTotalPrice = (totalEventTypePrice + totalShippingFee) - totalDiscount;
+			const totalAddOnPrice = totalAddOns || 0;
+			const finalTotalPrice = (totalEventTypePrice + totalShippingFee + totalAddOnPrice) - totalDiscount;
 
 			const { ref2, ref3 } = generatePaymentReferences();
 
@@ -180,11 +184,20 @@ const RegistrationDetail = () => {
 				refno3: ref3,
 				unitPrice: totalEventTypePrice,
 				shippingFee: totalShippingFee,
+				addOnTotal: totalAddOnPrice,
 				totalPrice: finalTotalPrice,
 				eventId: order.eventId,
 				qty: orderDetails.length,
 				discountShirt: totalDiscount,
-				orderDetails
+				orderDetails,
+				// Prices are re-derived server-side from the organizer's config;
+				// applicantIndex lines a per-runner add-on up with its orderDetail.
+				addOns: (order.addOns || []).map(a => ({
+					addOnId: a.addOnId,
+					applicantIndex: a.applicantIndex ?? null,
+					qty: a.qty,
+					note: a.note,
+				}))
 			};
 
 			const res = await createOrder(orderData);
@@ -251,6 +264,16 @@ const RegistrationDetail = () => {
 					grandTotal,
 					paymentLink,
 					coverImg: url,
+					addOns: (storedDataMail.addOns || []).map(a => ({
+						name: a.name,
+						qty: a.qty,
+						applicantName: a.applicantIndex != null
+							? `${storedDataMail.applicants[a.applicantIndex]?.firstName || ""} ${storedDataMail.applicants[a.applicantIndex]?.lastName || ""}`.trim()
+							: null,
+						note: a.note || null,
+						totalPrice: Number(a.totalPrice) || 0,
+					})),
+					addOnTotal: totalAddOns,
 					applicants: storedDataMail.applicants.map(app => ({
 						firstName: app.firstName,
 						lastName: app.lastName,
@@ -446,6 +469,42 @@ const RegistrationDetail = () => {
 									</div>
 								);
 							})}
+
+							{addOns.length > 0 ? (
+								<div className="bg-white border border-[#bfc7d2] rounded-xl overflow-hidden shadow-sm">
+									<div className="flex items-center justify-between gap-2 px-5 py-3 bg-[#f1f4f6] border-b border-[#e5e9eb]">
+										<span className="font-bold text-[#181c1e]">🎁 {t("back.reg.addOn.title")}</span>
+										<span className="text-[#006193] font-bold whitespace-nowrap">
+											{totalAddOns.toLocaleString()} {t("general.unitBaht")}
+										</span>
+									</div>
+									<div className="p-5 space-y-3">
+										{addOns.map((a, i) => {
+											const owner = a.applicantIndex != null ? applicants[a.applicantIndex] : null;
+											return (
+												<div key={i} className="flex justify-between gap-3 text-sm border-b border-[#e5e9eb] last:border-0 pb-3 last:pb-0">
+													<div className="min-w-0">
+														<div className="font-bold text-[#181c1e]">{a.name}</div>
+														{owner ? (
+															<div className="text-[#3f4850]">
+																{t("back.reg.common.applicantInfo")}: {owner.firstName} {owner.lastName}
+															</div>
+														) : (
+															<div className="text-[#3f4850]">
+																{t("back.reg.addOn.qty")}: {a.qty}
+															</div>
+														)}
+														{a.note ? <div className="text-[#3f4850] break-words">📝 {a.note}</div> : null}
+													</div>
+													<div className="text-[#006193] font-bold whitespace-nowrap">
+														{(Number(a.totalPrice) || 0).toLocaleString()} {t("general.unitBaht")}
+													</div>
+												</div>
+											);
+										})}
+									</div>
+								</div>
+							) : null}
 						</div>
 
 						{/* ---- right: order summary + confirm ---- */}
@@ -458,6 +517,7 @@ const RegistrationDetail = () => {
 										<div className="flex justify-between"><span className="text-[#3f4850]">{t("back.reg.payment.totalFee")}</span><span className="font-bold">{totalEventType.toLocaleString()} {t("general.unitBaht")}</span></div>
 										{totalDiscount > 0 ? <div className="flex justify-between"><span className="text-[#3f4850]">{t("back.reg.payment.discountNoShirt")}</span><span className="font-bold text-[#ba1a1a]">-{totalDiscount.toLocaleString()} {t("general.unitBaht")}</span></div> : null}
 										<div className="flex justify-between"><span className="text-[#3f4850]">{t("back.reg.payment.totalShippingFee")}</span><span className="font-bold">{totalShipping.toLocaleString()} {t("general.unitBaht")}</span></div>
+										{totalAddOns > 0 ? <div className="flex justify-between"><span className="text-[#3f4850]">{t("back.reg.addOn.title")}</span><span className="font-bold">{totalAddOns.toLocaleString()} {t("general.unitBaht")}</span></div> : null}
 									</div>
 									<div className="border-t border-[#e5e9eb] mt-3 pt-3 flex justify-between items-center">
 										<span className="font-bold text-[#181c1e]">{t("back.reg.payment.grandTotal")}</span>

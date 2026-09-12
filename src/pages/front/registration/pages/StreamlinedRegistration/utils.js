@@ -158,3 +158,86 @@ export const resolvePricing = (eventType, availability) => {
     isClosed: closed,
   };
 };
+
+/**
+ * Count how many units of an add-on the current selection buys: the quantity
+ * for a per-order add-on, or the number of runners ticked for a per-applicant one.
+ */
+export const addOnPickedCount = (addOn, selection) => {
+  if (!selection) return 0;
+  if (addOn?.perApplicant) {
+    return Object.values(selection.applicants || {}).filter(Boolean).length;
+  }
+  return Number(selection.qty) || 0;
+};
+
+/**
+ * Add-ons to show a buyer, in the organizer's order. Sold-out ones stay on the
+ * list (greyed out by the picker) — hiding them just makes people wonder where
+ * the hotel they were told about went.
+ */
+export const sellableAddOns = (event) =>
+  (event?.addOns || [])
+    .filter((a) => a.active !== false)
+    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+
+/**
+ * Flatten the picker's selection state into order lines. A per-applicant add-on
+ * produces one line per ticked runner (carrying that runner's index, which is
+ * how the backend attaches it to the right orderDetail); a per-order add-on
+ * produces a single line with a quantity.
+ */
+export const buildAddOnOrder = (addOns, selections) => {
+  const lines = [];
+
+  (addOns || []).forEach((addOn) => {
+    const selection = (selections || {})[addOn.id];
+    const count = addOnPickedCount(addOn, selection);
+    if (count < 1) return;
+
+    const unitPrice = Number(addOn.price) || 0;
+    const note = selection?.note?.trim() || undefined;
+    const base = {
+      addOnId: addOn.id,
+      name: addOn.name,
+      nameEn: addOn.nameEn,
+      unitPrice,
+      note,
+      perApplicant: !!addOn.perApplicant,
+    };
+
+    if (addOn.perApplicant) {
+      Object.entries(selection.applicants || {})
+        .filter(([, on]) => on)
+        .map(([index]) => Number(index))
+        .sort((a, b) => a - b)
+        .forEach((applicantIndex) => {
+          lines.push({ ...base, applicantIndex, qty: 1, totalPrice: unitPrice });
+        });
+    } else {
+      lines.push({ ...base, applicantIndex: null, qty: count, totalPrice: unitPrice * count });
+    }
+  });
+
+  return lines;
+};
+
+/** What the picked add-ons come to. */
+export const addOnsTotal = (addOns, selections) =>
+  (addOns || []).reduce(
+    (sum, addOn) =>
+      sum + addOnPickedCount(addOn, (selections || {})[addOn.id]) * (Number(addOn.price) || 0),
+    0
+  );
+
+/**
+ * First add-on that was picked but whose required note is still blank, so the
+ * caller can point the buyer at it. Returns null when everything is filled in.
+ */
+export const firstMissingAddOnNote = (addOns, selections) =>
+  (addOns || []).find((addOn) => {
+    if (!addOn.noteRequired || !addOn.noteLabel) return false;
+    const selection = (selections || {})[addOn.id];
+    if (addOnPickedCount(addOn, selection) < 1) return false;
+    return !selection?.note?.trim();
+  }) || null;

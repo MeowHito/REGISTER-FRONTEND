@@ -290,7 +290,27 @@
         "eventFontColor": "Event font color",
         "fee": "Fee",
         "isTeam": "Team Competition",
-        "showChecklist": "Show checklist button"
+        "showChecklist": "Show checklist button",
+        "addOns": "Add-ons",
+        "addOnsHelp": "Optional packages a registrant can buy after filling in their details — accommodation, a photo package, a shuttle seat. Leave the quota blank for unlimited.",
+        "addAddOn": "Add an add-on",
+        "addOnNumber": "Add-on {{number}}",
+        "addOnName": "Package name",
+        "addOnNameEn": "Package name (English)",
+        "addOnCategory": "Category (e.g. Accommodation, Photos)",
+        "addOnDescription": "Package details",
+        "addOnPrice": "Price",
+        "addOnQuota": "Quota (blank = unlimited)",
+        "addOnMaxPerOrder": "Max per order",
+        "addOnPerOrder": "Per order",
+        "addOnPerApplicant": "Per person",
+        "addOnPerApplicantHelp": "Charge per runner (each is ticked individually)",
+        "addOnActive": "On sale",
+        "addOnNoteLabel": "Note field label (e.g. Check-in date)",
+        "addOnNoteLabelEn": "Note field label (English)",
+        "addOnNoteRequired": "Required",
+        "addOnSoldOut": "Sold out",
+        "addOnSoldCount": "{{count}} sold"
       },
       "home": {
         "confirmPublish": "Do you want to publish the event?",
@@ -1915,6 +1935,18 @@
         "createOrderFailed": "An error occurred. Please try again",
         "systemBusyTitle": "System is Busy",
         "systemBusy": "Please try again in a moment"
+      },
+      "addOn": {
+        "title": "Add-ons",
+        "intro": "Pick any extra packages you want, or go straight to checkout.",
+        "perPerson": "per person",
+        "perUnit": "per unit",
+        "soldOut": "Sold out",
+        "remaining": "{{count}} left",
+        "chooseApplicants": "Choose who this package is for",
+        "total": "Add-ons total",
+        "qty": "Quantity",
+        "skipHint": "Not interested? Just hit Checkout."
       }
     },
     "helpRequests": {
@@ -2178,7 +2210,9 @@
     "emergencyPhone": "Please enter emergency phone number",
     "teamClub": "Please enter team/club",
     "logo": "Please upload logo image",
-    "coverImg": "Please upload cover image"
+    "coverImg": "Please upload cover image",
+    "addOnName": "Please enter the add-on name",
+    "addOnPrice": "Please enter the add-on price"
   },
   "validation": {
     "email": "Invalid email",

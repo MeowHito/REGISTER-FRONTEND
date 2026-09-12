@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 const OrderSummary = ({
   totalShirtPrice,
   totalDeliveryFee,
+  totalAddOns = 0,
+  addOns = [],
   totalDiscount,
   totalCoupon,
   finalTotal,
@@ -37,6 +39,29 @@ const OrderSummary = ({
           <div className="text-right font-semibold">{formatMoney(totalDeliveryFee)} {t("general.unitBaht")}</div>
         </Col>
       </Row>
+
+      {totalAddOns > 0 && (
+        <>
+          <Row className="text-sm text-gray-700 mt-1">
+            <Col span={16}>
+              <div>{t("back.reg.addOn.title")}</div>
+            </Col>
+            <Col span={8}>
+              <div className="text-right font-semibold">{formatMoney(totalAddOns)} {t("general.unitBaht")}</div>
+            </Col>
+          </Row>
+          {addOns.map((a, i) => (
+            <Row key={i} className="text-xs text-gray-500">
+              <Col span={16}>
+                <div className="pl-3 truncate">• {a.name}{a.qty > 1 ? ` × ${a.qty}` : ""}</div>
+              </Col>
+              <Col span={8}>
+                <div className="text-right">{formatMoney(a.totalPrice)} {t("general.unitBaht")}</div>
+              </Col>
+            </Row>
+          ))}
+        </>
+      )}
 
       <Row className="text-sm text-gray-700 mt-1">
         <Col span={16}>

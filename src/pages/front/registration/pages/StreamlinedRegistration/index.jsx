@@ -21,11 +21,15 @@ import { handleQueryStatus } from "utils";
 
 import ApplicantForm from "./ApplicantForm";
 import ShirtPicker from "./ShirtPicker";
-import { finalizeApplicants, totalQty, resolvePricing } from "./utils";
+import AddOnPicker from "./AddOnPicker";
+import {
+  finalizeApplicants, totalQty, resolvePricing,
+  sellableAddOns, buildAddOnOrder, addOnsTotal, firstMissingAddOnNote,
+} from "./utils";
 import { primaryBtn, phaseBadgeCls } from "./theme";
 import useBilingual from "./useBilingual";
 
-const SECTIONS = ["tickets", "info", "shirt", "shipping"];
+const BASE_SECTIONS = ["tickets", "info", "shirt", "shipping"];
 const fmt = (n) => (Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
 
 // Used when the master nationalities API is unavailable so the form stays usable.
@@ -65,7 +69,7 @@ const Section = ({ id, step, title, open, reached, onToggle, children }) => {
 };
 
 const StreamlinedRegistration = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const bi = useBilingual();
   const params = useParams();
   const eventKey = params.id || params.name;
@@ -82,6 +86,9 @@ const StreamlinedRegistration = () => {
   const [eventConditions, setEventConditions] = useState([]);
   const [deliveryMethod, setDeliveryMethod] = useState("pickup");
   const [shippingAddress, setShippingAddress] = useState("");
+  // Add-on picks keyed by add-on id: { qty } for per-order, { applicants: {idx: true} }
+  // for per-applicant, plus an optional { note }.
+  const [addOnSelections, setAddOnSelections] = useState({});
   // Drives how many applicant cards to render. Kept in React state (not Form.useWatch)
   // so the cards render reliably; the form itself only holds the editable field values.
   const [applicantList, setApplicantList] = useState([]);
@@ -146,12 +153,23 @@ const StreamlinedRegistration = () => {
     [event, availability]
   );
 
+  // Add-ons are an extra step only when this event actually sells some, so the
+  // flow stays four steps for every event that doesn't use the feature.
+  const addOns = useMemo(() => sellableAddOns(event), [event]);
+  const hasAddOns = addOns.length > 0;
+  const SECTIONS = useMemo(
+    () => (hasAddOns ? [...BASE_SECTIONS, "addons"] : BASE_SECTIONS),
+    [hasAddOns]
+  );
+
   const shippingFee = event?.shippingFee;
   const subtotal = applicantList.reduce((s, a) => s + (Number(a?.price) || 0), 0);
   const liveTicketTotal = eventTypeRows.reduce((s, et) => s + (tickets[et.id] || 0) * et._price, 0);
   const totalShipping = deliveryMethod === "post" && shippingFee != null ? shippingFee : 0;
-  const grandTotal = (applicantList.length ? subtotal : liveTicketTotal) + totalShipping;
+  const totalAddOns = addOnsTotal(addOns, addOnSelections);
+  const grandTotal = (applicantList.length ? subtotal : liveTicketTotal) + totalShipping + totalAddOns;
 
+  const lastSection = SECTIONS[SECTIONS.length - 1];
   const reachedIdx = (id) => SECTIONS.indexOf(id);
   const isReached = (id) => reachedIdx(id) <= maxReached;
   const goTo = (id) => setOpenSection((p) => (p === id ? null : id));
@@ -212,6 +230,25 @@ const StreamlinedRegistration = () => {
         [removed.eventTypeId]: Math.max(0, (prev[removed.eventTypeId] || 0) - 1),
       }));
     }
+    // Per-applicant add-ons are keyed by position, so re-index them the same way
+    // the applicants array was, or the wrong runner keeps the package.
+    setAddOnSelections((prev) => {
+      const next = {};
+      Object.entries(prev).forEach(([addOnId, sel]) => {
+        if (!sel?.applicants) {
+          next[addOnId] = sel;
+          return;
+        }
+        const shifted = {};
+        Object.entries(sel.applicants).forEach(([idx, on]) => {
+          const n = Number(idx);
+          if (!on || n === i) return;
+          shifted[n > i ? n - 1 : n] = true;
+        });
+        next[addOnId] = { ...sel, applicants: shifted };
+      });
+      return next;
+    });
   };
 
   // After a failed validateFields: scroll to the first offending field and show
@@ -250,9 +287,29 @@ const StreamlinedRegistration = () => {
     }
   };
 
+  const confirmShipping = () => {
+    if (deliveryMethod === "post" && !shippingAddress.trim()) {
+      message.warning(bi("back.reg.payment.enterAddress"));
+      return;
+    }
+    if (hasAddOns) {
+      advanceTo("addons");
+      return;
+    }
+    checkout();
+  };
+
+  const setAddOnSelection = (addOnId, selection) =>
+    setAddOnSelections((prev) => ({ ...prev, [addOnId]: selection }));
+
   const checkout = () => {
     if (deliveryMethod === "post" && !shippingAddress.trim()) {
       message.warning(bi("back.reg.payment.enterAddress"));
+      return;
+    }
+    const missingNote = firstMissingAddOnNote(addOns, addOnSelections);
+    if (missingNote) {
+      message.warning(`${missingNote.name}: ${missingNote.noteLabel}`);
       return;
     }
     const raw = form.getFieldValue("applicants") || [];
@@ -268,6 +325,7 @@ const StreamlinedRegistration = () => {
     dispatch(SET_PROPS({ id: "eventData", payload: event }));
     dispatch(SET_ORDER({
       applicants: finalApplicants,
+      addOns: buildAddOnOrder(addOns, addOnSelections),
       eventConditions,
       eventId: event.id,
       eventData: event,
@@ -279,6 +337,7 @@ const StreamlinedRegistration = () => {
     if (openSection === "tickets") return confirmTickets();
     if (openSection === "info") return confirmInfo();
     if (openSection === "shirt") return confirmShirt();
+    if (openSection === "shipping") return confirmShipping();
     return checkout();
   };
 
@@ -303,7 +362,9 @@ const StreamlinedRegistration = () => {
     );
   }
 
-  const stepLabels = ["Tickets", "ข้อมูล", "เสื้อ", "จัดส่ง"];
+  const stepLabels = hasAddOns
+    ? ["Tickets", "ข้อมูล", "เสื้อ", "จัดส่ง", "เสริม"]
+    : ["Tickets", "ข้อมูล", "เสื้อ", "จัดส่ง"];
 
   return (
     <FrontLayout fullWidth>
@@ -327,7 +388,7 @@ const StreamlinedRegistration = () => {
                     i <= maxReached ? "bg-[#006193] text-white" : "bg-[#e0e3e5] text-[#3f4850]"}`}>{i + 1}</div>
                   <span className={`text-xs font-bold ${i <= maxReached ? "text-[#006193]" : "text-[#3f4850] opacity-60"}`}>{label}</span>
                 </div>
-                {i < 3 && <div className={`flex-1 h-[2px] mx-2 -mt-5 ${i < maxReached ? "bg-[#006193]" : "bg-[#bfc7d2]"}`} />}
+                {i < stepLabels.length - 1 && <div className={`flex-1 h-[2px] mx-2 -mt-5 ${i < maxReached ? "bg-[#006193]" : "bg-[#bfc7d2]"}`} />}
               </div>
             ))}
           </div>
@@ -454,11 +515,43 @@ const StreamlinedRegistration = () => {
                   </div>
                 )}
 
-                <button type="button" className={primaryBtn} onClick={checkout}>
-                  Checkout <ShoppingCartOutlined />
+                <button type="button" className={primaryBtn} onClick={confirmShipping}>
+                  {hasAddOns ? (
+                    <>Next <ArrowRightOutlined /></>
+                  ) : (
+                    <>Checkout <ShoppingCartOutlined /></>
+                  )}
                 </button>
               </div>
             </Section>
+
+            {/* SECTION 5 — optional packages the organizer sells (hotel, photos…) */}
+            {hasAddOns ? (
+              <Section id="addons" step={5} open={openSection === "addons"} reached={isReached("addons")}
+                title="5. แพ็กเกจเสริม (Add-ons)" onToggle={goTo}>
+                <div className="space-y-5">
+                  <AddOnPicker
+                    addOns={addOns}
+                    applicants={applicantList}
+                    selections={addOnSelections}
+                    onChange={setAddOnSelection}
+                    lang={i18n.language}
+                  />
+
+                  {totalAddOns > 0 ? (
+                    <div className="flex justify-between items-center px-4 py-3 rounded-lg bg-[#f1f4f6] border border-[#bfc7d2]">
+                      <span className="font-bold text-[#3f4850]">{bi("back.reg.addOn.total")}</span>
+                      <span className="font-bold text-[#006193]">{fmt(totalAddOns)} THB</span>
+                    </div>
+                  ) : null}
+
+                  <button type="button" className={primaryBtn} onClick={checkout}>
+                    Checkout <ShoppingCartOutlined />
+                  </button>
+                  <p className="text-xs text-center text-[#3f4850]">{bi("back.reg.addOn.skipHint")}</p>
+                </div>
+              </Section>
+            ) : null}
           </CommonForm>
         </div>
       </div>
@@ -472,8 +565,8 @@ const StreamlinedRegistration = () => {
           </div>
           <button type="button" onClick={primaryAction}
             className="bg-[#fe9400] text-[#633700] font-bold px-7 h-12 rounded-full flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform">
-            {openSection === "shipping" ? "Checkout" : "ถัดไป"}
-            {openSection === "shipping" ? <ShoppingCartOutlined /> : <ArrowRightOutlined />}
+            {openSection === lastSection ? "Checkout" : "ถัดไป"}
+            {openSection === lastSection ? <ShoppingCartOutlined /> : <ArrowRightOutlined />}
           </button>
         </div>
       </div>

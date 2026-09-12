@@ -23,6 +23,7 @@ import { toStartOfDayISO } from 'utils/format';
 import { v4 as uuidv4 } from 'uuid';
 import useCountryStateHook from 'hooks/useCountryStateHook';
 import EventSelections from '../eventSelections';
+import EventAddOns from '../eventAddOns';
 import useMe from 'hooks/useMe';
 
 const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
@@ -155,6 +156,17 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
             })),
             isDraft: eventData?.isDraft || false,
 
+            addOns: await Promise.all((values.addOns || []).map(async (a, index) => ({
+                ...a,
+                description: await checkAndUploadImg(a.description, prefix, { isPublic: true }),
+                perApplicant: !!a.perApplicant,
+                active: a.active !== false,
+                noteRequired: !!a.noteRequired,
+                // a per-applicant add-on is one-per-runner, so a per-order cap is meaningless
+                maxPerOrder: a.perApplicant ? null : (a.maxPerOrder ?? null),
+                position: index,
+            }))),
+
             selectionFields: (values.selectionFields || []).map((field) => ({
                 ...field,
                 options: (field.options || []).map((opt, optIndex) => ({
@@ -220,6 +232,18 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                         }))
                 );
 
+                const convertedAddOns = await Promise.all(
+                    (eventData.addOns || [])
+                        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+                        .map(async (a) => ({
+                            ...a,
+                            perApplicant: !!a.perApplicant,
+                            active: a.active !== false,
+                            noteRequired: !!a.noteRequired,
+                            description: await convertStorageToHtml(a.description, prefix, getPublicUrl),
+                        }))
+                );
+
                 const cleanedData = {
                     ...eventData,
                     showChecklist: eventData?.showChecklist ?? false,
@@ -232,6 +256,7 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                         endDate: dayjs(p.endDate),
                     })) || [],
                     eventDetails: convertedEventDetails,
+                    addOns: convertedAddOns,
                     shirtTypes: (eventData.shirtTypes || []).map(st => ({
                         ...st,
                         shirtSizes: st.shirtSizes || [],
@@ -742,6 +767,10 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
 
                         <Title>{t("back.event.form.shirtTypeAndSize")}</Title>
                         <ShirtTypes form={form} />
+
+                        <Title>{t("back.event.form.addOns")}</Title>
+                        <div className="text-sm text-gray-500 mb-3">{t("back.event.form.addOnsHelp")}</div>
+                        <EventAddOns form={form} isEditable={isEditable} />
 
                         <Title>{t("back.event.form.additionalInfo")}</Title>
                         <EventDetails form={form} />

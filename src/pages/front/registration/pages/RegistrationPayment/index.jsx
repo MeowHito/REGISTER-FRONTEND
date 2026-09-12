@@ -48,6 +48,7 @@ const RegistrationPayment = () => {
 
     const [totalShirtPrice, setTotalShirtPrice] = useState(0);
     const [totalDeliveryFee, setTotalDeliveryFee] = useState(0);
+    const [totalAddOns, setTotalAddOns] = useState(0);
     const [totalDiscount, setTotalDiscount] = useState(0);
     const [totalCoupon, setTotalCoupon] = useState(0);
     const [finalTotal, setFinalTotal] = useState(0);
@@ -115,12 +116,14 @@ const RegistrationPayment = () => {
         const shirt = order.applicants.reduce((sum, a) => sum + (a.price || 0), 0);
         const delivery = order.applicants.reduce((sum, a) => sum + (a.deliveryMethod === "post" ? a.shippingFee : 0), 0);
         const discount = order.applicants.reduce((sum, a) => sum + (a.discountNoShirt || 0), 0);
+        const addOn = (order.addOns || []).reduce((sum, a) => sum + (Number(a.totalPrice) || 0), 0);
         const coupon = 0;
 
         setTotalShirtPrice(shirt);
         setTotalDeliveryFee(delivery);
         setTotalDiscount(discount);
-        const total = (shirt + delivery) - discount - coupon;
+        setTotalAddOns(addOn);
+        const total = (shirt + delivery + addOn) - discount - coupon;
         setFinalTotal(total);
         setTotalAmountWithFee(total);
         setTotalCoupon(0);
@@ -276,7 +279,7 @@ const RegistrationPayment = () => {
             dispatch(SET_ORDER(storedData));
             setCouponMeta({ couponCode: '', deductionPercentage: 0 });
             setTotalCoupon(0);
-            const resetTotal = totalShirtPrice + totalDeliveryFee - totalDiscount;
+            const resetTotal = totalShirtPrice + totalDeliveryFee + totalAddOns - totalDiscount;
             const resetFee = Math.ceil(resetTotal * (feePercent / 100) * 100) / 100;
             setFinalTotal(resetTotal);
             setFeeAmount(resetFee);
@@ -335,7 +338,7 @@ const RegistrationPayment = () => {
 
                 setApplicants(updatedApplicants);
                 setTotalCoupon(totalCouponDiscount);
-                const newTotal = totalShirtPrice + totalDeliveryFee - totalDiscount - totalCouponDiscount;
+                const newTotal = totalShirtPrice + totalDeliveryFee + totalAddOns - totalDiscount - totalCouponDiscount;
                 const newFee = Math.ceil(newTotal * (feePercent / 100) * 100) / 100;
                 setFinalTotal(newTotal);
                 setFeeAmount(newFee);
@@ -378,7 +381,7 @@ const RegistrationPayment = () => {
         setCouponMeta({ couponCode: '', deductionPercentage: 0 });
         setTotalCoupon(0);
 
-        const newTotal = totalShirtPrice + totalDeliveryFee - totalDiscount;
+        const newTotal = totalShirtPrice + totalDeliveryFee + totalAddOns - totalDiscount;
         const newFeeAmount = Math.ceil(newTotal * (feePercent / 100) * 100) / 100;
         const newTotalWithFee = Math.ceil((newTotal + newFeeAmount) * 100) / 100;
 
@@ -460,6 +463,8 @@ const RegistrationPayment = () => {
                 <OrderSummary
                     totalShirtPrice={totalShirtPrice}
                     totalDeliveryFee={totalDeliveryFee}
+                    totalAddOns={totalAddOns}
+                    addOns={order?.addOns || []}
                     totalDiscount={totalDiscount}
                     totalCoupon={totalCoupon}
                     finalTotal={finalTotal}

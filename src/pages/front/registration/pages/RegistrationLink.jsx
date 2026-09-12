@@ -112,12 +112,27 @@ const RegistrationLink = () => {
             pictureUrl: "",
         }));
 
-        const totalPrice = applicants
-            .reduce((sum, a) => sum + Number(a.finalPrice || 0), 0)
-            .toFixed(2);
+        // Add-ons already bought on this order — rebuilt so the payment page shows
+        // and charges the same total as it did at checkout.
+        const addOns = (raw.addOns || []).map((a) => ({
+            addOnId: a.addOnId,
+            name: a.name,
+            nameEn: a.nameEn,
+            qty: Number(a.qty || 0),
+            unitPrice: Number(a.unitPrice || 0),
+            totalPrice: Number(a.totalPrice || 0),
+            note: a.note || undefined,
+            applicantName: a.applicantName || null,
+        }));
+
+        const totalPrice = (
+            applicants.reduce((sum, a) => sum + Number(a.finalPrice || 0), 0) +
+            addOns.reduce((sum, a) => sum + a.totalPrice, 0)
+        ).toFixed(2);
 
         return {
             applicants,
+            addOns,
             eventConditions: [],
             eventId: raw.eventId || "",
             orderNo: raw.orderNo || "",
