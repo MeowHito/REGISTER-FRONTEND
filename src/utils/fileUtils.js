@@ -22,6 +22,10 @@ export const convertHtmlToStorage = (html) => {
 };
 
 export const convertStorageToHtml = async (html, prefix, getPublicUrl) => {
+    // Optional rich-text fields arrive as null/undefined; hand them back untouched
+    // rather than blowing up on .matchAll().
+    if (typeof html !== "string" || !html) return html;
+
     const pattern = /\{\$img ([^}]+)\}/g;
     const matches = [...html.matchAll(pattern)];
 
@@ -43,6 +47,9 @@ export const convertStorageToHtml = async (html, prefix, getPublicUrl) => {
 
 
 export const checkAndUploadImg = async (html, prefix, { isPublic = false } = {}) => {
+    // Same as above: an empty optional editor field is not an error.
+    if (typeof html !== "string" || !html) return html;
+
     const imgTagPattern = /<img[^>]+src="([^">]+)"/g;
     const matches = [...html.matchAll(imgTagPattern)];
 
