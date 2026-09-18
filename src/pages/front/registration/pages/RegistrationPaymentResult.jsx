@@ -67,7 +67,9 @@ const RegistrationPaymentResult = () => {
 
     const orderResolved = !orderDetail.isLoading;
     const paymentMethod = orderDetail?.data?.paymentMethod || order?.paymentType || null;
-    const isScbOrder = SCB_PAYMENT_METHODS.has(paymentMethod);
+    // SCB orders are settled by webhook and test-mode orders never touch a
+    // gateway, so neither should be verified against 2C2P.
+    const isScbOrder = SCB_PAYMENT_METHODS.has(paymentMethod) || paymentMethod === "test";
 
     const inquire = async ({ silent = false } = {}) => {
         if (!invoiceNo) {

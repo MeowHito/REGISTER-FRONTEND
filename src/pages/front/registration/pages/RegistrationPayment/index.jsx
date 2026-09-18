@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, message } from 'antd';
+import { Alert, Button, message } from 'antd';
 import FrontLayout from 'components/frontLayout';
 import RegistrationSteps from '../../components/RegistrationSteps';
 import backOfficeServices from 'services/backoffice.services';
@@ -82,9 +82,11 @@ const RegistrationPayment = () => {
     const { status: currentStatus, paymentDueDatetime } = resolvePaymentState(orderDetail, order);
 
     const isPayable = isPayablePayment(currentStatus, paymentDueDatetime);
+    // Admin-flagged test event: the backend completes the order without payment.
+    const isTestMode = orderDetail?.testMode === true;
     const isFreeOrder = totalAmountWithFee <= 0;
     const hasSelectedPayment = !!selectedPayment;
-    const canProceed = !isProceeding && !isFetchingOrderDetail && isPayable && (hasSelectedPayment || isFreeOrder);
+    const canProceed = !isProceeding && !isFetchingOrderDetail && isPayable && (hasSelectedPayment || isFreeOrder || isTestMode);
 
     useEffect(() => {
         if (!isFetchingOrderDetail && currentStatus && currentStatus !== "PENDING") {
@@ -184,7 +186,7 @@ const RegistrationPayment = () => {
                 return;
             }
 
-            if (totalAmountWithFee > 0 && !selectedPayment) {
+            if (totalAmountWithFee > 0 && !selectedPayment && !fresh.data?.testMode) {
                 message.error("กรุณาเลือกช่องทางการชำระเงิน");
                 return;
             }
@@ -199,7 +201,7 @@ const RegistrationPayment = () => {
                 dispatch(SET_ORDER({
                     ...order,
                     paymentStatus: 'SUCCESS',
-                    paymentType: selectedPayment || 'free',
+                    paymentType: isTestMode ? 'test' : (selectedPayment || 'free'),
                     totalPrice: '0.00',
                     totalAmountWithFee: 0,
                     fee: 0,
@@ -475,10 +477,14 @@ const RegistrationPayment = () => {
                     formatMoney={formatMoney}
                 />
 
-                <PaymentMethods
-                    selectedPayment={selectedPayment}
-                    handlePaymentSelection={handlePaymentSelection}
-                />
+                {isTestMode ? (
+                    <Alert type="warning" showIcon className="!mt-4" message={t("back.reg.payment.testModeNotice")} />
+                ) : (
+                    <PaymentMethods
+                        selectedPayment={selectedPayment}
+                        handlePaymentSelection={handlePaymentSelection}
+                    />
+                )}
 
                 <div className="flex justify-center mt-6">
                     <Button
@@ -495,7 +501,9 @@ const RegistrationPayment = () => {
                         disabled={!canProceed}
                         loading={isProceeding}
                     >
-                        {isFreeOrder
+                        {isTestMode
+                            ? t("back.reg.payment.confirmTestRegistration")
+                            : isFreeOrder
                             ? t("back.reg.payment.confirmRegistration") || "ยืนยันการสมัคร"
                             : hasSelectedPayment
                                 ? t("back.reg.payment.proceedPayment")

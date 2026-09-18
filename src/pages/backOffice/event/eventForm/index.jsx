@@ -247,6 +247,7 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                 const cleanedData = {
                     ...eventData,
                     showChecklist: eventData?.showChecklist ?? false,
+                    testMode: eventData?.testMode ?? false,
                     eventDate: dayjs(eventData.eventDate),
                     description: await convertStorageToHtml(eventData.description, prefix, getPublicUrl),
                     startRegistrationDate: eventData.startRegistrationDate ? dayjs(eventData.startRegistrationDate) : null,
@@ -304,6 +305,7 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                     generalInfoTitle: t("front.eventDetail.general"),
                     eventTypeTitle: t("front.eventDetail.eventType"),
                     showChecklist: false,
+                    testMode: false,
                     eventConditions: [
                         { id: uuidv4(), description: "ข้าพเจ้าได้ตรวจสอบข้อมูลความถูกต้องของการสมัครเรียบร้อย" },
                         { id: uuidv4(), description: "ข้าพเจ้ายอมรับเงื่อนไขการสมัครของผู้จัดงาน" },
@@ -434,6 +436,17 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                                             <Switch disabled={!isEditable} />
                                         </CommonForm.Item>
                                     </div>
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <span>{t("back.event.form.testMode")}</span>
+                                        <CommonForm.Item
+                                            name="testMode"
+                                            valuePropName="checked"
+                                            className="!mb-0"
+                                        >
+                                            <Switch disabled={!isEditable} />
+                                        </CommonForm.Item>
+                                    </div>
+                                    <div className="text-xs text-red-500 mb-3">{t("back.event.form.testModeHint")}</div>
                                 </Col>
                             )}
                         </Row>
