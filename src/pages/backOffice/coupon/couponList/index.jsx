@@ -11,6 +11,7 @@ import { handleQueryStatus } from "utils";
 import CouponDetails from "../couponDetails";
 import useMe from "hooks/useMe";
 import PermissionActionTable from "components/permissionActionTable";
+import PageHeader from 'components/pageHeader';
 
 const VIEWS = {
   LIST: "list",
@@ -218,6 +219,8 @@ const CouponList = () => {
     switch (view) {
       case VIEWS.LIST:
         return (
+          <>
+          <PageHeader menu="couponList" />
           <PermissionActionTable
             rowKey="id"
             className="text-nowrap"
@@ -275,6 +278,7 @@ const CouponList = () => {
               ].filter(Boolean)
             }
           />
+          </>
         );
 
       case VIEWS.DETAILS:

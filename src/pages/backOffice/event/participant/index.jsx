@@ -6,8 +6,10 @@ import {
     HeartOutlined,
     TrophyOutlined,
     FormOutlined,
+    GiftOutlined,
 } from '@ant-design/icons';
 import CommonForm from "components/commonForm";
+import AddOnList from "components/addOnList";
 import { AlertSuccess, AlertError, AlertConfirm, AlertClosed } from 'components/alert';
 import backOfficeServices from "services/backoffice.services";
 import { errorToMessage } from 'hooks/functions/errorToMessage';
@@ -749,6 +751,17 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
                                 </>
                             );
                         })()}
+
+                        {/* ── Add-ons bought for this runner (plus whole-order ones on the first runner) ── */}
+                        {participantData?.addOns?.length > 0 && (
+                            <>
+                                <SectionHeader
+                                    icon={<GiftOutlined />}
+                                    title={t("back.event.participant.form.sectionAddOns")}
+                                />
+                                <AddOnList items={participantData.addOns} showApplicant={false} />
+                            </>
+                        )}
                     </CommonForm>
                 </Spin>
             </Modal>

@@ -1,102 +1,54 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { NOT_FOUND_IMG } from "assets";
+import { useEffect, useMemo, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ConfigProvider, Image, Layout, Menu, Spin } from "antd";
-import { COLOR } from "constants/color";
-import Footer from "components/footer";
+import { Avatar, ConfigProvider, Drawer, Menu, Spin } from "antd";
+import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined } from "@ant-design/icons";
 import * as Icons from "@ant-design/icons";
 import { useMediaQuery } from "react-responsive";
-import MenuItemBadge from "components/menuItemBadge";
 import { useTranslation } from "react-i18next";
-import useMe from "hooks/useMe";
 import { useDispatch } from "react-redux";
+import Footer from "components/footer";
+import MenuItemBadge from "components/menuItemBadge";
+import AnnouncementBanner from "components/announcementBanner";
+import BackOfficeHeader from "components/backOfficeHeader";
+import { useAvatarUrl, useDisplayName, useRoleLabel } from "hooks/useMeDisplay";
+import useMe from "hooks/useMe";
 import { PROFILE_LOADING } from "store/reducers/profileSlice";
 import { handleQueryStatus } from "utils";
+import { backOfficeTheme } from "./theme";
+import "./index.css";
 
-const { Sider } = Layout;
-
-// Distinctive identity color per sidebar menu item (keyed by menu title)
-const MENU_ICON_COLORS = {
-  dashboard: "#2563eb",          // blue
-  eventList: "#7c3aed",          // violet
-  contractList: "#0d9488",       // teal
-  announcementList: "#f59e0b",   // amber
-  eventCalendarList: "#e11d48",  // rose
-  couponList: "#ea580c",         // orange
-  reportList: "#16a34a",         // green
-  historyList: "#0891b2",        // cyan
-  correctionEmail: "#9333ea",    // purple
-  operations: "#c026d3",         // fuchsia
-  helpRequests: "#dc2626",       // red
-  jobMonitoring: "#ca8a04",      // gold
-  emailQueue: "#0ea5e9",         // sky
-  setting: "#64748b",            // slate
-  profile: "#475569",            // slate-600
+// Sidebar sections, keyed by menu title. Anything not listed is "manage".
+const MENU_GROUPS = {
+  dashboard: "main",
+  historyList: "main",
+  setting: "system",
+  profile: "system",
+  operations: "system",
+  jobMonitoring: "system",
+  emailQueue: "system",
+  helpRequests: "system",
 };
-const DEFAULT_MENU_ICON_COLOR = "#64748b";
+const GROUP_ORDER = ["main", "manage", "system"];
+
+const BUILD_INFO = import.meta.env.VITE_BUILD_INFO || "";
 
 export default function BackOfficeLayout() {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const location = useLocation();
   const navigate = useNavigate();
+  const isDesktop = useMediaQuery({ query: "(min-width: 1024px)" });
 
   const [collapsed, setCollapsed] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [menuItems, setMenuItems] = useState([]);
-  const [, setMenuDesc] = useState("");
 
-  const currentPathSegs = useMemo(
-    () => location.pathname.split("/"),
-    [location.pathname]
-  );
-  const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
+  const currentPathSegs = useMemo(() => location.pathname.split("/"), [location.pathname]);
 
-  const [menuBtnActive, setMenuBtnActive] = useState(false);
-  const idleTimerRef = useRef(null);
-  const scrollTickingRef = useRef(false);
-
-  const bumpMenuBtnActive = useCallback(() => {
-    setMenuBtnActive(true);
-    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-    idleTimerRef.current = setTimeout(() => setMenuBtnActive(false), 800);
-  }, []);
-
-  useEffect(() => {
-    if (!(isMobile && collapsed)) {
-      setMenuBtnActive(false);
-      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-      return;
-    }
-
-    const onPointer = () => bumpMenuBtnActive();
-
-    const onScroll = () => {
-      if (scrollTickingRef.current) return;
-      scrollTickingRef.current = true;
-      requestAnimationFrame(() => {
-        bumpMenuBtnActive();
-        scrollTickingRef.current = false;
-      });
-    };
-
-    globalThis.addEventListener("pointerdown", onPointer, { passive: true });
-    globalThis.addEventListener("pointermove", onPointer, { passive: true });
-    globalThis.addEventListener("scroll", onScroll, { passive: true });
-
-    return () => {
-      globalThis.removeEventListener("pointerdown", onPointer);
-      globalThis.removeEventListener("pointermove", onPointer);
-      globalThis.removeEventListener("scroll", onScroll);
-      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-      scrollTickingRef.current = false;
-    };
-  }, [isMobile, collapsed, bumpMenuBtnActive]);
-
-  const {
-    data: me,
-    status: meStatus,
-    fetchStatus: meFetchStatus,
-  } = useMe({ retry: 0 });
+  const { data: me, status: meStatus, fetchStatus: meFetchStatus } = useMe({ retry: 0 });
+  const name = useDisplayName(me);
+  const roleLabel = useRoleLabel(me);
+  const avatarUrl = useAvatarUrl(me);
 
   useEffect(() => {
     handleQueryStatus(
@@ -109,8 +61,8 @@ export default function BackOfficeLayout() {
         const hideHistory = roleType === "admin" || roleType === "organizer";
 
         const menus = me.role.permissions
-          .map(p => p.menu)
-          .filter(m => !(hideHistory && m.title === "historyList"))
+          .map((p) => p.menu)
+          .filter((m) => !(hideHistory && m.title === "historyList"))
           .sort((a, b) => a.position - b.position);
 
         if (menus.length === 0) return;
@@ -119,7 +71,7 @@ export default function BackOfficeLayout() {
         const selected = menus.find((m) => m.title === roleSeg);
 
         if (!selected) {
-          const firstMenu = menus.find(m => m.path);
+          const firstMenu = menus.find((m) => m.path);
           if (firstMenu) {
             navigate(firstMenu.path, { replace: true });
           } else {
@@ -128,210 +80,146 @@ export default function BackOfficeLayout() {
           return;
         }
 
-        setMenuDesc(t(`back.menu.${selected.title}.desc`));
         setMenuItems(menus.filter((m) => m.isDisplay));
       },
       () => {
         navigate("/login", { replace: true });
       }
     );
-  }, [
-    meStatus,
-    meFetchStatus,
-    me,
-    currentPathSegs,
-    navigate,
-    t,
-    dispatch,
-  ]);
+  }, [meStatus, meFetchStatus, me, currentPathSegs, navigate, t, dispatch]);
 
-  const toggleCollapsed = () => setCollapsed((c) => !c);
+  // Close the mobile drawer whenever the route changes.
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [location.pathname]);
+
+  const groupedItems = useMemo(() => {
+    const toItem = (m) => {
+      const IconComponent = Icons[m.icon] || Icons.AppstoreOutlined;
+      return {
+        key: m.path,
+        icon: <IconComponent />,
+        disabled: !!m.disabled,
+        label: (
+          <Link
+            to={m.path}
+            title={t(`back.menu.${m.title}.name`)}
+            className="flex items-center justify-between w-full overflow-hidden whitespace-nowrap"
+          >
+            <span className="truncate">{t(`back.menu.${m.title}.name`)}</span>
+            {m.isNoti && <MenuItemBadge badgeKey={m.badgeKey} size="small" offset={[-2, 0]} showZero color="#8e8e93" />}
+          </Link>
+        ),
+      };
+    };
+    return GROUP_ORDER.map((group) => ({
+      type: "group",
+      key: `group-${group}`,
+      label: t(`back.shell.group.${group}`),
+      children: menuItems.filter((m) => (MENU_GROUPS[m.title] || "manage") === group).map(toItem),
+    })).filter((g) => g.children.length > 0);
+  }, [menuItems, t]);
+
+  // The selected key is the menu whose path prefixes the current URL.
+  const selectedKey = useMemo(() => {
+    const match = menuItems
+      .filter((m) => m.path && (location.pathname === m.path || location.pathname.startsWith(`${m.path}/`)))
+      .sort((a, b) => b.path.length - a.path.length)[0];
+    return match?.path || location.pathname;
+  }, [menuItems, location.pathname]);
 
   const spinning = meFetchStatus === "fetching" && !me;
   if (spinning) {
     return (
-      <Layout>
-        <div className="w-full min-h-screen flex items-center justify-center">
-          <Spin />
-        </div>
-      </Layout>
+      <div className="w-full min-h-screen flex items-center justify-center bg-[#f5f5f7]">
+        <Spin />
+      </div>
     );
   }
 
-  return (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: COLOR.primary,
-          colorInfo: COLOR.primary,
-          borderRadius: 8,
-          colorBorderSecondary: "#eef0f4",
-        },
-        components: {
-          Table: {
-            headerBg: "#f7f9fc",
-            headerColor: "#475569",
-            headerSplitColor: "transparent",
-            borderColor: "#eef0f4",
-            headerBorderRadius: 10,
-            cellPaddingBlock: 12,
-            rowHoverBg: "#f5f9ff",
-            fontWeightStrong: 600,
-          },
-          Button: {
-            borderRadius: 8,
-            controlHeight: 38,
-            fontWeight: 500,
-            primaryShadow: "0 2px 6px rgba(51,122,183,0.25)",
-            defaultShadow: "none",
-          },
-          Card: {
-            borderRadiusLG: 16,
-            boxShadowTertiary: "0 1px 3px rgba(16,24,40,0.06)",
-          },
-          Input: { borderRadius: 8, controlHeight: 38 },
-          InputNumber: { borderRadius: 8, controlHeight: 38 },
-          Select: { borderRadius: 8, controlHeight: 38 },
-          DatePicker: { borderRadius: 8, controlHeight: 38 },
-          Pagination: { borderRadius: 8, itemActiveBg: COLOR.primary },
-          Modal: { borderRadiusLG: 16 },
-          Tabs: { horizontalItemGutter: 24 },
-          Tag: { borderRadiusSM: 6 },
-          Segmented: { borderRadius: 8 },
-        },
-      }}
-    >
-    <Layout>
-      <div className="w-full min-h-[calc(100vh-40px)] md:min-h-[calc(100vh-65px)]">
-        {collapsed && isMobile && (
+  const narrow = isDesktop && collapsed;
+
+  const sidebarBody = (
+    <div className="flex flex-col h-full">
+      <div className={`border-b border-[#e5e5ea] ${narrow ? "py-4 flex justify-center" : "px-4 pt-5 pb-4 text-center"}`}>
+        <Avatar
+          src={avatarUrl || undefined}
+          icon={<UserOutlined />}
+          size={narrow ? 36 : 56}
+          className="!bg-[rgba(0,113,227,0.1)] !text-[#0071e3] ring-1 ring-[#e5e5ea]"
+        />
+        {!narrow && (
+          <>
+            <p className="mt-2.5 mb-0 text-sm font-semibold text-[#1d1d1f] leading-tight truncate">{name || "-"}</p>
+            <span className="inline-flex mt-1.5 items-center h-5 px-2 rounded-full bg-[rgba(0,113,227,0.1)] text-[#0071e3] text-[11px] font-semibold">
+              {roleLabel}
+            </span>
+          </>
+        )}
+      </div>
+
+      <div className="flex-1 bo-scroll-y py-2">
+        <Menu
+          mode="inline"
+          inlineCollapsed={narrow}
+          selectedKeys={[selectedKey]}
+          items={groupedItems}
+        />
+      </div>
+
+      {isDesktop && (
+        <div className={`border-t border-[#e5e5ea] h-12 flex items-center ${narrow ? "justify-center" : "justify-between px-4"}`}>
           <button
             type="button"
-            onClick={() => setCollapsed(false)}
-            aria-label="Open menu"
-            className={[
-              "fixed left-0 top-10 z-50 w-10 h-10 rounded-tr-md rounded-br-md bg-[#337ab7] text-white shadow-md transition-opacity duration-200 pointer-events-auto",
-              menuBtnActive ? "opacity-90" : "opacity-10",
-            ].join(" ")}
+            onClick={() => setCollapsed((c) => !c)}
+            className="flex items-center gap-2 text-[13px] text-[#6e6e73] hover:text-[#1d1d1f] cursor-pointer"
           >
-            <Icons.MenuOutlined />
+            {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            {!narrow && t("back.shell.collapse")}
           </button>
-        )}
-
-        <ConfigProvider
-          theme={{
-            components: {
-              Layout: {
-                siderBg: "#ffffff",
-                triggerBg: "#f1f3f6",
-                triggerColor: "#1f2937",
-              },
-              Menu: {
-                itemBg: "transparent",
-                subMenuItemBg: "transparent",
-                itemColor: "#1f2937",
-                itemHoverColor: COLOR.primary,
-                itemHoverBg: "#eef4fb",
-                itemSelectedColor: COLOR.primary,
-                itemSelectedBg: "#e6f0fa",
-                itemActiveBg: "#e6f0fa",
-                itemBorderRadius: 8,
-                itemMarginInline: 10,
-                itemHeight: 42,
-                iconSize: 16,
-              },
-            },
-          }}
-        >
-          <Sider
-            className="!z-[60] !fixed !h-full border-r border-[#eef0f4]"
-            style={{ ...(isMobile && { left: 0, top: 0, bottom: 0 }) }}
-            breakpoint="lg"
-            collapsedWidth={isMobile ? 0 : 80}
-            collapsible={!isMobile}
-            width="220"
-            collapsed={collapsed}
-            onCollapse={toggleCollapsed}
-            theme="light"
-            trigger={isMobile ? null : undefined}
-          >
-            <div className="px-4 pt-5 pb-3 text-center">
-              {!collapsed && (
-                <div className="mb-3 pb-4 border-b border-[#eef0f4]">
-                  <div className="w-[64px] h-[64px] mx-auto rounded-full overflow-hidden ring-2 ring-[#e6f0fa]">
-                    <Image
-                      src={me?.thumbPictureUrl || NOT_FOUND_IMG}
-                      alt="Profile"
-                      className="w-full h-full object-cover"
-                      preview={false}
-                      fallback={NOT_FOUND_IMG}
-                    />
-                  </div>
-                  <p className="mt-2 text-[#16243a] font-medium leading-tight">
-                    {`${me?.firstName || ""} ${me?.lastName || ""}`.trim() || "username"}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <Menu
-              theme="light"
-              mode="inline"
-              selectedKeys={[location.pathname]}
-              onClick={() => {
-                if (isMobile) setCollapsed(true);
-              }}
-              items={menuItems.map((m) => {
-              const IconComponent = Icons[m.icon] || Icons.AppstoreOutlined;
-              const iconColor = MENU_ICON_COLORS[m.title] || DEFAULT_MENU_ICON_COLOR;
-              return {
-                key: m.path,
-                icon: <IconComponent style={{ color: iconColor, fontSize: 17 }} />,
-                label: (
-                  <Link
-                    to={m.path}
-                    title={t(`back.menu.${m.title}.name`)}
-                    className="flex items-center justify-between w-full overflow-hidden whitespace-nowrap"
-                  >
-                    <span className="truncate">
-                      {t(`back.menu.${m.title}.name`)}
-                    </span>
-                    {m.isNoti && (
-                      <MenuItemBadge
-                        badgeKey={m.badgeKey}
-                        size="small"
-                        offset={[-2, 0]}
-                        showZero
-                      />
-                    )}
-                  </Link>
-                ),
-                disabled: !!m.disabled,
-              };
-            })}
-          />
-          </Sider>
-        </ConfigProvider>
-
-        {!collapsed && isMobile && (
-          <div
-            onClick={toggleCollapsed}
-            className="fixed inset-0 bg-black opacity-50 z-[51]"
-          />
-        )}
-
-        <div
-          className={`flex flex-col max-w-full h-full transition-all duration-300 ${collapsed ? "md:!ml-[80px]" : "md:!ml-[220px]"
-            }`}
-        >
-          <div className="flex flex-col flex-1 bg-[#f4f6fa] p-2 md:!p-5">
-            <div className="flex-1 bg-white rounded-2xl border border-[#eef0f4] shadow-[0_1px_3px_rgba(16,24,40,0.04)] p-3 md:!p-6">
-              <Outlet />
-            </div>
-          </div>
-          <Footer layout="compact" />
+          {!narrow && BUILD_INFO && <span className="text-[11px] text-[#a1a1a6] tabular-nums">{BUILD_INFO}</span>}
         </div>
+      )}
+    </div>
+  );
+
+  return (
+    <ConfigProvider theme={backOfficeTheme}>
+      <div className="bo-shell min-h-screen">
+        <BackOfficeHeader onOpenMenu={isDesktop ? undefined : () => setDrawerOpen(true)} />
+        <AnnouncementBanner />
+
+        <div className="flex">
+          {isDesktop && (
+            <aside
+              className={`bo-sidebar sticky top-16 h-[calc(100vh-4rem)] shrink-0 bg-white border-r border-[#e5e5ea] transition-[width] duration-200 ${narrow ? "w-[76px]" : "w-[248px]"}`}
+            >
+              {sidebarBody}
+            </aside>
+          )}
+
+          <div className="flex-1 min-w-0 flex flex-col min-h-[calc(100vh-4rem)]">
+            <main className="flex-1 w-full max-w-[1440px] mx-auto px-4 md:px-6 xl:px-8 py-5 md:py-8">
+              <Outlet />
+            </main>
+            <Footer layout="compact" />
+          </div>
+        </div>
+
+        {!isDesktop && (
+          <Drawer
+            placement="left"
+            open={drawerOpen}
+            onClose={() => setDrawerOpen(false)}
+            width={272}
+            closable={false}
+            styles={{ body: { padding: 0 } }}
+            rootClassName="bo-sidebar"
+          >
+            {sidebarBody}
+          </Drawer>
+        )}
       </div>
-    </Layout>
     </ConfigProvider>
   );
 }

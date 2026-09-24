@@ -29,6 +29,41 @@ function useQueryWithCallbacks(options, { onSuccess, onError } = {}) {
 }
 
 const backOfficeServices = {
+  useQueryGetMyNotifications({ enabled = true } = {}) {
+    return useQuery({
+      queryKey: ["getMyNotifications"],
+      queryFn: async () => {
+        const res = await createRequest.get("api/notification");
+        return res.data.data;
+      },
+      enabled,
+      refetchInterval: 30000,
+      refetchOnWindowFocus: true,
+    });
+  },
+
+  useMutationReadNotification(onSuccess, onError) {
+    return useMutation({
+      mutationFn: async ({ id }) => {
+        const res = await createRequest.put(`api/notification/${id}/read`);
+        return res.data;
+      },
+      onSuccess,
+      onError,
+    });
+  },
+
+  useMutationReadAllNotifications(onSuccess, onError) {
+    return useMutation({
+      mutationFn: async () => {
+        const res = await createRequest.put("api/notification/readAll");
+        return res.data;
+      },
+      onSuccess,
+      onError,
+    });
+  },
+
   useQueryGetAllPaymentHistory({ params, paging }) {
     return useQuery({
       queryKey: ["getAllPaymentHistory", params, paging],
@@ -561,6 +596,19 @@ const backOfficeServices = {
     );
   },
 
+  useQueryGetFinanceAddOnSummary({ id, startDate, endDate }) {
+    return useQuery({
+      queryKey: ["getFinanceAddOnSummary", id, startDate, endDate],
+      queryFn: async () => {
+        const res = await createRequest.get(`api/summaryReport/finaceAddOn`, { params: { id, startDate, endDate } });
+        return res.data.data;
+      },
+      enabled: !!id,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    });
+  },
+
   useQueryGetRevenueSummary({ startDate, endDate, paging, onSuccess, onError }) {
     return useQueryWithCallbacks(
       {
@@ -992,6 +1040,44 @@ const backOfficeServices = {
       mutationFn: async (values) => {
         const res = await createRequest.post(`/api/event`, values);
         return res.data;
+      },
+      onSuccess,
+      onError,
+    });
+  },
+
+  useQueryGetEventSummary({ search }) {
+    return useQuery({
+      queryKey: ["getEventSummary", search],
+      queryFn: async () => {
+        const res = await createRequest.post(`api/event/summary`, { active: true, paging: { page: 0, size: 1, ...search } });
+        return res.data.data;
+      },
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    });
+  },
+
+  useMutationDuplicateEvent(onSuccess, onError) {
+    return useMutation({
+      mutationFn: async ({ id }) => {
+        const res = await createRequest.post(`/api/event/${id}/duplicate`);
+        return res.data.data;
+      },
+      onSuccess,
+      onError,
+    });
+  },
+
+  /** Every event matching the list's current search, unpaged (page 0 returns all). */
+  useMutationFetchAllEvents(onSuccess, onError) {
+    return useMutation({
+      mutationFn: async ({ search } = {}) => {
+        const res = await createRequest.post(`api/event/getAllEvents`, {
+          active: true,
+          paging: { page: 0, size: 1, ...search },
+        });
+        return res.data.data?.content || [];
       },
       onSuccess,
       onError,

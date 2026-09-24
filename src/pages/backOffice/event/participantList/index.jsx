@@ -1,4 +1,4 @@
-import { SearchOutlined, LeftOutlined, DownloadOutlined, UploadOutlined, MailOutlined } from '@ant-design/icons';
+import { SearchOutlined, DownloadOutlined, UploadOutlined, MailOutlined } from '@ant-design/icons';
 import { Button, Input, message, Select, Space, Spin } from 'antd';
 import UseModalHook from 'hooks/useModalHook';
 import React, { useEffect, useState } from 'react'
@@ -7,7 +7,6 @@ import Highlighter from 'react-highlight-words';
 import { AlertError } from 'components/alert';
 import Participant from '../participant';
 import { useTranslation } from 'react-i18next';
-import { useMediaQuery } from 'react-responsive';
 import ParticipantUpload from '../participantUpload';
 import masterService from 'services/master.services';
 import fileService from 'services/file.services';
@@ -17,10 +16,11 @@ import { genderOption } from 'constants/options/genderOption';
 import { getMenuPermission, handleQueryStatus } from 'utils';
 import PermissionActionTable from 'components/permissionActionTable';
 import useMe from 'hooks/useMe';
+import PageHeader from 'components/pageHeader';
+import { AddOnTags } from 'components/addOnList';
 
 function ParticipantList({ eventId, eventName, setView, eventCanUpdate = true }) {
     const { t } = useTranslation();
-    const isMobile = useMediaQuery({ query: '(max-width: 768px)' });
     const [mode, setMode] = useState(null);
     const [editParticipant, setEditParticipant] = useState(null);
     const [participantData, setParticipantData] = useState([]);
@@ -194,11 +194,11 @@ function ParticipantList({ eventId, eventName, setView, eventCanUpdate = true })
         setSortedField(sortField)
     };
 
-    const handleRowClick = (record) => {
+    const handleRowClick = (record, nextMode = "edit") => {
         setEditParticipant({
             ...record,
         });
-        setMode("edit")
+        setMode(nextMode)
         handleOpenCreateParticipant();
     };
 
@@ -230,6 +230,13 @@ function ParticipantList({ eventId, eventName, setView, eventCanUpdate = true })
             key: 'lastName',
             sorter: true,
             search: true,
+        },
+        {
+            title: t("back.event.participant.home.addOns"),
+            dataIndex: 'addOns',
+            key: 'addOns',
+            width: 220,
+            render: (items) => <AddOnTags items={items || []} />,
         },
         {
             title: t("back.event.participant.home.gender"),
@@ -357,12 +364,11 @@ function ParticipantList({ eventId, eventName, setView, eventCanUpdate = true })
     };
 
     const CreateSection = () =>
-        <div className="flex flex-col lg:flex-row justify-end gap-1">
+        <div className="flex flex-col lg:flex-row justify-end gap-2">
             {totalData > 0 && (
                 <div className="w-full md:w-auto">
                     <Button
-                        type="primary"
-                        className="w-full h-full center"
+                        className="w-full"
                         icon={<MailOutlined />}
                         onClick={handleSendBibEmail}
                         loading={isLoading}
@@ -373,8 +379,7 @@ function ParticipantList({ eventId, eventName, setView, eventCanUpdate = true })
             )}
             <div className="w-full md:w-auto">
                 <Button
-                    type="primary"
-                    className="w-full h-full center"
+                    className="w-full"
                     icon={<DownloadOutlined />}
                     onClick={() => participantDownload()}
                     loading={isLoadingParticipantDownload}
@@ -386,7 +391,7 @@ function ParticipantList({ eventId, eventName, setView, eventCanUpdate = true })
                 menuPerm.canUpdate && eventCanUpdate ? <div className="w-full md:w-auto">
                     <Button
                         type="primary"
-                        className="w-full h-full center"
+                        className="w-full"
                         icon={<UploadOutlined />}
                         onClick={() => {
                             handleOpenCreateParticipantUpload();
@@ -396,36 +401,16 @@ function ParticipantList({ eventId, eventName, setView, eventCanUpdate = true })
                     </Button>
                 </div> : null
             }
-            <div className="w-[200px]">
-                <Select
-                    placeholder={t("back.event.participant.home.eventType")}
-                    className='w-full'
-                    value={eventType}
-                    options={eventTypeOption}
-                    onChange={(value) => {
-                        setEventType(value);
-                    }}
-                />
-            </div>
         </div>
 
     return (
         <>
-            <div className={`mb-4 flex ${isMobile ? 'flex-col items-start' : 'items-center justify-between'}`}>
-                <Button
-                    type="link"
-                    className="center"
-                    onClick={() => {
-                        setView(null);
-                    }}
-                >
-                    <LeftOutlined size={22} className="me-2" />
-                    <p>{t("general.back")}</p>
-                </Button>
-                <label className="flex-1 text-center text-xl font-semibold opacity-60">
-                    {t('back.event.eventPermission.eventName') + ': ' + eventName}
-                </label>
-            </div>
+            <PageHeader
+                onBack={() => setView(null)}
+                backLabel={t("back.event.participant.home.backToEvents")}
+                title={eventName}
+                subtitle={t("back.event.participant.home.subtitle")}
+            />
             <Spin spinning={isLoadingData}>
                 <PermissionActionTable
                     className="!w-full !text-nowrap"
@@ -436,7 +421,7 @@ function ParticipantList({ eventId, eventName, setView, eventCanUpdate = true })
                     }))}
                     dataSource={participantData}
                     bordered
-                    scroll={{ x: true }}
+                    scroll={{ x: 'max-content' }}
                     pagination={{
                         pageSize: limitPage,
                         current: page,
@@ -453,6 +438,19 @@ function ParticipantList({ eventId, eventName, setView, eventCanUpdate = true })
                     rawId="eventList"
                     totalText={t("back.event.participant.home.allParticipants")}
                     customCreate={<CreateSection />}
+                    headerExtra={
+                        <Select
+                            placeholder={t("back.event.participant.home.eventType")}
+                            className="w-full lg:!w-[200px]"
+                            value={eventType}
+                            options={eventTypeOption}
+                            onChange={(value) => {
+                                setPage(1);
+                                setEventType(value);
+                            }}
+                        />
+                    }
+                    onView={(record) => handleRowClick(record, "view")}
                     onEdit={eventCanUpdate ? (record) => {
                         handleRowClick(record);
                     } : undefined}

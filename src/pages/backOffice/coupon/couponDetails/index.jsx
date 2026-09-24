@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Table, Button, Tag, Input, Space, Spin } from "antd";
 import {
-  LeftOutlined,
   DeleteOutlined,
   SearchOutlined,
   DownloadOutlined,
@@ -14,6 +13,7 @@ import { errorToMessage } from "hooks/functions/errorToMessage";
 import Highlighter from "react-highlight-words";
 import dayjs from "dayjs";
 import useMe from "hooks/useMe";
+import PageHeader from "components/pageHeader";
 
 const CouponDetails = ({ coupon: bucketName, onBack }) => {
   const { t } = useTranslation();
@@ -294,27 +294,16 @@ const CouponDetails = ({ coupon: bucketName, onBack }) => {
 
   return (
     <Spin spinning={isLoadingDetails}>
-      <div className="mb-4">
-        <Button
-          type="link"
-          className="center"
-          onClick={(e) => {
-            e.stopPropagation();
-            onBack();
-          }}
-        >
-          <LeftOutlined size={22} className="me-2" />
-          <p>{t("back.couponList.back")}</p>
-        </Button>
-      </div>
-      <div className="pb-2 w-full flex flex-row justify-between">
-        <div className="text-xl font-semibold opacity-60">
-          {t("back.couponList.details")} ({totalData || 0})
-        </div>
-        <div className="flex items-center gap-1">
+      <PageHeader
+        onBack={() => onBack()}
+        backLabel={t("back.couponList.back")}
+        title={t("back.couponList.details")}
+        count={totalData || 0}
+      />
+      <div className="bo-card overflow-hidden">
+      <div className="px-4 md:px-5 py-4 w-full flex flex-row justify-end border-b border-[#e5e5ea]">
+        <div className="flex items-center gap-2">
           <Button
-            type="primary"
-            className="w-full h-full center"
             icon={<DownloadOutlined />}
             onClick={!isLoadingCouponDownload ? couponDownload : null}
             loading={isLoadingCouponDownload}
@@ -324,7 +313,6 @@ const CouponDetails = ({ coupon: bucketName, onBack }) => {
           {roleUser === "admin" && (
             <Button
               danger
-              className="w-full h-full center"
               icon={<DeleteOutlined />}
               onClick={() => handleDelete()}
               disabled={selectedRowKeys.length === 0}
@@ -336,7 +324,7 @@ const CouponDetails = ({ coupon: bucketName, onBack }) => {
         </div>
       </div>
       <Table
-        className="text-nowrap"
+        className="text-nowrap bo-flush-table"
         rowKey={(record) => record.id}
         dataSource={coupons}
         columns={columns.map((column) => ({
@@ -358,6 +346,7 @@ const CouponDetails = ({ coupon: bucketName, onBack }) => {
           showSizeChanger: true,
         }}
       />
+      </div>
     </Spin>
   );
 };

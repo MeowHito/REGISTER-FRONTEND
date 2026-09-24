@@ -1,7 +1,10 @@
 ﻿import { useEffect, useState } from 'react'
-import { Button, Col, Input, Row, Spin, Switch } from 'antd';
+import { Col, Input, notification, Row, Spin, Switch } from 'antd';
 import CommonForm from "components/commonForm";
-import { AlertSuccess, AlertError, AlertConfirm } from 'components/alert';
+import { AlertError, AlertConfirm } from 'components/alert';
+import PageHeader from 'components/pageHeader';
+import SectionCard from 'components/sectionCard';
+import StickyActionBar from 'components/stickyActionBar';
 import _ from "lodash";
 import useUploadFileHook from 'hooks/useUploadFileHook';
 import backOfficeServices from "services/backoffice.services";
@@ -16,7 +19,7 @@ import EventDetails from '../eventDetails';
 import EventConditions from '../eventConditions';
 import ImageUpload from 'components/imageUpload';
 import { checkAndUploadImg, convertStorageToHtml, getImageFileToUpload, getPublicUrl } from 'utils/fileUtils';
-import { LeftOutlined } from '@ant-design/icons';
+import { CalendarOutlined, SaveOutlined, WarningOutlined } from '@ant-design/icons';
 import { eventTypeOption } from 'constants/options/eventTypeOption';
 import ShirtTypes from '../shirtTypes';
 import { toStartOfDayISO } from 'utils/format';
@@ -35,6 +38,13 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
     const prefix = "event";
     const startRegistrationDate = CommonForm.useWatch("startRegistrationDate", form);
     const endRegistrationDate = CommonForm.useWatch("endRegistrationDate", form);
+    const link = CommonForm.useWatch("link", form);
+    const eventName = CommonForm.useWatch("name", form);
+    const testMode = CommonForm.useWatch("testMode", form);
+    const primaryColor = CommonForm.useWatch("eventPrimaryColor", form);
+    const secondaryColor = CommonForm.useWatch("eventSecondaryColor", form);
+    const fontColor = CommonForm.useWatch("eventFontColor", form);
+    const [dirty, setDirty] = useState(false);
 
     const {
         data: me
@@ -108,8 +118,13 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                         await createEvent(payload);
                     }
 
+                    setDirty(false);
                     refetch();
-                    AlertSuccess({})
+                    notification.success({
+                        message: t("back.shell.savedTitle"),
+                        description: t("back.shell.savedDesc"),
+                        placement: "topRight",
+                    });
                 } catch (err) {
                     const response = err?.response;
                     const data = response?.data;
@@ -318,60 +333,266 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
         loadAndPrepare();
     }, [eventData, mode]);
 
+    const handleBack = () => {
+        const currentValues = form.getFieldsValue(true);
+        const hasChanges = !_.isEqual(currentValues, initialValues) ||
+            logoFileList.some(e => !e.isPreview) || pictureFileList.some(e => !e.isPreview);
+
+        if (hasChanges) {
+            AlertConfirm({
+                title: t("general.cancelEditConfirmTitle"),
+                text: t("general.cancelEditConfirmText"),
+                onOk: () => {
+                    setLogoFileList([]);
+                    setPictureFileList([]);
+                    form.resetFields();
+                    setMode(null);
+                },
+            });
+        } else {
+            setMode(null);
+        }
+    };
+
+    const sections = [
+        { id: "ef-general", label: t("back.event.form.section.general") },
+        { id: "ef-theme", label: t("back.event.form.section.theme") },
+        roleUser === "admin" && { id: "ef-settings", label: t("back.event.form.section.settings") },
+        { id: "ef-description", label: t("back.event.form.section.description") },
+        { id: "ef-race", label: t("back.event.form.section.race") },
+        { id: "ef-questions", label: t("back.event.form.section.questions") },
+        { id: "ef-shirts", label: t("back.event.form.section.shirts") },
+        { id: "ef-extra", label: t("back.event.form.section.extra") },
+    ].filter(Boolean);
+
+    const origin = `${globalThis.location.protocol}//${globalThis.location.host}`;
+    const isDraft = mode !== "edit" || !!eventData?.isDraft;
+    const gutter = { xs: 8, md: 16 };
+
     return (
         <>
-            <div className="mb-4">
-                <Button
-                    type="link"
-                    className="center"
-                    onClick={() => {
-                        const currentValues = form.getFieldsValue(true);
-                        const hasChanges = !_.isEqual(currentValues, initialValues) ||
-                            logoFileList.some(e => !e.isPreview) || pictureFileList.some(e => !e.isPreview);
+            <PageHeader
+                onBack={handleBack}
+                backLabel={t("back.event.form.backToList")}
+                title={mode === "edit" ? t("back.event.form.editTitle") : t("back.event.form.createTitle")}
+                tag={
+                    <span className={`inline-flex items-center h-6 px-2.5 rounded-full text-xs font-semibold ${isDraft ? "bg-[rgba(0,0,0,0.06)] text-[#424245]" : "bg-[rgba(52,199,89,0.12)] text-[#1d7c34]"}`}>
+                        {isDraft ? t("back.event.form.draftTag") : t("back.event.form.publishedTag")}
+                    </span>
+                }
+                subtitle={t("back.event.form.subtitle")}
+            />
 
-                        if (hasChanges) {
-                            AlertConfirm({
-                                title: t("general.cancelEditConfirmTitle"),
-                                text: t("general.cancelEditConfirmText"),
-                                onOk: () => {
-                                    setLogoFileList([]);
-                                    setPictureFileList([]);
-                                    form.resetFields();
-                                    setMode(null);
-                                },
-                            });
-                        } else {
-                            setMode(null);
-                        }
-                    }}
-                >
-                    <LeftOutlined size={22} className="me-2" />
-                    <p>{t("general.back")}</p>
-                </Button>
-            </div>
+            <SectionNav sections={sections} />
+
             <Spin spinning={isLoadingEvent}>
                 <CommonForm
                     form={form}
                     name="event-form"
                     layout="vertical"
                     onFinish={onFinish}
+                    onValuesChange={() => setDirty(true)}
                     autoComplete="off"
                 >
-                    <div className='max-w-screen-lg md:mx-auto' >
-                        <CommonForm.Item name="id" noStyle>
-                            <Input hidden />
-                        </CommonForm.Item>
-                        <Row gutter={{ xs: 2, md: 8 }}>
-                            <Col xs={24} className='!flex !gap-2 !mb-3'>
-                                <CommonForm.Item
-                                    name="logoFile"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: t("required.logo"),
-                                        },
-                                    ]}
-                                >
+                    <CommonForm.Item name="id" noStyle>
+                        <Input hidden />
+                    </CommonForm.Item>
+
+                    <div className="grid gap-6">
+                        <SectionCard id="ef-general" title={t("back.event.form.section.general")} description={t("back.event.form.section.generalDesc")}>
+                            <CommonForm.Item
+                                name="generalInfoTitle"
+                                rules={[{ required: true, message: t("required.generalInfoTitle") }]}
+                            >
+                                <FloatingLabel size="large" label={t("back.event.form.generalInfoTitle")} required readOnly={!isEditable} />
+                            </CommonForm.Item>
+                            <CommonForm.Item name="name" rules={[{ required: true, message: t("required.event") }]}>
+                                <FloatingLabel size="large" label={t("back.event.form.name")} required readOnly={!isEditable} />
+                            </CommonForm.Item>
+                            <Row gutter={gutter}>
+                                <Col xs={24} md={12}>
+                                    <CommonForm.Item name="type" rules={[{ required: true, message: t("required.eventType") }]}>
+                                        <FloatingLabel
+                                            type="select"
+                                            label={t("back.event.form.selectEventType")}
+                                            required
+                                            size="large"
+                                            disabled={!isEditable}
+                                            options={eventTypeOption}
+                                            filterOption={(input, option) =>
+                                                option.label.toLowerCase().includes(input.toLowerCase())
+                                            }
+                                        />
+                                    </CommonForm.Item>
+                                </Col>
+                                {roleUser === "admin" && (
+                                    <Col xs={24} md={12}>
+                                        <CommonForm.Item name="organizerId" rules={[{ required: true, message: t("organizer") }]}>
+                                            <FloatingLabel
+                                                type="select"
+                                                label={t("back.event.form.selectOrganizer")}
+                                                required
+                                                showSearch
+                                                size="large"
+                                                disabled={isLoadingOrganizer}
+                                                options={optionOrganizer}
+                                                filterOption={(input, option) =>
+                                                    option.label.toLowerCase().includes(input.toLowerCase())
+                                                }
+                                            />
+                                        </CommonForm.Item>
+                                    </Col>
+                                )}
+                            </Row>
+                            <Row gutter={gutter}>
+                                <Col xs={24} md={12}>
+                                    <CommonForm.Item name="organizerName" rules={[{ required: true, message: t("required.organizerName") }]}>
+                                        <FloatingLabel size="large" label={t("back.event.form.organizerName")} required readOnly={!isEditable} />
+                                    </CommonForm.Item>
+                                </Col>
+                                <Col xs={24} md={7}>
+                                    <CommonForm.Item name="location">
+                                        <FloatingLabel size="large" label={t("back.event.form.location")} readOnly={!isEditable} />
+                                    </CommonForm.Item>
+                                </Col>
+                                <Col xs={24} md={5}>
+                                    <CommonForm.Item name="provinceId" rules={[{ required: true, message: t("required.province") }]}>
+                                        <FloatingLabel
+                                            type="select"
+                                            label={t("back.event.form.selectProvince")}
+                                            required
+                                            showSearch
+                                            size="large"
+                                            disabled={isLoadingProvince}
+                                            options={provinceOption}
+                                            filterOption={(input, option) => {
+                                                const str = option.filterLabel || (typeof option.label === 'string' ? option.label : '');
+                                                return str.toLowerCase().includes(input.toLowerCase());
+                                            }}
+                                        />
+                                    </CommonForm.Item>
+                                </Col>
+                            </Row>
+
+                            <div className="bo-inset p-4 md:p-5 mb-6">
+                                <p className="m-0 mb-6 flex items-center gap-2 text-sm font-semibold text-[#1d1d1f]">
+                                    <CalendarOutlined className="text-[#0071e3]" />
+                                    {t("back.event.form.section.dates")}
+                                </p>
+                                <Row gutter={gutter}>
+                                    <Col xs={24} md={8}>
+                                        <CommonForm.Item
+                                            name="startRegistrationDate"
+                                            rules={[{ required: true, message: t("required.startRegistrationDate") }]}
+                                        >
+                                            <FloatingLabel
+                                                type="date"
+                                                showTime
+                                                required
+                                                label={t("back.event.form.startRegistrationDate")}
+                                                className="w-full"
+                                                disabled={!isEditable}
+                                                minDate={dayjs(new Date())}
+                                            />
+                                        </CommonForm.Item>
+                                    </Col>
+                                    <Col xs={24} md={8}>
+                                        <CommonForm.Item
+                                            name="endRegistrationDate"
+                                            dependencies={['startRegistrationDate']}
+                                            rules={[
+                                                { required: true, message: t("required.endRegistrationDate") },
+                                                ({ getFieldValue }) => ({
+                                                    validator(_, value) {
+                                                        const startDate = getFieldValue('startRegistrationDate');
+                                                        if (!value || !startDate) {
+                                                            return Promise.resolve();
+                                                        }
+                                                        if (dayjs(value).isAfter(dayjs(startDate))) {
+                                                            return Promise.resolve();
+                                                        }
+                                                        return Promise.reject(new Error(t("validation.endDateAfterStart")));
+                                                    },
+                                                }),
+                                            ]}
+                                        >
+                                            <FloatingLabel
+                                                type="date"
+                                                showTime
+                                                required
+                                                label={t("back.event.form.endRegistrationDate")}
+                                                className="w-full"
+                                                disabled={!isEditable}
+                                                minDate={startRegistrationDate ? dayjs(startRegistrationDate) : dayjs(new Date())}
+                                            />
+                                        </CommonForm.Item>
+                                    </Col>
+                                    <Col xs={24} md={8}>
+                                        <CommonForm.Item
+                                            name="eventDate"
+                                            dependencies={['endRegistrationDate']}
+                                            rules={[
+                                                { required: true, message: t("required.eventDate") },
+                                                ({ getFieldValue }) => ({
+                                                    validator(_, value) {
+                                                        const endDate = getFieldValue('endRegistrationDate');
+                                                        if (!value || !endDate) {
+                                                            return Promise.resolve();
+                                                        }
+                                                        if (dayjs(value).isAfter(dayjs(endDate))) {
+                                                            return Promise.resolve();
+                                                        }
+                                                        return Promise.reject(new Error(t("validation.eventDateAfterEndRegistration")));
+                                                    },
+                                                }),
+                                            ]}
+                                        >
+                                            <FloatingLabel
+                                                type="date"
+                                                required
+                                                label={t("back.event.form.eventDate")}
+                                                className="w-full"
+                                                disabled={!isEditable}
+                                                minDate={endRegistrationDate ? dayjs(endRegistrationDate).add(1, 'day') : dayjs(new Date()).add(1, 'day')}
+                                            />
+                                        </CommonForm.Item>
+                                    </Col>
+                                </Row>
+                            </div>
+
+                            <Row gutter={gutter}>
+                                <Col xs={24} md={12}>
+                                    <CommonForm.Item
+                                        name="link"
+                                        extra={
+                                            <span className="text-xs text-[#6e6e73]">
+                                                {t("back.event.form.linkPreview")}:{" "}
+                                                <a href={`${origin}/eventDetail/${link || eventData?.id || ""}`} target="_blank" rel="noopener noreferrer">
+                                                    {`${origin}/eventDetail/${link || eventData?.id || "…"}`}
+                                                </a>
+                                            </span>
+                                        }
+                                    >
+                                        <FloatingLabel size="large" label={t("back.event.form.link")} readOnly={!isEditable} />
+                                    </CommonForm.Item>
+                                </Col>
+                                <Col xs={24} md={12}>
+                                    <CommonForm.Item name="shippingFee" extra={<span className="text-xs text-[#6e6e73]">{t("back.event.form.shippingFeeHint")}</span>}>
+                                        <FloatingLabel
+                                            type="number"
+                                            size="large"
+                                            className="w-full"
+                                            label={t("back.event.form.shippingFee")}
+                                            addonAfter={t("general.unitBaht")}
+                                        />
+                                    </CommonForm.Item>
+                                </Col>
+                            </Row>
+                        </SectionCard>
+
+                        <SectionCard id="ef-theme" title={t("back.event.form.section.theme")} description={t("back.event.form.section.themeDesc")}>
+                            <div className="flex flex-wrap gap-4 mb-2">
+                                <CommonForm.Item name="logoFile" rules={[{ required: true, message: t("required.logo") }]}>
                                     <ImageUpload
                                         label={t("back.event.form.logo")}
                                         prefix={prefix}
@@ -383,15 +604,7 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                                         isEditable={isEditable}
                                     />
                                 </CommonForm.Item>
-                                <CommonForm.Item
-                                    name="pictureFile"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: t("required.coverImg"),
-                                        },
-                                    ]}
-                                >
+                                <CommonForm.Item name="pictureFile" rules={[{ required: true, message: t("required.coverImg") }]}>
                                     <ImageUpload
                                         label={t("back.event.form.coverImg")}
                                         prefix={prefix}
@@ -403,411 +616,195 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                                         isEditable={isEditable}
                                     />
                                 </CommonForm.Item>
-                            </Col>
-                        </Row>
-                        <Row gutter={{ xs: 2, md: 8 }} align="middle">
-                            <Col xs={24} md={16}>
-                                <CommonForm.Item
-                                    name="generalInfoTitle"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: t("required.generalInfoTitle"),
-                                        },
-                                    ]}
-                                >
-                                    <FloatingLabel
-                                        size="large"
-                                        label={t("back.event.form.generalInfoTitle")}
-                                        required
-                                        readOnly={!isEditable}
-                                    />
-                                </CommonForm.Item>
-                            </Col>
-                            {roleUser === "admin" && (
-                                <Col xs={24} md={8}>
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <span>{t("back.event.form.showChecklist")}</span>
-                                        <CommonForm.Item
-                                            name="showChecklist"
-                                            valuePropName="checked"
-                                            className="!mb-0"
-                                        >
-                                            <Switch disabled={!isEditable} />
-                                        </CommonForm.Item>
-                                    </div>
-                                    <div className="flex items-center gap-3 mb-1">
-                                        <span>{t("back.event.form.testMode")}</span>
-                                        <CommonForm.Item
-                                            name="testMode"
-                                            valuePropName="checked"
-                                            className="!mb-0"
-                                        >
-                                            <Switch disabled={!isEditable} />
-                                        </CommonForm.Item>
-                                    </div>
-                                    <div className="text-xs text-red-500 mb-3">{t("back.event.form.testModeHint")}</div>
-                                </Col>
-                            )}
-                        </Row>
-                        <Row gutter={{ xs: 2, md: 8 }}>
-                            <Col xs={24} md={16}>
-                                <CommonForm.Item
-                                    name="name"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: t("required.event"),
-                                        },
-                                    ]}
-                                >
-                                    <FloatingLabel
-                                        size="large"
-                                        label={t("back.event.form.name")}
-                                        required
-                                        readOnly={!isEditable}
-                                    />
-                                </CommonForm.Item>
-                            </Col>
-                            <Col xs={24} md={8}>
-                                <CommonForm.Item
-                                    name="type"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: t("required.eventType"),
-                                        },
-                                    ]}
-                                >
-                                    <FloatingLabel
-                                        type="select"
-                                        label={t("back.event.form.selectEventType")}
-                                        required
-                                        size="large"
-                                        disabled={!isEditable}
-                                        options={eventTypeOption}
-                                        filterOption={(input, option) =>
-                                            option.label.toLowerCase().includes(input.toLowerCase())
-                                        }
-                                    />
-                                </CommonForm.Item>
-                            </Col>
-                        </Row>
-                        <Row gutter={{ xs: 2, md: 8 }}>
-                            <Col xs={24} md={roleUser === "admin" ? 16 : 24}>
-                                <CommonForm.Item
-                                    name="organizerName"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: t("required.organizerName"),
-                                        },
-                                    ]}
-                                >
-                                    <FloatingLabel
-                                        size="large"
-                                        label={t("back.event.form.organizerName")}
-                                        required
-                                        readOnly={!isEditable}
-                                    />
-                                </CommonForm.Item>
-                            </Col>
-                            <Col xs={24} md={8}>
-                                {roleUser === "admin" && (
-                                    <CommonForm.Item
-                                        name="organizerId"
-                                        rules={[
-                                            {
-                                                required: true,
-                                                message: t("organizer"),
-                                            },
-                                        ]}
-                                    >
-                                        <FloatingLabel
-                                            type="select"
-                                            label={t("back.event.form.selectOrganizer")}
-                                            required
-                                            showSearch
-                                            size="large"
-                                            disabled={isLoadingOrganizer}
-                                            options={optionOrganizer}
-                                            filterOption={(input, option) =>
-                                                option.label.toLowerCase().includes(input.toLowerCase())
-                                            }
-                                        />
-                                    </CommonForm.Item>
-                                )}
-                            </Col>
-                        </Row>
-                        <Row gutter={{ xs: 2, md: 8 }}>
-                            <Col xs={24} md={16}>
-                                <CommonForm.Item
-                                    name="location"
-                                >
-                                    <FloatingLabel
-                                        size="large"
-                                        label={t("back.event.form.location")}
-                                        readOnly={!isEditable}
-                                    />
-                                </CommonForm.Item>
-                            </Col>
-                            <Col xs={24} md={8}>
-                                <CommonForm.Item
-                                    name="provinceId"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: t("required.province"),
-                                        },
-                                    ]}
-                                >
-                                    <FloatingLabel
-                                        type="select"
-                                        label={t("back.event.form.selectProvince")}
-                                        required
-                                        showSearch
-                                        size="large"
-                                        disabled={isLoadingProvince}
-                                        options={provinceOption}
-                                        filterOption={(input, option) => {
-                                            const str = option.filterLabel || (typeof option.label === 'string' ? option.label : '');
-                                            return str.toLowerCase().includes(input.toLowerCase());
-                                        }}
-                                    />
-                                </CommonForm.Item>
-                            </Col>
-                        </Row>
-                        <Row gutter={{ xs: 2, md: 8 }}>
-                            <Col xs={24} md={8}>
-                                <CommonForm.Item
-                                    name="startRegistrationDate"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: t("required.startRegistrationDate"),
-                                        },
-                                    ]}
-                                >
-                                    <FloatingLabel
-                                        type="date"
-                                        showTime
-                                        required
-                                        label={t("back.event.form.startRegistrationDate")}
-                                        className="w-full"
-                                        disabled={!isEditable}
-                                        minDate={dayjs(new Date())}
-                                    />
-                                </CommonForm.Item>
-                            </Col>
-                            <Col xs={24} md={8}>
-                                <CommonForm.Item
-                                    name="endRegistrationDate"
-                                    dependencies={['startRegistrationDate']}
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: t("required.endRegistrationDate"),
-                                        },
-                                        ({ getFieldValue }) => ({
-                                            validator(_, value) {
-                                                const startDate = getFieldValue('startRegistrationDate');
-                                                if (!value || !startDate) {
-                                                    return Promise.resolve();
-                                                }
-                                                if (dayjs(value).isAfter(dayjs(startDate))) {
-                                                    return Promise.resolve();
-                                                }
-                                                return Promise.reject(new Error(t("validation.endDateAfterStart")));
-                                            },
-                                        }),
-                                    ]}
-                                >
-                                    <FloatingLabel
-                                        type="date"
-                                        showTime
-                                        required
-                                        label={t("back.event.form.endRegistrationDate")}
-                                        className="w-full"
-                                        disabled={!isEditable}
-                                        minDate={startRegistrationDate ? dayjs(startRegistrationDate) : dayjs(new Date())}
-                                    />
-                                </CommonForm.Item>
-                            </Col>
-                            <Col xs={24} md={8}>
-                                <CommonForm.Item
-                                    name="eventDate"
-                                    dependencies={['endRegistrationDate']}
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: t("required.eventDate"),
-                                        },
-                                        ({ getFieldValue }) => ({
-                                            validator(_, value) {
-                                                const endDate = getFieldValue('endRegistrationDate');
-                                                if (!value || !endDate) {
-                                                    return Promise.resolve();
-                                                }
-                                                if (dayjs(value).isAfter(dayjs(endDate))) {
-                                                    return Promise.resolve();
-                                                }
-                                                return Promise.reject(new Error(t("validation.eventDateAfterEndRegistration")));
-                                            },
-                                        }),
-                                    ]}
-                                >
-                                    <FloatingLabel
-                                        type="date"
-                                        required
-                                        label={t("back.event.form.eventDate")}
-                                        className="w-full"
-                                        disabled={!isEditable}
-                                        minDate={endRegistrationDate ? dayjs(endRegistrationDate).add(1, 'day') : dayjs(new Date()).add(1, 'day')}
-                                    />
-                                </CommonForm.Item>
-                            </Col>
-                        </Row>
-                        <Row gutter={{ xs: 2, md: 8 }}>
-                            <Col xs={24} md={12}>
-                                <CommonForm.Item
-                                    name="link"
-                                >
-                                    <FloatingLabel
-                                        size="large"
-                                        label={t("back.event.form.link")}
-                                        readOnly={!isEditable}
-                                    />
-                                </CommonForm.Item>
-                            </Col>
-                            <Col xs={24} md={12}>
-                                <CommonForm.Item
-                                    name="shippingFee"
-                                >
-                                    <FloatingLabel
-                                        type="number"
-                                        size="large"
-                                        className="w-full"
-                                        label={t("back.event.form.shippingFee")}
-                                        addonAfter={t("general.unitBaht")}
-                                    />
-                                </CommonForm.Item>
-                            </Col>
-                        </Row>
-                        <Row gutter={{ xs: 2, md: 8 }}>
-                            <Col xs={24} md={8}>
-                                <CommonForm.Item
-                                    name="eventPrimaryColor"
-                                >
-                                    <FloatingLabel
-                                        type="color"
-                                        label={t("back.event.form.eventPrimaryColor")}
-                                    />
-                                </CommonForm.Item>
-                            </Col>
-                            <Col xs={24} md={8}>
-                                <CommonForm.Item
-                                    name="eventSecondaryColor"
-                                >
-                                    <FloatingLabel
-                                        type="color"
-                                        label={t("back.event.form.eventSecondaryColor")}
-                                    />
-                                </CommonForm.Item>
-                            </Col>
-                            <Col xs={24} md={8}>
-                                <CommonForm.Item
-                                    name="eventFontColor"
-                                >
-                                    <FloatingLabel
-                                        type="color"
-                                        label={t("back.event.form.eventFontColor")}
-                                    />
-                                </CommonForm.Item>
-                            </Col>
-                        </Row>
-                        <Row gutter={{ xs: 2, md: 8 }}>
-                            <Col xs={24}>
-                                <CommonForm.Item
-                                    name="description"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: t("required.description"),
-                                        },
-                                    ]}
-                                >
-                                    <FloatingLabel
-                                        type="tiptap"
-                                        size="large"
-                                        label={t("back.event.form.description")}
-                                        required
-                                        readOnly={!isEditable}
-                                    />
-                                </CommonForm.Item>
-                            </Col>
-                        </Row>
+                            </div>
 
-                        <Title>{t("back.event.form.paymentTypes")}</Title>
-                        <PaymentTypes form={form} />
-
-                        <Row gutter={{ xs: 2, md: 8 }}>
-                            <Col xs={24}>
-                                <CommonForm.Item
-                                    name="eventTypeTitle"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: t("required.eventTypeTitle"),
-                                        },
-                                    ]}
-                                >
-                                    <FloatingLabel
-                                        size="large"
-                                        label={t("back.event.form.eventTypeTitle")}
-                                        required
-                                        readOnly={!isEditable}
-                                    />
-                                </CommonForm.Item>
-                            </Col>
-                        </Row>
-                        <EventTypes form={form} />
-
-                        <Title>{t("back.event.form.selectionFields")}</Title>
-                        <EventSelections form={form} />
-
-                        <Title>{t("back.event.form.conditions")}</Title>
-                        <EventConditions form={form} />
-
-                        <Title>{t("back.event.form.shirtTypeAndSize")}</Title>
-                        <ShirtTypes form={form} />
-
-                        <Title>{t("back.event.form.addOns")}</Title>
-                        <div className="text-sm text-gray-500 mb-3">{t("back.event.form.addOnsHelp")}</div>
-                        <EventAddOns form={form} isEditable={isEditable} />
-
-                        <Title>{t("back.event.form.additionalInfo")}</Title>
-                        <EventDetails form={form} />
-
-                        <div className='flex'>
-                            {
-                                isEditable &&
+                            <div className="border-t border-[#e5e5ea] pt-6 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
                                 <div>
-                                    <Button
-                                        type='primary'
-                                        loading={submitting}
-                                        htmlType="submit"
-                                    >
-                                        {t("general.buttonSave")}
-                                    </Button>
+                                    <p className="m-0 mb-6 text-sm font-semibold text-[#1d1d1f]">{t("back.event.form.section.colors")}</p>
+                                    <Row gutter={gutter}>
+                                        <Col xs={24} md={8}>
+                                            <CommonForm.Item name="eventPrimaryColor">
+                                                <FloatingLabel type="color" label={t("back.event.form.eventPrimaryColor")} />
+                                            </CommonForm.Item>
+                                        </Col>
+                                        <Col xs={24} md={8}>
+                                            <CommonForm.Item name="eventSecondaryColor">
+                                                <FloatingLabel type="color" label={t("back.event.form.eventSecondaryColor")} />
+                                            </CommonForm.Item>
+                                        </Col>
+                                        <Col xs={24} md={8}>
+                                            <CommonForm.Item name="eventFontColor">
+                                                <FloatingLabel type="color" label={t("back.event.form.eventFontColor")} />
+                                            </CommonForm.Item>
+                                        </Col>
+                                    </Row>
                                 </div>
-                            }
-                        </div>
+                                <ThemePreview
+                                    t={t}
+                                    name={eventName}
+                                    primary={toHex(primaryColor)}
+                                    secondary={toHex(secondaryColor)}
+                                    font={toHex(fontColor)}
+                                />
+                            </div>
+                        </SectionCard>
+
+                        {roleUser === "admin" && (
+                            <SectionCard id="ef-settings" title={t("back.event.form.section.settings")} description={t("back.event.form.section.settingsDesc")} bodyClassName="!py-2">
+                                <div className="flex items-center justify-between gap-4 py-4 border-b border-[#e5e5ea]">
+                                    <div>
+                                        <p className="m-0 text-sm font-semibold text-[#1d1d1f]">{t("back.event.form.showChecklist")}</p>
+                                        <p className="m-0 mt-0.5 text-xs text-[#6e6e73]">{t("back.event.form.showChecklistHint")}</p>
+                                    </div>
+                                    <CommonForm.Item name="showChecklist" valuePropName="checked" className="!mb-0">
+                                        <Switch disabled={!isEditable} />
+                                    </CommonForm.Item>
+                                </div>
+                                <div className="flex items-center justify-between gap-4 py-4">
+                                    <div>
+                                        <p className="m-0 text-sm font-semibold text-[#1d1d1f] flex items-center gap-2">
+                                            {t("back.event.form.testMode")}
+                                            <span className="inline-flex items-center h-5 px-2 rounded-full bg-[rgba(255,59,48,0.1)] text-[#d70015] text-[10px] font-bold tracking-wide">SANDBOX</span>
+                                        </p>
+                                        <p className="m-0 mt-0.5 text-xs text-[#6e6e73]">{t("back.event.form.testModeDesc")}</p>
+                                    </div>
+                                    <CommonForm.Item name="testMode" valuePropName="checked" className="!mb-0">
+                                        <Switch disabled={!isEditable} className={testMode ? "!bg-[#ff3b30]" : ""} />
+                                    </CommonForm.Item>
+                                </div>
+                                {testMode && (
+                                    <div className="mb-4 rounded-xl border border-[#ffc0bd] bg-[#fff2f2] px-4 py-3 flex gap-3">
+                                        <WarningOutlined className="text-[#d70015] mt-0.5" />
+                                        <div>
+                                            <p className="m-0 text-sm font-semibold text-[#d70015]">{t("back.event.form.testModeWarnTitle")}</p>
+                                            <p className="m-0 mt-0.5 text-xs text-[#86181d]">{t("back.event.form.testModeHint")}</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </SectionCard>
+                        )}
+
+                        <SectionCard id="ef-description" title={t("back.event.form.section.description")} description={t("back.event.form.section.descriptionDesc")}>
+                            <CommonForm.Item name="description" rules={[{ required: true, message: t("required.description") }]}>
+                                <FloatingLabel type="tiptap" size="large" label={t("back.event.form.description")} required readOnly={!isEditable} />
+                            </CommonForm.Item>
+                        </SectionCard>
+
+                        <SectionCard id="ef-race" title={t("back.event.form.section.race")} description={t("back.event.form.section.raceDesc")}>
+                            <Title>{t("back.event.form.paymentTypes")}</Title>
+                            <PaymentTypes form={form} />
+                            <div className="border-t border-[#e5e5ea] my-6" />
+                            <CommonForm.Item name="eventTypeTitle" rules={[{ required: true, message: t("required.eventTypeTitle") }]}>
+                                <FloatingLabel size="large" label={t("back.event.form.eventTypeTitle")} required readOnly={!isEditable} />
+                            </CommonForm.Item>
+                            <EventTypes form={form} />
+                        </SectionCard>
+
+                        <SectionCard id="ef-questions" title={t("back.event.form.section.questions")} description={t("back.event.form.section.questionsDesc")}>
+                            <Title>{t("back.event.form.selectionFields")}</Title>
+                            <EventSelections form={form} />
+                            <div className="border-t border-[#e5e5ea] my-6" />
+                            <Title>{t("back.event.form.conditions")}</Title>
+                            <EventConditions form={form} />
+                        </SectionCard>
+
+                        <SectionCard id="ef-shirts" title={t("back.event.form.section.shirts")} description={t("back.event.form.section.shirtsDesc")}>
+                            <Title>{t("back.event.form.shirtTypeAndSize")}</Title>
+                            <ShirtTypes form={form} />
+                            <div className="border-t border-[#e5e5ea] my-6" />
+                            <Title>{t("back.event.form.addOns")}</Title>
+                            <div className="rounded-xl bg-[#f0f6ff] border border-[#cfe2fb] text-[13px] text-[#0b4f99] px-4 py-3 mb-4">
+                                {t("back.event.form.addOnsHelp")}
+                            </div>
+                            <EventAddOns form={form} isEditable={isEditable} />
+                        </SectionCard>
+
+                        <SectionCard id="ef-extra" title={t("back.event.form.section.extra")} description={t("back.event.form.section.extraDesc")}>
+                            <EventDetails form={form} />
+                        </SectionCard>
                     </div>
+
+                    {isEditable && (
+                        <StickyActionBar
+                            dirty={dirty}
+                            onCancel={handleBack}
+                            saving={submitting}
+                            saveHtmlType="submit"
+                            saveIcon={<SaveOutlined />}
+                            saveText={t("general.buttonSave")}
+                        />
+                    )}
                 </CommonForm>
             </Spin>
         </>
     )
 }
+
+/** Sticky pill nav that scrolls to each section card and follows the scroll position. */
+const SectionNav = ({ sections }) => {
+    const [active, setActive] = useState(sections[0]?.id);
+    const sectionIds = sections.map((s) => s.id).join();
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const visible = entries.filter((e) => e.isIntersecting)
+                    .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+                if (visible[0]) setActive(visible[0].target.id);
+            },
+            { rootMargin: "-140px 0px -55% 0px" }
+        );
+        sectionIds.split(",").forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) observer.observe(el);
+        });
+        return () => observer.disconnect();
+    }, [sectionIds]);
+
+    return (
+        <div className="sticky top-16 z-20 -mx-1 px-1 py-2 mb-4 bg-[#f5f5f7]/90 backdrop-blur">
+            <div className="bo-card flex gap-1 p-1.5 overflow-x-auto">
+                {sections.map(({ id, label }) => (
+                    <button
+                        key={id}
+                        type="button"
+                        onClick={() => {
+                            setActive(id);
+                            document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }}
+                        className={`shrink-0 px-3.5 h-9 rounded-lg text-[13px] cursor-pointer transition-colors ${active === id ? "bg-[rgba(0,113,227,0.1)] text-[#0071e3] font-semibold" : "text-[#424245] hover:bg-[rgba(0,0,0,0.04)]"}`}
+                    >
+                        {label}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const toHex = (c) => (typeof c === "string" ? c : c?.toHexString?.() || null);
+
+/** How the event's colours look on the public registration card. */
+const ThemePreview = ({ t, name, primary, secondary, font }) => (
+    <div className="bo-inset p-4">
+        <p className="m-0 mb-3 text-xs font-semibold text-[#6e6e73]">{t("back.event.form.themePreview")}</p>
+        <div className="bo-card p-4">
+            <span
+                className="inline-flex items-center h-5 px-2 rounded text-[10px] font-bold uppercase tracking-wide"
+                style={{ background: secondary || "#38bdf8", color: font || "#ffffff" }}
+            >
+                {t("back.event.form.themePreviewTag")}
+            </span>
+            <p className="m-0 mt-2 text-sm font-bold text-[#1d1d1f] truncate">{name || t("back.event.form.name")}</p>
+            <div
+                className="mt-3 h-10 rounded-lg flex items-center justify-center text-sm font-semibold"
+                style={{ background: primary || "#0071e3", color: font || "#ffffff" }}
+            >
+                {t("back.event.form.themePreviewButton")} →
+            </div>
+        </div>
+    </div>
+);
 
 const Title = ({ className, children }) => <div className={`text-lg font-bold mb-3 ${className || ""}`}>{children}</div>
 

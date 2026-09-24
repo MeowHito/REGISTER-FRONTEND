@@ -9,6 +9,7 @@ import dayjs from "dayjs";
 import FloatingLabel from "components/floatingLabel";
 import { useTranslation } from "react-i18next";
 import HistoryDetail from "./historyDetail";
+import PageHeader from "components/pageHeader";
 
 const statusColors = {
   PENDING: { color: "#faad14", label: "รอดำเนินการ" },
@@ -161,6 +162,9 @@ const HistoryList = () => {
 
   return mode === "list" ?
     <>
+      <PageHeader menu="historyList" />
+      <div className="bo-card overflow-hidden">
+      <div className="px-4 md:px-5 pt-5 border-b border-[#e5e5ea]">
       <CommonForm
         form={form}
         name="finance-summary-report"
@@ -207,13 +211,13 @@ const HistoryList = () => {
           </Col>
         </Row>
       </CommonForm>
+      </div>
 
       <Table
         rowKey="id"
-        className="!w-full !text-nowrap"
+        className="!w-full !text-nowrap bo-flush-table"
         dataSource={data}
         columns={columns}
-        bordered
         pagination={{
           pageSize: limitPage,
           current: page,
@@ -228,6 +232,7 @@ const HistoryList = () => {
         scroll={{ x: true }}
         loading={isFetching}
       />
+      </div>
     </>
     : <HistoryDetail paymentId={paymentId} setMode={setMode} />
 };

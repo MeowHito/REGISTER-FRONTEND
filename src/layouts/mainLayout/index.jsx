@@ -11,6 +11,8 @@ export default function MainLayout() {
   const loading = useSelector((state) => state.loading.loading);
   const { pathname } = useLocation();
   const isFullWidth = isFullWidthPath(pathname);
+  // The back office draws its own "Console" header (components/backOfficeHeader).
+  const isBackOffice = pathname === '/backoffice' || pathname.startsWith('/backoffice/');
   return (
     <>
       {loading &&
@@ -19,8 +21,8 @@ export default function MainLayout() {
         </div>
       }
       <Layout className={`min-h-screen mx-auto ${isFullWidth ? 'w-full' : 'md:max-w-[1200px]'}`}>
-        <Header />
-        <AnnouncementBanner />
+        {!isBackOffice && <Header />}
+        {!isBackOffice && <AnnouncementBanner />}
         <Content id="scrollableDiv">
           <Outlet />
         </Content>

@@ -312,7 +312,41 @@
         "addOnNoteLabelEn": "Note field label (English)",
         "addOnNoteRequired": "Required",
         "addOnSoldOut": "Sold out",
-        "addOnSoldCount": "{{count}} sold"
+        "addOnSoldCount": "{{count}} sold",
+        "backToList": "Back to event list",
+        "createTitle": "Create event",
+        "editTitle": "Edit event",
+        "draftTag": "Draft",
+        "publishedTag": "Active",
+        "subtitle": "Event details, race types and registration conditions",
+        "linkPreview": "Link preview",
+        "shippingFeeHint": "When shirts and race kits are shipped by post",
+        "showChecklistHint": "Show a button for runners to check the participant list, BIB numbers and status",
+        "testModeDesc": "Open registration for testing without real payment",
+        "testModeWarnTitle": "Test mode warning",
+        "themePreview": "Theme preview",
+        "themePreviewTag": "Run for health",
+        "themePreviewButton": "Register now",
+        "section": {
+          "general": "General",
+          "generalDesc": "Basic event information used to identify it in the system",
+          "dates": "Registration and race dates",
+          "theme": "Images & theme",
+          "themeDesc": "Banner images and event colours shown on every device",
+          "colors": "Event colours",
+          "settings": "Registration settings",
+          "settingsDesc": "Visibility and behaviour of the registration system",
+          "description": "Event details",
+          "descriptionDesc": "Main content of the event page: text, images and tables",
+          "race": "Races & payment",
+          "raceDesc": "Pricing phases (e.g. Early Bird), distances, prices, quotas and age groups",
+          "questions": "Questions & terms",
+          "questionsDesc": "Extra registration questions and the terms runners must accept",
+          "shirts": "Shirts & add-ons",
+          "shirtsDesc": "Shirt types/sizes and add-on packages such as hotels and photos",
+          "extra": "Additional info",
+          "extraDesc": "Extra information sections shown on the event page"
+        }
       },
       "home": {
         "confirmPublish": "Do you want to publish the event?",
@@ -334,7 +368,26 @@
         "status": "Active",
         "eventName": "Event",
         "manageParticipants": "Manage Participants",
-        "managePermission": "Manage event access permissions"
+        "managePermission": "Manage event access permissions",
+        "subtitle": "Manage events and their registration status",
+        "statPublished": "Active events",
+        "statClosed": "Registration closed",
+        "statProvinces": "Provinces",
+        "ofTotal": "{{percent}}% of total",
+        "nationwide": "Nationwide",
+        "searchPlaceholder": "Search event name",
+        "statusTitle": "Status",
+        "statusActive": "Active",
+        "statusDraft": "Draft",
+        "province": "Province",
+        "refresh": "Refresh",
+        "export": "Download Excel",
+        "noPermission": "You don't have permission to edit this event",
+        "duplicate": "Duplicate",
+        "duplicateConfirmTitle": "Duplicate this event?",
+        "duplicateConfirm": "All settings of \"{{name}}\" will be copied into a new draft (participants, orders, coupons and collaborators are not copied).",
+        "duplicateSuccess": "Event duplicated",
+        "duplicateSuccessDesc": "The copy was saved as a draft. Set its URL and dates before publishing."
       },
       "eventPermission": {
         "eventName": "Event",
@@ -420,7 +473,8 @@
           "bloodType": "Blood Group",
           "emergencyContact": "Emergency Contact",
           "emergencyRelation": "Relationship",
-          "emergencyPhone": "Emergency Phone"
+          "emergencyPhone": "Emergency Phone",
+          "sectionAddOns": "Add-ons"
         },
         "home": {
           "eventType": "Competition Type",
@@ -448,7 +502,10 @@
             "failed": "Failed to send email: {{reason}}",
             "error": "An error occurred while sending email: {{message}}"
           },
-          "orderNo": "Order No."
+          "orderNo": "Order No.",
+          "addOns": "Add-ons",
+          "backToEvents": "Back to events",
+          "subtitle": "Paid participants, by race type"
         },
         "upload": {
           "alertError": "Please upload according to the specified template.",
@@ -865,7 +922,22 @@
       "statusUndefined": "Unspecified",
       "statusNotOpenYet": "Not open yet",
       "unknown": "Unknown",
-      "people": "participants"
+      "people": "participants",
+      "addOn": "Add-ons",
+      "addOnEmpty": "This event has no add-ons",
+      "addOnName": "Add-on",
+      "addOnMode": "Sold",
+      "addOnPerApplicant": "Per runner",
+      "addOnPerOrder": "Per order",
+      "addOnSold": "Sold (paid)",
+      "addOnReserved": "Pending / review",
+      "addOnQuota": "Quota",
+      "addOnUnlimited": "Unlimited",
+      "addOnLeft": "{{left}} left",
+      "addOnRevenue": "Revenue",
+      "addOnCount": "Add-ons",
+      "addOnSoldTotal": "Units sold",
+      "addOnRevenueTotal": "Add-on revenue"
     },
     "history": {
       "historyList": {
@@ -1337,7 +1409,11 @@
           "totalAmount": "Total Registration Fee",
           "totalNetAmount": "Net Amount",
           "totalServiceFee": "Service Fee",
-          "totalAmountWithFee": "Total with Fee"
+          "totalAmountWithFee": "Total with Fee",
+          "addOn": "Add-on",
+          "unitPrice": "Unit price",
+          "addOnQty": "Qty",
+          "totalAddOn": "Add-ons total"
         },
         "modal": {
           "title": "Enter Receipt Remark",
@@ -1347,7 +1423,8 @@
           "placeholders": {
             "remark": "Enter a remark for receipt"
           }
-        }
+        },
+        "addOnTitle": "Add-ons"
       },
       "participantSummary": {
         "title": "Registrant Summary",
@@ -1382,7 +1459,8 @@
           "fee": "fee",
           "total": "Total"
         }
-      }
+      },
+      "addOnColumn": "Add-ons"
     },
     "setting": {
       "profile": {
@@ -1429,7 +1507,19 @@
         "approver": "Assign Approver",
         "selectUserAdmin": "Select Approver",
         "signature": "Signature",
-        "takeSignature": "Sign"
+        "takeSignature": "Sign",
+        "sectionBasic": "Basic information & profile photo",
+        "sectionBasicDesc": "General information shown in the system and on official documents",
+        "profileImgHint": "JPG or PNG, square 1:1 recommended (400×400px)",
+        "idNoLockedHint": "Locked to protect your personal data",
+        "ageYears": "{{age}} years",
+        "sectionHealth": "Health information",
+        "sectionHealthDesc": "Used only in case of an emergency during an event",
+        "sectionEmergencyDesc": "Someone our staff can contact right away if needed",
+        "emergencyRelation": "Relationship",
+        "sectionAddressDesc": "Address for documents and event coordination",
+        "sectionShippingDesc": "Address for shipping shirts and race kits",
+        "sectionDocumentDesc": "Approver and signature used on contract documents"
       },
       "account": {
         "personal": "Personal Information",
@@ -1605,7 +1695,8 @@
           "priority": "Priority",
           "instance": "Instance"
         }
-      }
+      },
+      "subtitle": "Manage your personal information and account settings in ACTION"
     },
     "menu": {
       "profile": {
@@ -2003,6 +2094,34 @@
         "approved": "Approved successfully",
         "empty": "No organizers pending approval"
       }
+    },
+    "shell": {
+      "group": {
+        "main": "Main",
+        "manage": "Management",
+        "system": "System"
+      },
+      "collapse": "Collapse",
+      "home": "Home",
+      "role": {
+        "admin": "Super administrator",
+        "organizer": "Organizer",
+        "guest": "Runner"
+      },
+      "unsavedChanges": "You have unsaved changes",
+      "allSaved": "Everything is up to date",
+      "savedTitle": "Saved successfully",
+      "savedDesc": "Updated just now",
+      "showing": "Showing {{from}}-{{to}} of {{total}}",
+      "perPage": "{{size}} / page",
+      "notification": {
+        "title": "Notifications",
+        "markAllRead": "Mark all as read",
+        "empty": "No notifications yet",
+        "justNow": "Just now",
+        "minutesAgo": "{{count}} min ago",
+        "hoursAgo": "{{count}} h ago"
+      }
     }
   },
   "general": {
@@ -2357,6 +2476,12 @@
       "noMatch": "No matching results",
       "title": "Select Location",
       "complete": "Complete"
+    },
+    "addOn": {
+      "qty": "Qty {{qty}}",
+      "perOrder": "Whole order",
+      "perApplicant": "This runner",
+      "note": "Note"
     }
   }
 }

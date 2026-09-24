@@ -18,6 +18,7 @@ import dayjs from "dayjs";
 import { SYS_DATE_FORMAT } from "constants/helper";
 import useMe from "hooks/useMe";
 import PermissionActionTable from "components/permissionActionTable";
+import PageHeader from 'components/pageHeader';
 
 const { TextArea } = Input;
 
@@ -282,6 +283,7 @@ const EventCalendarList = () => {
     <Spin spinning={isLoading}>
       {view === VIEWS.LIST && (
         <div>
+          <PageHeader menu="eventCalendarList" />
           <PermissionActionTable
             className="!w-full !text-nowrap"
             rowKey="eventId"

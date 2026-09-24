@@ -1,5 +1,7 @@
 import React from "react";
 import { Tabs } from "antd";
+import { useSearchParams } from "react-router-dom";
+import PageHeader from "components/pageHeader";
 import { useTranslation } from "react-i18next";
 import HelpRequestList from "pages/backOffice/helpRequests";
 import JobMonitoring from "pages/backOffice/setting/jobMonitoring";
@@ -8,41 +10,36 @@ import PendingOrganizers from "pages/backOffice/operations/PendingOrganizers";
 import PaymentMismatch from "pages/backOffice/paymentMismatch";
 import ResendConfirmation from "pages/backOffice/resendConfirmation";
 
+// Tabs are addressable (?tab=helpRequests) so notifications can deep-link.
+const TAB_KEYS = ["pendingOrganizers", "helpRequests", "jobMonitoring", "emailQueue", "paymentMismatch", "resendConfirmation"];
+
+const inCard = (node) => <div className="bo-card bo-card-pad">{node}</div>;
+
 export default function Operations() {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requested = searchParams.get("tab");
+  const activeKey = TAB_KEYS.includes(requested) ? requested : "helpRequests";
 
   const items = [
-    {
-      key: "0",
-      label: t("back.operations.tab.pendingOrganizers"),
-      children: <PendingOrganizers />,
-    },
-    {
-      key: "1",
-      label: t("back.operations.tab.helpRequests"),
-      children: <HelpRequestList />,
-    },
-    {
-      key: "2",
-      label: t("back.operations.tab.jobMonitoring"),
-      children: <JobMonitoring />,
-    },
-    {
-      key: "3",
-      label: t("back.operations.tab.emailQueue"),
-      children: <EmailQueue />,
-    },
-    {
-      key: "4",
-      label: t("back.operations.tab.paymentMismatch"),
-      children: <PaymentMismatch />,
-    },
-    {
-      key: "5",
-      label: t("back.operations.tab.resendConfirmation"),
-      children: <ResendConfirmation />,
-    },
+    { key: "pendingOrganizers", label: t("back.operations.tab.pendingOrganizers"), children: inCard(<PendingOrganizers />) },
+    { key: "helpRequests", label: t("back.operations.tab.helpRequests"), children: inCard(<HelpRequestList />) },
+    { key: "jobMonitoring", label: t("back.operations.tab.jobMonitoring"), children: inCard(<JobMonitoring />) },
+    { key: "emailQueue", label: t("back.operations.tab.emailQueue"), children: inCard(<EmailQueue />) },
+    { key: "paymentMismatch", label: t("back.operations.tab.paymentMismatch"), children: <PaymentMismatch /> },
+    { key: "resendConfirmation", label: t("back.operations.tab.resendConfirmation"), children: <ResendConfirmation /> },
   ];
 
-  return <Tabs items={items} defaultActiveKey="1" destroyOnHidden />;
+  return (
+    <>
+      <PageHeader menu="operations" />
+      <Tabs
+        className="bo-tabs"
+        items={items}
+        activeKey={activeKey}
+        onChange={(key) => setSearchParams({ tab: key }, { replace: true })}
+        destroyOnHidden
+      />
+    </>
+  );
 }

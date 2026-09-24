@@ -12,6 +12,7 @@ import Shirt from "./tabs/shirt";
 import Province from "./tabs/province";
 import RegistrationDateTime from "./tabs/registrationDateTime";
 import General from "./tabs/general";
+import AddOn from "./tabs/addOn";
 import useCountryStateHook from "hooks/useCountryStateHook";
 
 const DashboardRegistration = () => {
@@ -171,9 +172,9 @@ const DashboardRegistration = () => {
     <Spin spinning={isLoadingData}>
       <div className="w-full h-auto mx-auto">
         {roleUser === "admin" && (
-          <Row gutter={[16, 16]} className="mb-8">
+          <Row gutter={[16, 16]} className="bo-card bo-card-pad !mx-0 mb-6">
             <Col xs={24} sm={12}>
-              <label className="block text-xl font-semibold opacity-60 mb-2">
+              <label className="block text-[13px] font-semibold text-[#424245] mb-2">
                 {t("back.dashboard.organizer")}
               </label>
               <Select
@@ -186,7 +187,7 @@ const DashboardRegistration = () => {
               />
             </Col>
             <Col xs={24} sm={12}>
-              <label className="block text-xl font-semibold opacity-60 mb-2">
+              <label className="block text-[13px] font-semibold text-[#424245] mb-2">
                 {t("back.dashboard.event")}
               </label>
               <Select
@@ -201,9 +202,9 @@ const DashboardRegistration = () => {
           </Row>
         )}
         {roleUser === "organizer" && (
-          <Row gutter={[16, 16]} className="mb-8">
+          <Row gutter={[16, 16]} className="bo-card bo-card-pad !mx-0 mb-6">
             <Col xs={24}>
-              <label className="text-xl font-semibold opacity-60 mb-2">
+              <label className="block text-[13px] font-semibold text-[#424245] mb-2">
                 {t("back.dashboard.event")}
               </label>
               <Select
@@ -228,6 +229,7 @@ const DashboardRegistration = () => {
               { key: "shirt", label: t("back.dashboard.shirt"), children: <Shirt {...tabProps} /> },
               { key: "province", label: t("back.dashboard.province"), children: <Province {...tabProps} /> },
               { key: "registrationDateTime", label: t("back.dashboard.registration"), children: <RegistrationDateTime {...tabProps} /> },
+              { key: "addOn", label: t("back.dashboard.addOn"), children: <AddOn {...tabProps} /> },
             ]}
           />
         </Spin>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Dropdown } from 'antd';
+import { GlobalOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import Cookies from "js-cookie";
 
@@ -17,7 +18,7 @@ const languages = [
   { code: 'th', label: 'ไทย', flagKey: 'th' },
 ];
 
-const LanguageSelector = ({ className }) => {
+const LanguageSelector = ({ className, variant }) => {
   const { i18n } = useTranslation();
 
   const [currentLanguage, setCurrentLanguage] = useState(() => {
@@ -58,6 +59,22 @@ const LanguageSelector = ({ className }) => {
       i18n.changeLanguage(currentLanguage);
     }
   }, [currentLanguage, i18n]);
+
+  // Back-office header shows a labelled pill ("🌐 TH ไทย") instead of the round flag.
+  if (variant === 'pill') {
+    return (
+      <Dropdown menu={{ items, onClick: handleClick }} trigger={['click']} placement="bottomRight">
+        <button
+          type="button"
+          className={`${className || ''} flex items-center gap-2 h-9 px-3 rounded-full border border-[#d2d2d7] bg-white text-[13px] font-medium text-[#1d1d1f] hover:bg-[#f5f5f7] transition-colors cursor-pointer`}
+        >
+          <GlobalOutlined className="text-[15px] text-[#424245]" />
+          <span className="font-semibold">{currentLang.code.toUpperCase()}</span>
+          <span className="text-[#6e6e73] hidden sm:inline">{currentLang.label}</span>
+        </button>
+      </Dropdown>
+    );
+  }
 
   return (
     <Dropdown

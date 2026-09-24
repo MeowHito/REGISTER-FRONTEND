@@ -94,6 +94,13 @@ const FinanceSummary = () => {
         }
     }, [dataFinanceSummary]);
 
+    // Add-on sales in the same event/date window, shown as their own table.
+    const { data: addOnSummary } = backOfficeServices.useQueryGetFinanceAddOnSummary({
+        id: filteredData?.id,
+        startDate: filteredData?.startDate,
+        endDate: filteredData?.endDate,
+    });
+
     const { mutateAsync: downloadSummaryFinanceExcel } = fileService.useMutationDownloadSummaryFinanceExcel();
     const { mutateAsync: downloadSummaryFinanceDocument } = fileService.useMutationSummaryFinanceDocument();
 
@@ -437,6 +444,25 @@ const FinanceSummary = () => {
                     scroll={{ x: true }}
                     onChange={handleChange}
                 />
+                {addOnSummary?.length > 0 && (
+                    <div style={{ marginTop: 24 }}>
+                        <Typography.Title level={5}>{t("back.report.financeSummary.addOnTitle")}</Typography.Title>
+                        <Table
+                            rowKey={(record) => `${record.eventTypeName}-${record.registrationFee}`}
+                            columns={[
+                                { ...columns[0] },
+                                { ...columns[1], title: t("back.report.financeSummary.columns.addOn") },
+                                { ...columns[2], title: t("back.report.financeSummary.columns.unitPrice") },
+                                { ...columns[3], title: t("back.report.financeSummary.columns.addOnQty") },
+                                { ...columns[4] },
+                            ].map(({ sorter: _sorter, search: _search, ...c }) => c)}
+                            dataSource={addOnSummary.map((row, i) => ({ ...row, key: i + 1 }))}
+                            bordered
+                            pagination={false}
+                            scroll={{ x: true }}
+                        />
+                    </div>
+                )}
                 <div style={{ marginTop: 24 }}>
                     <Typography.Title level={5}>{t("back.report.financeSummary.summaryTitle")}</Typography.Title>
 
@@ -445,6 +471,7 @@ const FinanceSummary = () => {
                         {renderRowSummary("totalDiscountCoupon", dataSummary.totalDiscountCoupon)}
                         {renderRowSummary("totalDiscountShirt", dataSummary.totalDiscountShirt)}
                         {renderRowSummary("totalShippingFee", dataSummary.totalShippingFee)}
+                        {renderRowSummary("totalAddOn", dataSummary.totalAddOn)}
                         {renderRowSummary("totalNetAmount", dataSummary.totalNetAmount)}
                         {roleUser === "admin" && (
                             <>

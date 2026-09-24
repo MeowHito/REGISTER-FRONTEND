@@ -236,6 +236,13 @@ const ParticipantSummary = () => {
             render: (value) => formatCurrency(value)
         },
         {
+            title: t("back.report.addOnColumn"),
+            dataIndex: "addOnTotal",
+            key: "addOnTotal",
+            align: "right",
+            render: (value) => formatCurrency(value)
+        },
+        {
             title: t("back.report.participantSummary.columns.totalAmount"),
             dataIndex: "totalAmount",
             key: "totalAmount",

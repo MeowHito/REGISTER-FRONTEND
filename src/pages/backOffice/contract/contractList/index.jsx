@@ -16,6 +16,7 @@ import { errorToMessage } from 'hooks/functions/errorToMessage';
 import { SYS_DATE_FORMAT } from 'constants/helper';
 import useMe from 'hooks/useMe';
 import PermissionActionTable from 'components/permissionActionTable';
+import PageHeader from 'components/pageHeader';
 
 const ContractList = () => {
     const { t } = useTranslation();
@@ -294,6 +295,7 @@ const ContractList = () => {
 
     return (
         <>
+            <PageHeader menu="contractList" />
             <Spin spinning={isLoadingData}>
                 <PermissionActionTable
                     rowKey="id"

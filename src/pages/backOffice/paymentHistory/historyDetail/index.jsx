@@ -5,6 +5,7 @@ import {
   Space, Modal, Form, Input,
 } from "antd";
 import { QuestionCircleOutlined, PaperClipOutlined, LeftOutlined, UserOutlined } from "@ant-design/icons";
+import AddOnList from "components/addOnList";
 import dayjs from "dayjs";
 import { Link, useNavigate } from "react-router-dom";
 import backOfficeServices from "services/backoffice.services";
@@ -473,12 +474,14 @@ const HistoryDetail = ({ paymentId, setMode }) => {
       {order ? (
         <>
           {/* Back Button */}
-          <div className="mb-4">
-            <Button type="link" className="p-0!" onClick={() => { setMode("list") }}>
-              <LeftOutlined className="me-2" />
-              {t("general.back")}
-            </Button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setMode("list")}
+            className="flex items-center gap-1.5 text-sm font-medium text-[#0071e3] hover:text-[#005bbf] mb-3 cursor-pointer"
+          >
+            <LeftOutlined className="text-[11px]" />
+            {t("general.back")}
+          </button>
 
           {/* Page Header Card */}
           <Card className="mb-4!" styles={{ body: { padding: "16px 24px" } }}>
@@ -599,26 +602,8 @@ const HistoryDetail = ({ paymentId, setMode }) => {
 
                     {/* Purchased add-ons — who booked the hotel room, who bought photos */}
                     {addOns.length > 0 && (
-                      <Card className="mb-4!" title={`🎁 ${t("back.reg.addOn.title")}`}>
-                        {addOns.map((a, i) => (
-                          <div
-                            key={a.id || i}
-                            className="flex justify-between gap-3 py-2 border-b border-gray-100 last:border-0"
-                          >
-                            <div className="min-w-0">
-                              <Text strong>{a.name}</Text>
-                              <div className="text-xs text-gray-500">
-                                {a.applicantName
-                                  ? a.applicantName
-                                  : `${t("back.reg.addOn.qty")}: ${a.qty}`}
-                                {a.note ? ` • 📝 ${a.note}` : ""}
-                              </div>
-                            </div>
-                            <Text className="whitespace-nowrap">
-                              {(Number(a.totalPrice) || 0).toLocaleString("th-TH")} {t("general.unitBaht")}
-                            </Text>
-                          </div>
-                        ))}
+                      <Card className="mb-4!" title={t("back.reg.addOn.title")}>
+                        <AddOnList items={addOns} />
                       </Card>
                     )}
 

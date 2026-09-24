@@ -6,6 +6,9 @@ import RevenueSummary from './revenueSummary';
 import ParticipantSummary from './participantSummary';
 import RevenueDetailSummary from './revenueDetailSummary';
 import useMe from 'hooks/useMe';
+import PageHeader from 'components/pageHeader';
+
+const inCard = (node) => <div className="bo-card bo-card-pad">{node}</div>;
 
 export default function Report() {
     const { t } = useTranslation();
@@ -21,12 +24,12 @@ export default function Report() {
             {
                 key: "1",
                 label: t("back.report.revenue"),
-                children: <RevenueSummary />
+                children: inCard(<RevenueSummary />)
             },
             {
                 key: "2",
                 label: t("back.report.revenueDetail"),
-                children: <RevenueDetailSummary />
+                children: inCard(<RevenueDetailSummary />)
             },
         );
     }
@@ -35,16 +38,19 @@ export default function Report() {
         {
             key: "3",
             label: t("back.report.summary"),
-            children: <FinanceSummary />
+            children: inCard(<FinanceSummary />)
         },
         {
             key: "4",
             label: t("back.report.participant"),
-            children: <ParticipantSummary />
+            children: inCard(<ParticipantSummary />)
         }
     );
 
     return (
-        <Tabs items={items} defaultActiveKey={roleUser === "admin" ? "1" : "2"} />
+        <>
+            <PageHeader menu="reportList" />
+            <Tabs className="bo-tabs" items={items} defaultActiveKey={roleUser === "admin" ? "1" : "3"} />
+        </>
     )
 }

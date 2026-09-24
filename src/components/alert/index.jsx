@@ -1,4 +1,9 @@
 import { COLOR } from "constants/color";
+
+// The back office ("Console") uses its own blue and a neutral cancel button.
+const inBackOffice = () => globalThis.location?.pathname?.startsWith("/backoffice");
+const confirmColor = () => (inBackOffice() ? "#0071e3" : COLOR.primary);
+const cancelColor = () => (inBackOffice() ? "#8e8e93" : "#d33");
 import Swal from "sweetalert2";
 
 export const AlertError = ({
@@ -12,7 +17,7 @@ export const AlertError = ({
     text: text,
     icon: "error",
     confirmButtonText,
-    confirmButtonColor: COLOR.primary,
+    confirmButtonColor: confirmColor(),
     allowOutsideClick: false,
     allowEscapeKey: false,
   }).then((result) => {
@@ -32,7 +37,7 @@ export const AlertWarning = ({
     text: text,
     icon: "warning",
     confirmButtonText,
-    confirmButtonColor: COLOR.primary,
+    confirmButtonColor: confirmColor(),
     allowOutsideClick: false,
     allowEscapeKey: false,
   }).then((result) => {
@@ -52,7 +57,7 @@ export const AlertSuccess = ({
     text: text,
     icon: "success",
     confirmButtonText,
-    confirmButtonColor: COLOR.primary,
+    confirmButtonColor: confirmColor(),
     allowOutsideClick: false,
     allowEscapeKey: false,
   }).then((result) => {
@@ -90,8 +95,8 @@ export const AlertConfirm = ({
     text,
     icon: "warning",
     showCancelButton: true,
-    confirmButtonColor: COLOR.primary,
-    cancelButtonColor: "#d33",
+    confirmButtonColor: confirmColor(),
+    cancelButtonColor: cancelColor(),
     confirmButtonText,
     cancelButtonText,
   }).then((result) => {

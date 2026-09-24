@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Descriptions, Button, Tag, Spin } from "antd";
-import { LeftOutlined, EditOutlined } from "@ant-design/icons";
+import { EditOutlined } from "@ant-design/icons";
 import backOfficeServices from "services/backoffice.services";
 import { useTranslation } from "react-i18next";
 import { handleQueryStatus } from "utils";
@@ -8,6 +8,7 @@ import EventCalendarForm from "../eventCalendarForm";
 import dayjs from "dayjs";
 import { SYS_DATE_FORMAT } from "constants/helper";
 import useMe from "hooks/useMe";
+import PageHeader from "components/pageHeader";
 
 const EventCalendarDetails = ({ eventId: id, onBack }) => {
   const { t } = useTranslation();
@@ -108,30 +109,18 @@ const EventCalendarDetails = ({ eventId: id, onBack }) => {
   return (
     <Spin spinning={isFetching}>
       <div>
-        <div className="mb-4">
-          <Button
-            type="link"
-            className="center"
-            onClick={(e) => {
-              e.stopPropagation();
-              onBack();
-            }}
-          >
-            <LeftOutlined size={22} className="me-2" />
-            <p>{t("back.couponList.back")}</p>
-          </Button>
-        </div>
-        <div className="w-full flex justify-between items-center pb-2 mt-4 mb-3">
-          <div className="text-2xl font-semibold opacity-60">
-            {event?.eventName}
-          </div>
-          {roleUser === "admin" && (
+        <PageHeader
+          onBack={() => onBack()}
+          backLabel={t("back.couponList.back")}
+          title={event?.eventName}
+          tag={getStatusTag(event?.isApproved)}
+          extra={roleUser === "admin" && (
             <Button type="primary" icon={<EditOutlined />} onClick={handleEdit} loading={isSubmitting}>
               {t("back.eventCalendarList.edit")}
             </Button>
           )}
-        </div>
-        <div className="mb-4">{getStatusTag(event?.isApproved)}</div>
+        />
+        <div className="bo-card bo-card-pad">
         <Descriptions
           bordered
           column={1}
@@ -139,6 +128,7 @@ const EventCalendarDetails = ({ eventId: id, onBack }) => {
           styles={{ label: { width: 160 } }}
           items={items}
         />
+        </div>
         <EventCalendarForm
           mode="edit"
           open={isModalOpen}

@@ -1,0 +1,194 @@
+/* Back-office ("Console") surface styles. Everything is scoped under .bo-shell
+   so the public site keeps its own look. Tokens live in ./theme.js. */
+
+.bo-shell {
+  background: #f5f5f7;
+  color: #1d1d1f;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---------- Surfaces ---------- */
+
+.bo-card {
+  background: #ffffff;
+  border: 1px solid #e5e5ea;
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.bo-card-pad {
+  padding: 16px;
+}
+
+@media (min-width: 768px) {
+  .bo-card-pad {
+    padding: 24px;
+  }
+}
+
+.bo-inset {
+  background: #fbfbfd;
+  border: 1px solid #e5e5ea;
+  border-radius: 12px;
+}
+
+.bo-shell .ant-card {
+  border-color: #e5e5ea;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+/* ---------- Tables ---------- */
+
+.bo-shell .ant-table-thead > tr > th {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border-bottom: 1px solid #e5e5ea !important;
+  white-space: nowrap;
+}
+
+.bo-shell .ant-table-tbody > tr > td {
+  border-bottom-color: #f0f0f2;
+}
+
+/* A table that sits flush inside a .bo-card (no double border / radius). */
+.bo-card .bo-flush-table .ant-table,
+.bo-card .bo-flush-table .ant-table-container {
+  border-radius: 0 !important;
+}
+
+.bo-card .bo-flush-table .ant-table-container {
+  border-inline-start: 0 !important;
+  border-top: 0 !important;
+}
+
+.bo-card .bo-flush-table .ant-table-cell:last-child {
+  border-inline-end: 0 !important;
+}
+
+/* Table footer: "Showing 1-5 of 6" on the left, pager + page size on the right. */
+.bo-shell .ant-table-wrapper .ant-table-pagination.ant-pagination {
+  align-items: center;
+  row-gap: 8px;
+  padding: 14px 20px;
+  margin: 0 !important;
+  border-top: 1px solid #e5e5ea;
+}
+
+.bo-shell .ant-table-wrapper .ant-pagination-total-text {
+  margin-inline-end: auto;
+  color: #424245;
+  font-size: 13px;
+}
+
+.bo-shell .ant-pagination .ant-pagination-item-active a {
+  color: #ffffff !important;
+}
+
+/* ---------- Segmented-style page tabs (macOS) ---------- */
+
+.bo-tabs > .ant-tabs-nav {
+  background: #ececf0;
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 24px !important;
+}
+
+.bo-tabs > .ant-tabs-nav::before,
+.bo-tabs > .ant-tabs-nav .ant-tabs-ink-bar {
+  display: none;
+}
+
+.bo-tabs > .ant-tabs-nav .ant-tabs-tab {
+  padding: 8px 16px;
+  margin: 0 !important;
+  border-radius: 9px;
+  color: #424245;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bo-tabs > .ant-tabs-nav .ant-tabs-tab:hover {
+  color: #1d1d1f;
+}
+
+.bo-tabs > .ant-tabs-nav .ant-tabs-tab-active {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.bo-tabs > .ant-tabs-nav .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #1d1d1f !important;
+  font-weight: 600;
+}
+
+.bo-tabs > .ant-tabs-nav .ant-tabs-nav-more {
+  border-radius: 9px;
+}
+
+/* ---------- Forms ---------- */
+
+.bo-shell .float-label .float-input:not(textarea),
+.bo-shell .float-label .float-input:not(textarea) .ant-input-number-wrapper input,
+.bo-shell .float-label .float-input:not(textarea) .ant-input-number-input-wrap input {
+  height: 42px;
+}
+
+/* Inputs are 42px here (40px on the public site): re-centre the resting label only. */
+.bo-shell .float-label:not(:has(.float-color)) .label.as-placeholder {
+  top: 9px;
+}
+
+.bo-shell .float-label:not(:has(.float-color)) .as-placeholder {
+  color: #86868b;
+}
+
+.bo-shell .ant-form-item-label > label {
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+/* ---------- Overlays ---------- */
+
+.bo-shell .ant-modal-mask,
+.ant-modal-root .bo-modal-mask {
+  backdrop-filter: blur(5px);
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* ---------- Header & sidebar ---------- */
+
+.bo-header {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid #e5e5ea;
+}
+
+.bo-sidebar .ant-menu-item-group-title {
+  padding: 16px 20px 6px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.bo-sidebar .ant-menu-inline,
+.bo-sidebar .ant-menu-vertical {
+  border-inline-end: 0 !important;
+}
+
+.bo-sidebar .ant-menu-item .anticon {
+  color: #6e6e73;
+}
+
+.bo-sidebar .ant-menu-item-selected .anticon {
+  color: #0071e3;
+}
+
+.bo-sidebar .ant-menu-item-selected {
+  font-weight: 600;
+}
+
+.bo-scroll-y {
+  overflow-y: auto;
+  scrollbar-width: thin;
+}

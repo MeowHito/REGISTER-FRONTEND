@@ -12,6 +12,7 @@ import dayjs from 'dayjs';
 import { SYS_DATE_FORMAT } from 'constants/helper';
 import useMe from 'hooks/useMe';
 import PermissionActionTable from 'components/permissionActionTable';
+import PageHeader from 'components/pageHeader';
 
 const AnnouncementList = () => {
     const { t } = useTranslation();
@@ -191,6 +192,7 @@ const AnnouncementList = () => {
 
     return (
         <>
+            <PageHeader menu="announcementList" />
             <Spin spinning={isLoadingData}>
                 <PermissionActionTable
                     rowKey="id"

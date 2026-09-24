@@ -22,7 +22,13 @@ export default function Footer({ layout }) {
   const { t } = useTranslation();
 
   return (
-    <footer className="w-full bg-surfacex-highest border-t border-gray-300/60">
+    <footer
+      className={
+        layout === "compact"
+          ? "w-full bg-white/70 border-t border-[#e5e5ea]"
+          : "w-full bg-surfacex-highest border-t border-gray-300/60"
+      }
+    >
       {layout !== "compact" && (
         <div className="max-w-[1200px] mx-auto px-5 md:px-6 py-10 md:py-14">
           <div className="flex flex-col md:flex-row justify-between gap-10">
@@ -90,9 +96,9 @@ export default function Footer({ layout }) {
         </div>
       )}
 
-      <div className="border-t border-gray-300/60">
+      <div className={layout === "compact" ? "" : "border-t border-gray-300/60"}>
         <div className="max-w-[1200px] mx-auto px-5 md:px-6 py-5 text-center">
-          <span className="block text-sm text-inkx-variant">
+          <span className={`block text-sm ${layout === "compact" ? "text-[#6e6e73]" : "text-inkx-variant"}`}>
             © 2022-{new Date().getFullYear()} Action in thai™. {t("front.footer.rightsReserved")}
           </span>
         </div>

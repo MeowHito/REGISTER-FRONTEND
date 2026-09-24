@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Button, Spin, Input, Empty, Badge, Typography, Segmented, Pagination } from 'antd';
 import {
-    LeftOutlined, UserAddOutlined, SearchOutlined,
+    UserAddOutlined, SearchOutlined,
     SaveOutlined, UndoOutlined, TeamOutlined
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +11,7 @@ import { useMediaQuery } from 'react-responsive';
 import useMe from 'hooks/useMe';
 import InviteMemberModal from './InviteMemberModal';
 import MemberPermissionCard from './MemberPermissionCard';
+import PageHeader from "components/pageHeader";
 
 const { Title, Text } = Typography;
 
@@ -185,14 +186,14 @@ const EventPermission = ({ eventId, eventName, setView }) => {
 
     return (
         <div className="mb-4">
-            <div className="flex items-center mb-6">
-                <Button type="text" onClick={() => setView(null)} className="flex items-center text-gray-500 hover:text-gray-800">
-                    <LeftOutlined className="text-lg" />
-                    <span className="ml-1">{t('general.back')}</span>
-                </Button>
-            </div>
+            <PageHeader
+                onBack={() => setView(null)}
+                backLabel={t('back.event.participant.home.backToEvents')}
+                title={eventName}
+                subtitle={t('back.event.eventPermission.teamAccessDescription')}
+            />
 
-            <div className="w-full max-w-screen-lg mx-auto">
+            <div className="w-full bo-card bo-card-pad">
                 <div className={`flex ${isMobile ? 'flex-col gap-3' : 'items-start justify-between'} mb-6`}>
                     <div>
                         <div className="flex items-center gap-2 mb-1">

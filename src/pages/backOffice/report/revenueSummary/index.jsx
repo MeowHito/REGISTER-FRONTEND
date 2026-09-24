@@ -125,6 +125,13 @@ const RevenueSummary = () => {
             render: (value) => formatCurrency(value)
         },
         {
+            title: t("back.report.addOnColumn"),
+            dataIndex: "addOnTotal",
+            key: "addOnTotal",
+            align: "right",
+            render: (value) => formatCurrency(value)
+        },
+        {
             title: t("back.report.revenueSummary.columns.serviceFee"),
             dataIndex: "serviceFee",
             key: "serviceFee",
