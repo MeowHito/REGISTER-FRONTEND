@@ -144,9 +144,10 @@ const backOfficeServices = {
     });
   },
 
-  useQueryGetAllActiveEvents({ paging, queryKey }) {
+  useQueryGetAllActiveEvents({ paging, queryKey, enabled = true }) {
     return useQuery({
       queryKey: queryKey || ["getAllActiveEvents", paging],
+      enabled,
       queryFn: async () => {
         const payload = { paging, active: true };
         const res = await createRequest.post(`api/event/getAllEvents`, payload);

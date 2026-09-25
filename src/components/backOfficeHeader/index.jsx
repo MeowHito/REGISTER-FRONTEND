@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { logo_black } from "assets";
 import LanguageSelector from "components/languageSelector";
 import NotificationBell from "components/notificationBell";
+import ActiveEventChip from "components/activeEventChip";
 import useMe, { useLogout } from "hooks/useMe";
 import { useAvatarUrl, useDisplayName, useRoleLabel } from "hooks/useMeDisplay";
 
@@ -76,6 +77,7 @@ export default function BackOfficeHeader({ onOpenMenu }) {
               </Link>
             ))}
           </nav>
+          <ActiveEventChip className="hidden md:flex" />
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-3">

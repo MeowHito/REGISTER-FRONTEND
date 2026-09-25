@@ -15,14 +15,20 @@ import General from "./tabs/general";
 import AddOn from "./tabs/addOn";
 import useCountryStateHook from "hooks/useCountryStateHook";
 
-const DashboardRegistration = () => {
+const DashboardRegistration = ({ eventId, eventName }) => {
   const { t, i18n } = useTranslation();
   const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
   const isTablet = useMediaQuery({ query: "(max-width: 1024px)" });
   const [organizerOption, setOrganizerOption] = useState([]);
   const [selectedOrganizer, setSelectedOrganizer] = useState("");
-  const [eventOptions, setEventOptions] = useState([]);
-  const [selectedEvent, setSelectedEvent] = useState("");
+  const [pickerOptions, setEventOptions] = useState([]);
+  const [pickedEvent, setSelectedEvent] = useState("");
+  // A starred event (from the dashboard's event table) overrides the pickers.
+  const selectedEvent = eventId || pickedEvent;
+  const eventOptions = useMemo(
+    () => (eventId ? [{ value: eventId, label: eventName }] : pickerOptions),
+    [eventId, eventName, pickerOptions]
+  );
   const [isDataReady, setIsDataReady] = useState(false);
 
   const { data: me } = useMe({ retry: 0 });
@@ -171,7 +177,7 @@ const DashboardRegistration = () => {
   return (
     <Spin spinning={isLoadingData}>
       <div className="w-full h-auto mx-auto">
-        {roleUser === "admin" && (
+        {!eventId && roleUser === "admin" && (
           <Row gutter={[16, 16]} className="bo-card bo-card-pad !mx-0 mb-6">
             <Col xs={24} sm={12}>
               <label className="block text-[13px] font-semibold text-[#424245] mb-2">
@@ -201,7 +207,7 @@ const DashboardRegistration = () => {
             </Col>
           </Row>
         )}
-        {roleUser === "organizer" && (
+        {!eventId && roleUser === "organizer" && (
           <Row gutter={[16, 16]} className="bo-card bo-card-pad !mx-0 mb-6">
             <Col xs={24}>
               <label className="block text-[13px] font-semibold text-[#424245] mb-2">

@@ -12,7 +12,9 @@ import {
     SearchOutlined,
     SettingOutlined,
     ShareAltOutlined,
+    StarFilled,
     StopOutlined,
+    UnorderedListOutlined,
     UserOutlined,
 } from '@ant-design/icons';
 import {
@@ -21,6 +23,7 @@ import {
     Input,
     message,
     Select,
+    Spin,
     Switch,
     Table,
     Tooltip,
@@ -42,6 +45,8 @@ import EventPermission from '../eventPermission';
 import useMe from 'hooks/useMe';
 import PageHeader from 'components/pageHeader';
 import StatCard from 'components/statCard';
+import EventStarButton from 'components/eventStarButton';
+import useActiveEvent from 'hooks/useActiveEvent';
 
 const VIEWS = {
     LIST: 'list',
@@ -82,6 +87,10 @@ const EventList = () => {
     const [totalData, setTotalData] = useState(0);
     const [sortedField, setSortedField] = useState(undefined);
     const [exporting, setExporting] = useState(false);
+    // With an event starred the page opens on it; this switches to the full list.
+    const [showAll, setShowAll] = useState(false);
+    const { activeEvent, setActiveEvent, clearActiveEvent } = useActiveEvent();
+    const showWorkspace = !!activeEvent && !showAll;
 
     const { mutateAsync: updateStatus } = backOfficeServices.useMutationUpdateEventStatus();
     const { mutateAsync: deleteEvent } = backOfficeServices.useMutationDeleteEvent();
@@ -126,8 +135,36 @@ const EventList = () => {
 
     const queryKey = useMemo(() => ["getAllActiveEvents", paging], [paging]);
 
-    const { data, isFetching, refetch: refetchEvent, ...other } = backOfficeServices.useQueryGetAllActiveEvents({ paging, queryKey });
+    const { data, isFetching, refetch: refetchEvent, ...other } = backOfficeServices.useQueryGetAllActiveEvents({ paging, queryKey, enabled: !showWorkspace });
     const { data: summary, isFetching: summaryLoading, refetch: refetchSummary } = backOfficeServices.useQueryGetEventSummary({ search });
+
+    // The starred event, fetched through the same list endpoint so it carries its permission flags.
+    const activePaging = useMemo(() => ({
+        page: 0,
+        size: 1,
+        search: [{ searchField: 'uuid', searchText: activeEvent?.id, searchType: 'EQUAL' }],
+    }), [activeEvent?.id]);
+    const {
+        data: activeData,
+        isFetching: activeFetching,
+        isSuccess: activeLoaded,
+        refetch: refetchActive,
+    } = backOfficeServices.useQueryGetAllActiveEvents({
+        paging: activePaging,
+        queryKey: ["getAllActiveEvents", "starred", activeEvent?.id],
+        enabled: !!activeEvent?.id,
+    });
+    const activeRecord = activeData?.content?.[0];
+
+    useEffect(() => {
+        if (!activeEvent || !activeLoaded || activeFetching) return;
+        if (!activeRecord) {
+            // Deleted, or this user lost access to it.
+            clearActiveEvent();
+        } else if (activeRecord.name !== activeEvent.name) {
+            setActiveEvent(activeRecord);
+        }
+    }, [activeEvent, activeLoaded, activeFetching, activeRecord, clearActiveEvent, setActiveEvent]);
 
     useEffect(() => {
         handleQueryStatus(other, () => {
@@ -139,6 +176,7 @@ const EventList = () => {
     const refetchAll = () => {
         refetchEvent();
         refetchSummary();
+        if (activeEvent) refetchActive();
     };
 
     const handleRefetch = () => {
@@ -312,6 +350,12 @@ const EventList = () => {
 
     const columns = [
         {
+            key: 'star',
+            width: 56,
+            align: 'center',
+            render: (_, record) => <EventStarButton event={record} />,
+        },
+        {
             title: '#',
             key: 'index',
             width: 56,
@@ -429,11 +473,95 @@ const EventList = () => {
         return <EventPermission eventId={eventId} eventName={eventName} setView={setView} />;
     }
 
+    if (showWorkspace) {
+        const record = activeRecord;
+        const active = record && !record.isDraft;
+        const editable = record && canUpdateRecord(record);
+        // Same actions as the row menu, minus delete (that stays in the full list).
+        const actions = record
+            ? buildActions(record).filter((item) => item.type !== 'divider' && item.key !== 'delete')
+            : [];
+        const location = record?.province?.stateLocal || record?.location;
+        const fmt = (v) => (v ? dayjs(v).format(`${SYS_DATE_FORMAT} HH:mm`) : '-');
+
+        return (
+            <>
+                <PageHeader
+                    title={record?.name || activeEvent.name}
+                    tag={<span className="text-[#f5b301] text-xl leading-none"><StarFilled /></span>}
+                    subtitle={t('back.workspace.hubSubtitle')}
+                    extra={
+                        <Button icon={<UnorderedListOutlined />} onClick={() => setShowAll(true)}>
+                            {t('back.workspace.allEvents')}
+                        </Button>
+                    }
+                />
+
+                {!record ? (
+                    <div className="bo-card bo-card-pad flex justify-center py-16"><Spin /></div>
+                ) : (
+                    <>
+                        <div className="bo-card bo-card-pad grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
+                            <div>
+                                <div className="text-xs text-[#6e6e73] mb-1">{t('back.event.home.eventDate')}</div>
+                                <div className="font-semibold text-[#1d1d1f] tabular-nums">
+                                    {record.eventDate ? dayjs(record.eventDate).format(SYS_DATE_FORMAT) : '-'}
+                                </div>
+                            </div>
+                            <div className="min-w-0">
+                                <div className="text-xs text-[#6e6e73] mb-1">{t('back.event.home.location')}</div>
+                                <div className="font-semibold text-[#1d1d1f] truncate" title={record.location || location}>{location || '-'}</div>
+                            </div>
+                            <div>
+                                <div className="text-xs text-[#6e6e73] mb-1">{t('back.workspace.registrationPeriod')}</div>
+                                <div className="text-[13px] font-semibold text-[#1d1d1f] tabular-nums">
+                                    {fmt(record.startRegistrationDate)} – {fmt(record.endRegistrationDate)}
+                                </div>
+                            </div>
+                            <div>
+                                <div className="text-xs text-[#6e6e73] mb-1">{t('back.event.home.statusTitle')}</div>
+                                <Tooltip title={editable ? '' : t('back.event.home.noPermission')}>
+                                    <span className="inline-flex items-center gap-2">
+                                        <Switch checked={active} disabled={!editable} onChange={() => handleUpdateStatus(record)} />
+                                        <span className={`text-[13px] font-medium ${active ? 'text-[#0071e3]' : 'text-[#6e6e73]'}`}>
+                                            {active ? t('back.event.home.statusActive') : t('back.event.home.statusDraft')}
+                                        </span>
+                                    </span>
+                                </Tooltip>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                            {actions.map((item) => (
+                                <button
+                                    key={item.key}
+                                    type="button"
+                                    onClick={item.onClick}
+                                    className="bo-card bo-card-pad flex items-start gap-4 text-left cursor-pointer transition-shadow hover:shadow-md"
+                                >
+                                    <span className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[rgba(0,113,227,0.1)] text-[#0071e3] text-lg">
+                                        {item.icon}
+                                    </span>
+                                    <span className="min-w-0">
+                                        <span className="block font-semibold text-[#1d1d1f]">{item.label}</span>
+                                        <span className="block text-[13px] text-[#6e6e73] mt-0.5">{t(`back.workspace.actionDesc.${item.key}`)}</span>
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    </>
+                )}
+            </>
+        );
+    }
+
     const total = summary?.total ?? 0;
 
     return (
         <>
             <PageHeader
+                onBack={activeEvent ? () => setShowAll(false) : undefined}
+                backLabel={activeEvent?.name}
                 title={t('back.event.home.allEvent')}
                 count={summary ? total : undefined}
                 subtitle={t('back.event.home.subtitle')}

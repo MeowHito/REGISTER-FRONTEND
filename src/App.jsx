@@ -20,6 +20,7 @@ import {
   StreamlinedRegistration,
 } from 'pages/front/registration';
 import Dashboard from 'pages/backOffice/dashboard';
+import EventStats from 'pages/backOffice/eventStats';
 import ContractList from 'pages/backOffice/contract/contractList';
 import AnnouncementList from 'pages/backOffice/announcement/announcementList';
 import EventDetail from 'pages/front/eventDetail';
@@ -73,6 +74,7 @@ function App() {
               <Route path="eventList" element={<EventList />} />
               <Route path="participantList/:id" element={<ParticipantList />} />
               <Route path="dashboard" element={<Dashboard />} />
+              <Route path="eventStats" element={<EventStats />} />
               <Route path="setting" element={<Setting />} />
               <Route path="contractList" element={<ContractList />} />
               <Route path="announcementList" element={<AnnouncementList />} />

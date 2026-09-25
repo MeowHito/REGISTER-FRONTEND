@@ -5,6 +5,7 @@ import FloatingLabel from 'components/floatingLabel';
 import { SYS_DATE_FORMAT, SYS_DATE_FULL_TIME_FORMAT } from 'constants/helper';
 import dayjs from 'dayjs';
 import useMe from 'hooks/useMe';
+import useActiveEvent from 'hooks/useActiveEvent';
 import React, { useEffect, useState } from 'react'
 import Highlighter from 'react-highlight-words';
 import { useTranslation } from 'react-i18next';
@@ -34,6 +35,19 @@ const ParticipantSummary = () => {
     } = useMe({ retry: 0 });
     const userId = me?.id;
     const roleUser = me?.role?.roleType;
+    const { activeEvent } = useActiveEvent();
+
+    // Start the filter on the starred event (an admin also needs its organizer picked).
+    useEffect(() => {
+        if (!activeEvent || !roleUser) return;
+        if (roleUser === "admin") {
+            if (!activeEvent.organizerId) return;
+            setOrganizerId(activeEvent.organizerId);
+            form.setFieldsValue({ organizerId: activeEvent.organizerId, eventId: activeEvent.id });
+        } else {
+            form.setFieldsValue({ eventId: activeEvent.id });
+        }
+    }, [activeEvent, roleUser, form]);
 
     useEffect(() => {
         if (roleUser === "organizer" && userId) {

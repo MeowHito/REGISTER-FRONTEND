@@ -15,11 +15,13 @@ import TooltipTitle from "../components/tooltipTitle";
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
-const DashboardOverview = () => {
+const DashboardOverview = ({ eventId }) => {
   const { t, i18n } = useTranslation();
   const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
   const isTablet = useMediaQuery({ query: "(max-width: 1024px)" });
-  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [pickedEvent, setSelectedEvent] = useState(null);
+  // A starred event (from the dashboard's event table) overrides the picker.
+  const selectedEvent = eventId || pickedEvent;
   const [eventOption, setEventOption] = useState([]);
   const [isDataReady, setIsDataReady] = useState(false);
 
@@ -313,7 +315,7 @@ const DashboardOverview = () => {
   return (
     <div>
       <div className="w-full h-auto mx-auto">
-        <div className="mb-8">
+        {!eventId && <div className="mb-8">
           <label className="block text-xl font-semibold opacity-60 mb-2">
             {t("back.dashboard.event")}
           </label>
@@ -326,7 +328,7 @@ const DashboardOverview = () => {
             onChange={(value) => setSelectedEvent(value)}
             loading={isFetchingEvent}
           />
-        </div>
+        </div>}
 
         <Spin spinning={isFetching}>
           <StatSection

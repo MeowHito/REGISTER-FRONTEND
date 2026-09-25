@@ -10,6 +10,7 @@ import Footer from "components/footer";
 import MenuItemBadge from "components/menuItemBadge";
 import AnnouncementBanner from "components/announcementBanner";
 import BackOfficeHeader from "components/backOfficeHeader";
+import ActiveEventBar from "components/activeEventBar";
 import { useAvatarUrl, useDisplayName, useRoleLabel } from "hooks/useMeDisplay";
 import useMe from "hooks/useMe";
 import { PROFILE_LOADING } from "store/reducers/profileSlice";
@@ -20,6 +21,7 @@ import "./index.css";
 // Sidebar sections, keyed by menu title. Anything not listed is "manage".
 const MENU_GROUPS = {
   dashboard: "main",
+  eventStats: "main",
   historyList: "main",
   setting: "system",
   profile: "system",
@@ -199,7 +201,10 @@ export default function BackOfficeLayout() {
           )}
 
           <div className="flex-1 min-w-0 flex flex-col min-h-[calc(100vh-4rem)]">
-            <main className="flex-1 w-full max-w-[1440px] mx-auto px-4 md:px-6 xl:px-8 py-5 md:py-8">
+            {/* bo-flush: every page fills the content area and its panels butt together (index.css). */}
+            <main className="bo-flush flex-1 w-full flex flex-col">
+              {/* The header chip names the starred event from md up; phones get this strip instead. */}
+              <ActiveEventBar className="md:hidden" />
               <Outlet />
             </main>
             <Footer layout="compact" />

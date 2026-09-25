@@ -17,6 +17,13 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 6px rgba(0, 0, 0, 0.02);
 }
 
+/* A card's white surface without the frame, for a page-wide panel. */
+.bo-card.bo-card-flat {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
 .bo-card-pad {
   padding: 16px;
 }
@@ -36,6 +43,67 @@
 .bo-shell .ant-card {
   border-color: #e5e5ea;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+/* ---------- Flush layout ----------
+   Pages fill the content area edge to edge and panels sit flush against each other, with
+   hairlines (inset shadows on the right and bottom) drawing the grid between neighbours.
+   Only containers whose direct children are panels lose their gaps, so form grids keep theirs. */
+
+.bo-flush {
+  background: #ffffff;
+}
+
+.bo-flush .bo-card,
+.bo-flush .ant-card {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: inset -1px -1px 0 #e5e5ea !important;
+  margin: 0 !important;
+  transform: none !important;
+}
+
+.bo-flush .ant-card .ant-card-head {
+  border-radius: 0;
+}
+
+/* Whatever wraps panels (grids, stacks, inline-styled divs, antd rows) loses its spacing too. */
+.bo-flush div:has(> .bo-card, > .ant-card, > .ant-row .bo-card, > .ant-row .ant-card) {
+  gap: 0 !important;
+  margin: 0 !important;
+}
+
+.bo-flush .ant-row:has(.bo-card, .ant-card) {
+  margin: 0 !important;
+  row-gap: 0 !important;
+}
+
+.bo-flush .ant-row:has(.bo-card, .ant-card) > .ant-col {
+  padding: 0 !important;
+}
+
+.bo-flush .bo-page-header {
+  margin: 0 !important;
+  padding: 20px 24px 16px;
+  box-shadow: inset 0 -1px 0 #e5e5ea;
+}
+
+/* Segmented tabs become a full-width strip; the panes below start flush. */
+.bo-flush .bo-tabs > .ant-tabs-nav {
+  margin: 0 !important;
+  border-radius: 0;
+  padding: 8px 16px;
+  background: #f5f5f7;
+  box-shadow: inset 0 -1px 0 #e5e5ea;
+}
+
+.bo-flush .bo-sticky-bar {
+  bottom: 0;
+  margin-top: 0;
+}
+
+.bo-flush .bo-sticky-bar > .bo-card {
+  box-shadow: inset 0 1px 0 #e5e5ea, 0 -4px 16px rgba(0, 0, 0, 0.06) !important;
 }
 
 /* ---------- Tables ---------- */
@@ -65,6 +133,11 @@
 
 .bo-card .bo-flush-table .ant-table-cell:last-child {
   border-inline-end: 0 !important;
+}
+
+/* The starred (active) event's row in an event table. */
+.bo-shell .bo-row-starred > td.ant-table-cell {
+  background: rgba(245, 179, 1, 0.08);
 }
 
 /* Table footer: "Showing 1-5 of 6" on the left, pager + page size on the right. */

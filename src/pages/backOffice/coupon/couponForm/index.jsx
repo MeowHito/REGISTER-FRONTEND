@@ -26,6 +26,7 @@ import backOfficeServices from "services/backoffice.services";
 import { errorToMessage } from "hooks/functions/errorToMessage";
 import dayjs from "dayjs";
 import FloatingLabel from "components/floatingLabel";
+import useActiveEvent from "hooks/useActiveEvent";
 
 const CouponForm = ({
   isEditable,
@@ -46,6 +47,7 @@ const CouponForm = ({
   const [isReusable, setIsReusable] = useState(false);
   const [eventOption, setEventOption] = useState([]);
   const isAdmin = roleUser === "admin";
+  const { activeEvent } = useActiveEvent();
 
   const openUploadModal = () => {
     setUploadModalVisible(true);
@@ -86,6 +88,7 @@ const CouponForm = ({
       }
     } else if (open && mode === "create") {
       form.resetFields();
+      if (activeEvent) form.setFieldsValue({ eventId: activeEvent.id });
     } else if (!open) {
       form.resetFields();
     }

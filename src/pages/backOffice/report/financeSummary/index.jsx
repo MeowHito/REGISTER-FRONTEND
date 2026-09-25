@@ -9,6 +9,7 @@ import fileService from 'services/file.services';
 import { formatCurrency } from 'utils/format';
 import { SYS_DATE_FORMAT } from 'constants/helper';
 import useMe from 'hooks/useMe';
+import useActiveEvent from 'hooks/useActiveEvent';
 
 const FinanceSummary = () => {
     const [form] = CommonForm.useForm();
@@ -33,6 +34,19 @@ const FinanceSummary = () => {
     } = useMe({ retry: 0 });
     const userId = me?.id;
     const roleUser = me?.role?.roleType;
+    const { activeEvent } = useActiveEvent();
+
+    // Start the filter on the starred event (an admin also needs its organizer picked).
+    useEffect(() => {
+        if (!activeEvent || !roleUser) return;
+        if (roleUser === "admin") {
+            if (!activeEvent.organizerId) return;
+            setOrganizerId(activeEvent.organizerId);
+            form.setFieldsValue({ organizerId: activeEvent.organizerId, eventId: activeEvent.id });
+        } else {
+            form.setFieldsValue({ eventId: activeEvent.id });
+        }
+    }, [activeEvent, roleUser, form]);
 
     useEffect(() => {
         if (roleUser === "organizer" && userId) {

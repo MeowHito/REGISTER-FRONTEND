@@ -12,6 +12,7 @@ import CouponDetails from "../couponDetails";
 import useMe from "hooks/useMe";
 import PermissionActionTable from "components/permissionActionTable";
 import PageHeader from 'components/pageHeader';
+import useActiveEvent from "hooks/useActiveEvent";
 
 const VIEWS = {
   LIST: "list",
@@ -37,6 +38,11 @@ const CouponList = () => {
 
   const { data: me } = useMe({ retry: 0 });
   const roleUser = me?.role?.roleType;
+  const { activeEvent } = useActiveEvent();
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeEvent?.id]);
 
   const dataWithPerm = useMemo(
     () =>
@@ -61,6 +67,7 @@ const CouponList = () => {
       size,
       sortField: sortedField,
       sortDirection: order,
+      search: activeEvent ? [{ searchField: "eventId", searchText: activeEvent.id }] : undefined,
     },
   });
 

@@ -1708,8 +1708,12 @@
         "desc": "Manage your event and race type information"
       },
       "dashboard": {
+        "name": "Event",
+        "desc": "Choose the event to manage"
+      },
+      "eventStats": {
         "name": "Dashboard",
-        "desc": "System overview and registration information"
+        "desc": "Overview and registrant data for the selected event"
       },
       "setting": {
         "name": "Account",
@@ -2121,6 +2125,27 @@
         "justNow": "Just now",
         "minutesAgo": "{{count}} min ago",
         "hoursAgo": "{{count}} h ago"
+      }
+    },
+    "workspace": {
+      "star": "Manage this event",
+      "unstar": "Unselect",
+      "managing": "Managing",
+      "change": "Change event",
+      "changeShort": "Change",
+      "clear": "Unselect",
+      "pickTitle": "All events",
+      "pickDesc": "Star an event to manage it. Event management, stats, coupons and reports then show only the starred event.",
+      "registrationPeriod": "Registration period",
+      "hubSubtitle": "The event you are managing — pick what to do below",
+      "allEvents": "View all events",
+      "actionDesc": {
+        "view": "See the event page as runners see it",
+        "edit": "Edit details, distances, pricing, shirts and options",
+        "duplicate": "Create a new event copying this one's setup",
+        "participants": "View, search, edit and download participants",
+        "share": "Copy the event page link to share",
+        "permission": "Invite collaborators and set their permissions"
       }
     }
   },

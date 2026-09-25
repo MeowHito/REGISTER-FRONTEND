@@ -5,17 +5,19 @@ import storage from 'redux-persist-indexeddb-storage';
 import contextSlice from "./reducers/contextSlice";
 import profileSlice from "./reducers/profileSlice";
 import loadingSlice from "./reducers/loadingSlice";
+import workspaceSlice from "./reducers/workspaceSlice";
 
 const rootReducer = combineReducers({
   context: contextSlice,
   profile: profileSlice,
-  loading: loadingSlice
+  loading: loadingSlice,
+  workspace: workspaceSlice
 });
 
 const persistConfig = {
   key: 'root',
   storage: storage('actionInThai'),
-  whitelist: ['context', 'profile']
+  whitelist: ['context', 'profile', 'workspace']
 }
 
 const persistedReducer = persistReducer(persistConfig, rootReducer)

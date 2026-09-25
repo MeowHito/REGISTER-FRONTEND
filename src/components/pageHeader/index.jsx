@@ -25,7 +25,7 @@ export default function PageHeader({
     subtitle = subtitle ?? t(`back.menu.${menu}.desc`);
   }
   return (
-    <div className={`mb-6 ${className}`}>
+    <div className={`bo-page-header mb-6 ${className}`}>
       {breadcrumb?.length > 0 && (
         <nav className="flex items-center flex-wrap gap-1.5 text-xs text-[#6e6e73] mb-2">
           {breadcrumb.map((item, i) => (

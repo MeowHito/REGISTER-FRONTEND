@@ -7,7 +7,7 @@ export const PUBLIC_API = "/public-api";
 // Back-office ("Console") pages sit at the site root (/setting, /eventList, …) under the
 // pathless BackOfficeLayout route in App.jsx — keep this list in step with those routes.
 export const BACK_OFFICE_PATHS = [
-  "eventList", "participantList", "dashboard", "setting", "contractList", "announcementList",
+  "eventList", "participantList", "dashboard", "eventStats", "setting", "contractList", "announcementList",
   "eventCalendarList", "eventCalendarDetails", "couponList", "couponDetails", "reportList",
   "historyList", "operations",
 ];
