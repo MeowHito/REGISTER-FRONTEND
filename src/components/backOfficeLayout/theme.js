@@ -1,5 +1,5 @@
 // Back-office ("Console") look: quiet Apple-style neutrals with one blue accent.
-// Scoped to /backoffice only — the public site keeps COLOR.primary (#337ab7).
+// Scoped to the back office only — the public site keeps COLOR.primary (#337ab7).
 export const BO = {
   canvas: "#f5f5f7",
   surface: "#ffffff",

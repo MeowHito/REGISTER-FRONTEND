@@ -441,7 +441,7 @@ const HistoryDetail = ({ paymentId, setMode }) => {
         onSuccess: () => {
           message.success(t("back.history.historyDetail.cancel.success"));
           setOrder((prev) => ({ ...prev, status: "CANCELLED" }));
-          navigate("/backoffice/historyList");
+          navigate("/historyList");
         },
         onError: () => {
           message.error(t("back.history.historyDetail.cancel.failed"));

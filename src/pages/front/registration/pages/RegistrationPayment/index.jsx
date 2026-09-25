@@ -19,6 +19,9 @@ import PaymentMethods from './components/PaymentMethods';
 import {
     formatMoney,
     calculatePaymentFeePercent,
+    calculateFeeAmount,
+    addMoney,
+    couponDiscountFor,
     convertDateToThaiFormat,
 } from './utils';
 
@@ -282,10 +285,10 @@ const RegistrationPayment = () => {
             setCouponMeta({ couponCode: '', deductionPercentage: 0 });
             setTotalCoupon(0);
             const resetTotal = totalShirtPrice + totalDeliveryFee + totalAddOns - totalDiscount;
-            const resetFee = Math.ceil(resetTotal * (feePercent / 100) * 100) / 100;
+            const resetFee = calculateFeeAmount(resetTotal, feePercent);
             setFinalTotal(resetTotal);
             setFeeAmount(resetFee);
-            setTotalAmountWithFee(Math.ceil((resetTotal + resetFee) * 100) / 100);
+            setTotalAmountWithFee(addMoney(resetTotal, resetFee));
         }
 
         const idNo = applicants.map(a => String(a.idNo).trim());
@@ -322,7 +325,7 @@ const RegistrationPayment = () => {
                     const noShirtDiscount = app.discountNoShirt || 0;
                     const netPrice = Math.max(shirtPrice - noShirtDiscount, 0);
                     const isValid = validIdNos.includes(app.idNo);
-                    const personalDiscount = isValid ? Number((netPrice * deductionPercentage / 100).toFixed(2)) : 0;
+                    const personalDiscount = isValid ? couponDiscountFor(netPrice, deductionPercentage) : 0;
                     if (isValid) totalCouponDiscount += personalDiscount;
                     return { ...app, couponApplied: isValid, personalCouponDiscount: personalDiscount };
                 });
@@ -341,10 +344,10 @@ const RegistrationPayment = () => {
                 setApplicants(updatedApplicants);
                 setTotalCoupon(totalCouponDiscount);
                 const newTotal = totalShirtPrice + totalDeliveryFee + totalAddOns - totalDiscount - totalCouponDiscount;
-                const newFee = Math.ceil(newTotal * (feePercent / 100) * 100) / 100;
+                const newFee = calculateFeeAmount(newTotal, feePercent);
                 setFinalTotal(newTotal);
                 setFeeAmount(newFee);
-                setTotalAmountWithFee(Math.ceil((newTotal + newFee) * 100) / 100);
+                setTotalAmountWithFee(addMoney(newTotal, newFee));
 
             } else {
                 setCouponMsg(t("back.reg.payment.notEligible"));
@@ -384,8 +387,8 @@ const RegistrationPayment = () => {
         setTotalCoupon(0);
 
         const newTotal = totalShirtPrice + totalDeliveryFee + totalAddOns - totalDiscount;
-        const newFeeAmount = Math.ceil(newTotal * (feePercent / 100) * 100) / 100;
-        const newTotalWithFee = Math.ceil((newTotal + newFeeAmount) * 100) / 100;
+        const newFeeAmount = calculateFeeAmount(newTotal, feePercent);
+        const newTotalWithFee = addMoney(newTotal, newFeeAmount);
 
         setFinalTotal(newTotal);
         setFeeAmount(newFeeAmount);
@@ -413,10 +416,10 @@ const RegistrationPayment = () => {
         const delivery = totalDeliveryFee;
         const discount = totalDiscount;
 
-        const total = (shirt + delivery - discount - totalCoupon);
+        const total = (shirt + delivery + totalAddOns - discount - totalCoupon);
         const feePercent = calculatePaymentFeePercent(type);
-        const feeAmount = Math.ceil(total * (feePercent / 100) * 100) / 100;
-        const totalAmountWithFee = Math.ceil((total + feeAmount) * 100) / 100;
+        const feeAmount = calculateFeeAmount(total, feePercent);
+        const totalAmountWithFee = addMoney(total, feeAmount);
 
         setFeeAmount(feeAmount);
         setFeePercent(feePercent);

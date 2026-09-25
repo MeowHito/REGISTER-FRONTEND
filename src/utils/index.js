@@ -4,11 +4,23 @@ export { default as errorLogger } from "./errorLogger";
 
 export const PUBLIC_API = "/public-api";
 
+// Back-office ("Console") pages sit at the site root (/setting, /eventList, …) under the
+// pathless BackOfficeLayout route in App.jsx — keep this list in step with those routes.
+export const BACK_OFFICE_PATHS = [
+  "eventList", "participantList", "dashboard", "setting", "contractList", "announcementList",
+  "eventCalendarList", "eventCalendarDetails", "couponList", "couponDetails", "reportList",
+  "historyList", "operations",
+];
+
+export function isBackOfficePath(pathname = "") {
+  return BACK_OFFICE_PATHS.includes(pathname.split("/")[1]);
+}
+
 // Routes that should render edge-to-edge (no max-w-[1200px] container)
-const FULL_WIDTH_PREFIXES = ["/backoffice", "/contact", "/eventCalendar", "/registrationInfo", "/eventDetail"];
+const FULL_WIDTH_PREFIXES = ["/contact", "/eventCalendar", "/registrationInfo", "/eventDetail"];
 
 export function isFullWidthPath(pathname = "") {
-  if (pathname === "/") return true;
+  if (pathname === "/" || isBackOfficePath(pathname)) return true;
   return FULL_WIDTH_PREFIXES.some(
     (p) => pathname === p || pathname.startsWith(p + "/")
   );

@@ -67,7 +67,7 @@ export default function BackOfficeLayout() {
 
         if (menus.length === 0) return;
 
-        const roleSeg = currentPathSegs[2] || null;
+        const roleSeg = currentPathSegs[1] || null;
         const selected = menus.find((m) => m.title === roleSeg);
 
         if (!selected) {

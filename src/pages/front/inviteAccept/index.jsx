@@ -79,7 +79,7 @@ const InviteAccept = () => {
     };
 
     const handleGoToEvent = () => {
-        navigate('/backoffice/eventList');
+        navigate('/eventList');
     };
 
     const handleGoHome = () => {

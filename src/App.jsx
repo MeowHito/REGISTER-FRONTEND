@@ -68,7 +68,8 @@ function App() {
             <Route path="registrationPaymentConfirmation" element={<RegistrationPaymentConfirmation />} />
             <Route path="registrationPaymentResult" element={<RegistrationPaymentResult />} />
             <Route path="registrationLink" element={<RegistrationLink />} />
-            <Route path="backoffice" element={<BackOfficeLayout />}>
+            {/* Back office at the root; utils BACK_OFFICE_PATHS must list every path here. */}
+            <Route element={<BackOfficeLayout />}>
               <Route path="eventList" element={<EventList />} />
               <Route path="participantList/:id" element={<ParticipantList />} />
               <Route path="dashboard" element={<Dashboard />} />

@@ -1,6 +1,14 @@
 
 export const formatMoney = (amount) => amount.toLocaleString("th-TH", { minimumFractionDigits: 2 });
 
+// The backend recomputes every amount (OrderServiceImpl + PaymentFee) and charges its own figure;
+// these round the same way so the page shows what will be charged. toFixed(6) strips float noise
+// such as 2.2 * 5 = 11.000000000000002 before rounding to the satang.
+export const calculateFeeAmount = (total, feePercent) => Math.ceil(Number((total * feePercent).toFixed(6))) / 100;
+export const addMoney = (a, b) => Number((a + b).toFixed(2));
+export const couponDiscountFor = (netPrice, percent) => Math.round(Number((netPrice * percent).toFixed(6))) / 100;
+
+// Mirrors backend constant/PaymentFee.java.
 export const calculatePaymentFeePercent = (paymentType) => {
   const qrChannels = ["qrcode"];
   const creditChannels = ["creditcard", "ewallet", "alipay", "wechatpay"];

@@ -5,7 +5,7 @@ import LanguageSelector from "components/languageSelector";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "react-responsive";
 import { Avatar, Drawer, Dropdown } from "antd";
-import { DownOutlined, HistoryOutlined, LogoutOutlined, MenuOutlined, SolutionOutlined, UserOutlined } from "@ant-design/icons";
+import { DashboardOutlined, DownOutlined, HistoryOutlined, LogoutOutlined, MenuOutlined, SolutionOutlined, UserOutlined } from "@ant-design/icons";
 import useMe, { useLogout } from "hooks/useMe";
 import { isFullWidthPath } from "utils";
 import { usePublicImageUrl } from "utils/fileUtils";
@@ -25,7 +25,8 @@ export default function Menu() {
   const menus = me?.role.permissions
     .map(p => p.menu)
     .sort((a, b) => a.position - b.position) || []
-  const defaultMenu = menus?.[0] || { path: "/backoffice/setting" };
+  // Only roles granted the dashboard menu (admin, organizer) get the shortcut.
+  const dashboardMenu = menus.find((m) => m.title === "dashboard" && m.path);
 
   const currentLanguage = i18n.language?.toLowerCase();
 
@@ -80,15 +81,24 @@ export default function Menu() {
           {
             key: "history",
             icon: <HistoryOutlined />,
-            label: <Link to="/backoffice/historyList">{t("front.menu.registrationHistory")}</Link>,
+            label: <Link to="/historyList">{t("front.menu.registrationHistory")}</Link>,
           },
         ]
       : []),
     {
       key: "profile",
       icon: <SolutionOutlined />,
-      label: <Link to="/backoffice/setting">{t("front.menu.profile.title")}</Link>,
+      label: <Link to="/setting">{t("front.menu.profile.title")}</Link>,
     },
+    ...(dashboardMenu
+      ? [
+          {
+            key: "dashboard",
+            icon: <DashboardOutlined />,
+            label: <Link to={dashboardMenu.path}>{t("back.menu.dashboard.name")}</Link>,
+          },
+        ]
+      : []),
     {
       key: "logout",
       icon: <LogoutOutlined />,
@@ -238,7 +248,7 @@ export default function Menu() {
                 </div>
                 {isGuestUser && (
                   <Link
-                    to="/backoffice/historyList"
+                    to="/historyList"
                     onClick={() => setDrawerOpen(false)}
                     className="w-full block text-center py-3 rounded-xl border-2 border-brand text-brand font-bold"
                   >
@@ -246,12 +256,21 @@ export default function Menu() {
                   </Link>
                 )}
                 <Link
-                  to="/backoffice/setting"
+                  to="/setting"
                   onClick={() => setDrawerOpen(false)}
                   className="w-full block text-center py-3 rounded-xl border-2 border-brand text-brand font-bold"
                 >
                   {t("front.menu.profile.title")}
                 </Link>
+                {dashboardMenu && (
+                  <Link
+                    to={dashboardMenu.path}
+                    onClick={() => setDrawerOpen(false)}
+                    className="w-full block text-center py-3 rounded-xl border-2 border-brand text-brand font-bold"
+                  >
+                    {t("back.menu.dashboard.name")}
+                  </Link>
+                )}
                 <button
                   onClick={() => { setDrawerOpen(false); handleLogout(); }}
                   className="w-full py-3 rounded-xl bg-brand text-white font-bold"

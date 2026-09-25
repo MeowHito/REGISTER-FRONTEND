@@ -39,9 +39,9 @@ export default function BackOfficeHeader({ onOpenMenu }) {
     },
     { type: "divider" },
     ...(isGuest
-      ? [{ key: "history", icon: <HistoryOutlined />, label: <Link to="/backoffice/historyList">{t("front.menu.registrationHistory")}</Link> }]
+      ? [{ key: "history", icon: <HistoryOutlined />, label: <Link to="/historyList">{t("front.menu.registrationHistory")}</Link> }]
       : []),
-    { key: "profile", icon: <SolutionOutlined />, label: <Link to="/backoffice/setting">{t("front.menu.profile.title")}</Link> },
+    { key: "profile", icon: <SolutionOutlined />, label: <Link to="/setting">{t("front.menu.profile.title")}</Link> },
     { key: "logout", icon: <LogoutOutlined />, danger: true, label: t("front.menu.logout") },
   ];
 

@@ -1,7 +1,8 @@
 import { COLOR } from "constants/color";
+import { isBackOfficePath } from "utils";
 
 // The back office ("Console") uses its own blue and a neutral cancel button.
-const inBackOffice = () => globalThis.location?.pathname?.startsWith("/backoffice");
+const inBackOffice = () => isBackOfficePath(globalThis.location?.pathname);
 const confirmColor = () => (inBackOffice() ? "#0071e3" : COLOR.primary);
 const cancelColor = () => (inBackOffice() ? "#8e8e93" : "#d33");
 import Swal from "sweetalert2";
