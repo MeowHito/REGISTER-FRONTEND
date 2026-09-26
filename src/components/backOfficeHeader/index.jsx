@@ -6,6 +6,7 @@ import { logo_black } from "assets";
 import LanguageSelector from "components/languageSelector";
 import NotificationBell from "components/notificationBell";
 import ActiveEventChip from "components/activeEventChip";
+import EventSwitcher from "components/eventSwitcher";
 import useMe, { useLogout } from "hooks/useMe";
 import { useAvatarUrl, useDisplayName, useRoleLabel } from "hooks/useMeDisplay";
 
@@ -83,6 +84,7 @@ export default function BackOfficeHeader({ onOpenMenu }) {
             ))}
           </nav>
           <ActiveEventChip className="hidden md:flex" />
+          {dashboardMenu && <EventSwitcher className="hidden xl:flex shrink-0" />}
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-3">

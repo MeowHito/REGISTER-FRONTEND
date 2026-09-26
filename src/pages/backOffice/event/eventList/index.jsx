@@ -1,36 +1,25 @@
 import {
-    CalendarOutlined,
     CopyOutlined,
     DeleteOutlined,
-    DownloadOutlined,
     EditOutlined,
     EnvironmentOutlined,
     EyeOutlined,
     MoreOutlined,
     PlusOutlined,
-    ReloadOutlined,
-    SearchOutlined,
     SettingOutlined,
     ShareAltOutlined,
-    StarFilled,
-    StopOutlined,
-    UnorderedListOutlined,
     UserOutlined,
 } from '@ant-design/icons';
 import {
     Button,
     Dropdown,
-    Input,
     message,
-    Select,
-    Spin,
     Switch,
     Table,
     Tooltip,
 } from 'antd';
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import ExcelJS from 'exceljs';
 import dayjs from 'dayjs';
 
 import backOfficeServices from 'services/backoffice.services';
@@ -44,8 +33,6 @@ import { getMenuPermission, handleQueryStatus, mergePermissions } from 'utils';
 import EventPermission from '../eventPermission';
 import useMe from 'hooks/useMe';
 import PageHeader from 'components/pageHeader';
-import StatCard from 'components/statCard';
-import EventStarButton from 'components/eventStarButton';
 import useActiveEvent from 'hooks/useActiveEvent';
 
 const VIEWS = {
@@ -56,10 +43,6 @@ const VIEWS = {
     PREVIEW: 'preview',
     PERMISSION: 'permission',
 };
-
-const STATUS = { ALL: 'all', ACTIVE: 'active', DRAFT: 'draft' };
-
-const percent = (part, total) => (total ? Math.round((part / total) * 100) : 0);
 
 function DateTimeCell({ value }) {
     if (!value) return '-';
@@ -79,23 +62,16 @@ const EventList = () => {
     const [view, setView] = useState(VIEWS.LIST);
     const [eventData, setEventData] = useState([]);
     const [order, setOrder] = useState('asc');
-    const [searchInput, setSearchInput] = useState('');
-    const [searchText, setSearchText] = useState('');
-    const [status, setStatus] = useState(STATUS.ALL);
     const [limitPage, setLimitPage] = useState(5);
     const [page, setPage] = useState(1);
     const [totalData, setTotalData] = useState(0);
     const [sortedField, setSortedField] = useState(undefined);
-    const [exporting, setExporting] = useState(false);
-    // With an event starred the page opens on it; this switches to the full list.
-    const [showAll, setShowAll] = useState(false);
+    // With an event starred the table holds that event only; switching is done from the top bar.
     const { activeEvent, setActiveEvent, clearActiveEvent } = useActiveEvent();
-    const showWorkspace = !!activeEvent && !showAll;
 
     const { mutateAsync: updateStatus } = backOfficeServices.useMutationUpdateEventStatus();
     const { mutateAsync: deleteEvent } = backOfficeServices.useMutationDeleteEvent();
     const { mutateAsync: duplicateEvent } = backOfficeServices.useMutationDuplicateEvent();
-    const { mutateAsync: fetchAllEvents } = backOfficeServices.useMutationFetchAllEvents();
 
     const { data: me } = useMe({ retry: 0 });
     const roleUser = me?.role?.roleType;
@@ -106,37 +82,16 @@ const EventList = () => {
     const canUpdateRecord = (record) =>
         roleUser === 'admin' || (menuPerm.canUpdate && (record?.permission?.canUpdate ?? true));
 
-    // Debounce the search box so typing doesn't fire a request per keystroke.
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setSearchText(searchInput.trim());
-            setPage(1);
-        }, 350);
-        return () => clearTimeout(timer);
-    }, [searchInput]);
-
-    // Shared by the table, the stat cards and the Excel export.
-    const search = useMemo(() => ({
-        search: [
-            searchText ? { searchField: 'name', searchText } : null,
-            status !== STATUS.ALL
-                ? { searchField: 'isDraft', searchText: String(status === STATUS.DRAFT), searchType: 'BOOLEAN' }
-                : null,
-        ].filter(Boolean),
-    }), [searchText, status]);
-
     const paging = useMemo(() => ({
         size: limitPage,
         page: page - 1,
         sortField: sortedField,
         sortDirection: order,
-        ...search,
-    }), [limitPage, page, sortedField, order, search]);
+    }), [limitPage, page, sortedField, order]);
 
     const queryKey = useMemo(() => ["getAllActiveEvents", paging], [paging]);
 
-    const { data, isFetching, refetch: refetchEvent, ...other } = backOfficeServices.useQueryGetAllActiveEvents({ paging, queryKey, enabled: !showWorkspace });
-    const { data: summary, isFetching: summaryLoading, refetch: refetchSummary } = backOfficeServices.useQueryGetEventSummary({ search });
+    const { data, isFetching, refetch: refetchEvent, ...other } = backOfficeServices.useQueryGetAllActiveEvents({ paging, queryKey, enabled: !activeEvent });
 
     // The starred event, fetched through the same list endpoint so it carries its permission flags.
     const activePaging = useMemo(() => ({
@@ -174,9 +129,8 @@ const EventList = () => {
     }, [other.fetchStatus])
 
     const refetchAll = () => {
-        refetchEvent();
-        refetchSummary();
         if (activeEvent) refetchActive();
+        else refetchEvent();
     };
 
     const handleRefetch = () => {
@@ -238,63 +192,16 @@ const EventList = () => {
         });
     };
 
-    const handleExport = async () => {
-        setExporting(true);
-        try {
-            const events = await fetchAllEvents({ search });
-            const workbook = new ExcelJS.Workbook();
-            const sheet = workbook.addWorksheet(t("back.event.home.allEvent"));
-            sheet.columns = [
-                { header: '#', key: 'no', width: 6 },
-                { header: t('back.event.home.eventName'), key: 'name', width: 40 },
-                { header: t('back.event.home.eventDate'), key: 'eventDate', width: 14 },
-                { header: t('back.event.home.location'), key: 'location', width: 30 },
-                { header: t('back.event.home.province'), key: 'province', width: 20 },
-                { header: t('back.event.home.startRegistrationDate'), key: 'start', width: 20 },
-                { header: t('back.event.home.endRegistrationDate'), key: 'end', width: 20 },
-                { header: t('back.event.home.statusTitle'), key: 'status', width: 14 },
-            ];
-            sheet.getRow(1).font = { bold: true };
-            events.forEach((e, i) => sheet.addRow({
-                no: i + 1,
-                name: e.name,
-                eventDate: e.eventDate ? dayjs(e.eventDate).format(SYS_DATE_FORMAT) : '',
-                location: e.location || '',
-                province: e.province?.stateLocal || '',
-                start: e.startRegistrationDate ? dayjs(e.startRegistrationDate).format('DD/MM/YYYY HH:mm') : '',
-                end: e.endRegistrationDate ? dayjs(e.endRegistrationDate).format('DD/MM/YYYY HH:mm') : '',
-                status: e.isDraft ? t('back.event.home.statusDraft') : t('back.event.home.statusActive'),
-            }));
-
-            const buffer = await workbook.xlsx.writeBuffer();
-            const blob = new Blob([buffer], {
-                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            });
-            const url = globalThis.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `Events_${dayjs().format('YYYYMMDD_HHmm')}.xlsx`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        } catch (err) {
-            AlertError({ text: errorToMessage(err) });
-        } finally {
-            setExporting(false);
-        }
-    };
-
-    const eventDataWithPerm = useMemo(() =>
-        eventData.map((e) => ({
+    const eventDataWithPerm = useMemo(() => {
+        const rows = activeEvent ? (activeRecord ? [activeRecord] : []) : eventData;
+        return rows.map((e) => ({
             ...e,
             permission: {
                 ...e.permission,
                 canDelete: roleUser === 'admin' ? true : e.permission?.canDelete,
             }
-        })),
-        [eventData, roleUser]
-    );
+        }));
+    }, [activeEvent, activeRecord, eventData, roleUser]);
 
     const buildActions = (record) => {
         const perm = mergePermissions(menuPerm, record, true);
@@ -350,17 +257,11 @@ const EventList = () => {
 
     const columns = [
         {
-            key: 'star',
-            width: 56,
-            align: 'center',
-            render: (_, record) => <EventStarButton event={record} />,
-        },
-        {
             title: '#',
             key: 'index',
             width: 56,
             render: (_text, _record, index) => (
-                <span className="text-[#6e6e73] tabular-nums">{totalData - ((page - 1) * limitPage) - index}</span>
+                <span className="text-[#6e6e73] tabular-nums">{activeEvent ? index + 1 : totalData - ((page - 1) * limitPage) - index}</span>
             ),
         },
         {
@@ -473,98 +374,9 @@ const EventList = () => {
         return <EventPermission eventId={eventId} eventName={eventName} setView={setView} />;
     }
 
-    if (showWorkspace) {
-        const record = activeRecord;
-        const active = record && !record.isDraft;
-        const editable = record && canUpdateRecord(record);
-        // Same actions as the row menu, minus delete (that stays in the full list).
-        const actions = record
-            ? buildActions(record).filter((item) => item.type !== 'divider' && item.key !== 'delete')
-            : [];
-        const location = record?.province?.stateLocal || record?.location;
-        const fmt = (v) => (v ? dayjs(v).format(`${SYS_DATE_FORMAT} HH:mm`) : '-');
-
-        return (
-            <>
-                <PageHeader
-                    title={record?.name || activeEvent.name}
-                    tag={<span className="text-[#f5b301] text-xl leading-none"><StarFilled /></span>}
-                    subtitle={t('back.workspace.hubSubtitle')}
-                    extra={
-                        <Button icon={<UnorderedListOutlined />} onClick={() => setShowAll(true)}>
-                            {t('back.workspace.allEvents')}
-                        </Button>
-                    }
-                />
-
-                {!record ? (
-                    <div className="bo-card bo-card-pad flex justify-center py-16"><Spin /></div>
-                ) : (
-                    <>
-                        <div className="bo-card bo-card-pad grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
-                            <div>
-                                <div className="text-xs text-[#6e6e73] mb-1">{t('back.event.home.eventDate')}</div>
-                                <div className="font-semibold text-[#1d1d1f] tabular-nums">
-                                    {record.eventDate ? dayjs(record.eventDate).format(SYS_DATE_FORMAT) : '-'}
-                                </div>
-                            </div>
-                            <div className="min-w-0">
-                                <div className="text-xs text-[#6e6e73] mb-1">{t('back.event.home.location')}</div>
-                                <div className="font-semibold text-[#1d1d1f] truncate" title={record.location || location}>{location || '-'}</div>
-                            </div>
-                            <div>
-                                <div className="text-xs text-[#6e6e73] mb-1">{t('back.workspace.registrationPeriod')}</div>
-                                <div className="text-[13px] font-semibold text-[#1d1d1f] tabular-nums">
-                                    {fmt(record.startRegistrationDate)} – {fmt(record.endRegistrationDate)}
-                                </div>
-                            </div>
-                            <div>
-                                <div className="text-xs text-[#6e6e73] mb-1">{t('back.event.home.statusTitle')}</div>
-                                <Tooltip title={editable ? '' : t('back.event.home.noPermission')}>
-                                    <span className="inline-flex items-center gap-2">
-                                        <Switch checked={active} disabled={!editable} onChange={() => handleUpdateStatus(record)} />
-                                        <span className={`text-[13px] font-medium ${active ? 'text-[#0071e3]' : 'text-[#6e6e73]'}`}>
-                                            {active ? t('back.event.home.statusActive') : t('back.event.home.statusDraft')}
-                                        </span>
-                                    </span>
-                                </Tooltip>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                            {actions.map((item) => (
-                                <button
-                                    key={item.key}
-                                    type="button"
-                                    onClick={item.onClick}
-                                    className="bo-card bo-card-pad flex items-start gap-4 text-left cursor-pointer transition-shadow hover:shadow-md"
-                                >
-                                    <span className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[rgba(0,113,227,0.1)] text-[#0071e3] text-lg">
-                                        {item.icon}
-                                    </span>
-                                    <span className="min-w-0">
-                                        <span className="block font-semibold text-[#1d1d1f]">{item.label}</span>
-                                        <span className="block text-[13px] text-[#6e6e73] mt-0.5">{t(`back.workspace.actionDesc.${item.key}`)}</span>
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    </>
-                )}
-            </>
-        );
-    }
-
-    const total = summary?.total ?? 0;
-
     return (
         <>
             <PageHeader
-                onBack={activeEvent ? () => setShowAll(false) : undefined}
-                backLabel={activeEvent?.name}
-                title={t('back.event.home.allEvent')}
-                count={summary ? total : undefined}
-                subtitle={t('back.event.home.subtitle')}
                 extra={menuPerm.canCreate && (
                     <Button
                         type="primary"
@@ -577,72 +389,16 @@ const EventList = () => {
                 )}
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5 mb-6">
-                <StatCard
-                    label={t('back.event.home.statPublished')}
-                    value={summary?.published ?? 0}
-                    badge={t('back.event.home.ofTotal', { percent: percent(summary?.published, total) })}
-                    tone="blue"
-                    icon={<CalendarOutlined />}
-                    loading={summaryLoading && !summary}
-                />
-                <StatCard
-                    label={t('back.event.home.statClosed')}
-                    value={summary?.closed ?? 0}
-                    badge={t('back.event.home.ofTotal', { percent: percent(summary?.closed, total) })}
-                    tone="gray"
-                    icon={<StopOutlined />}
-                    loading={summaryLoading && !summary}
-                />
-                <StatCard
-                    label={t('back.event.home.statProvinces')}
-                    value={summary?.provinces ?? 0}
-                    badge={t('back.event.home.nationwide')}
-                    tone="gray"
-                    icon={<EnvironmentOutlined />}
-                    loading={summaryLoading && !summary}
-                />
-            </div>
-
             <div className="bo-card overflow-hidden">
-                <div className="flex flex-col md:flex-row md:items-center gap-3 p-4 md:px-5 border-b border-[#e5e5ea]">
-                    <Input
-                        allowClear
-                        prefix={<SearchOutlined className="text-[#6e6e73]" />}
-                        placeholder={t('back.event.home.searchPlaceholder')}
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        className="md:!max-w-[360px]"
-                    />
-                    <Select
-                        value={status}
-                        onChange={(v) => { setStatus(v); setPage(1); }}
-                        className="md:!w-[190px]"
-                        options={[
-                            { value: STATUS.ALL, label: `${t('back.event.home.statusTitle')}: ${t('general.all')}` },
-                            { value: STATUS.ACTIVE, label: `${t('back.event.home.statusTitle')}: ${t('back.event.home.statusActive')}` },
-                            { value: STATUS.DRAFT, label: `${t('back.event.home.statusTitle')}: ${t('back.event.home.statusDraft')}` },
-                        ]}
-                    />
-                    <div className="flex items-center gap-2 md:ml-auto">
-                        <Tooltip title={t('back.event.home.refresh')}>
-                            <Button icon={<ReloadOutlined />} onClick={refetchAll} loading={isFetching && !!data} aria-label={t('back.event.home.refresh')} />
-                        </Tooltip>
-                        <Tooltip title={t('back.event.home.export')}>
-                            <Button icon={<DownloadOutlined />} onClick={handleExport} loading={exporting} aria-label={t('back.event.home.export')} />
-                        </Tooltip>
-                    </div>
-                </div>
-
                 <Table
                     className="bo-flush-table"
                     rowKey="id"
                     columns={columns}
                     dataSource={eventDataWithPerm}
-                    loading={isFetching && !data}
+                    loading={activeEvent ? activeFetching && !activeRecord : isFetching && !data}
                     scroll={{ x: 'max-content' }}
                     onChange={handleChange}
-                    pagination={{
+                    pagination={activeEvent ? false : {
                         pageSize: limitPage,
                         current: page,
                         onChange: (p, ps) => {
