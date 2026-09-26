@@ -8,7 +8,17 @@ import EventStarButton from "components/eventStarButton";
 import useActiveEvent from "hooks/useActiveEvent";
 import { SYS_DATE_FORMAT } from "constants/helper";
 
-const STATUS = { ALL: "all", ACTIVE: "active", DRAFT: "draft" };
+const STATUS = { ALL: "all", OPEN: "open", CLOSED: "closed" };
+
+// Same rule as the backend's "registrationStatus" filter: published and now inside the
+// registration window (a missing bound means unbounded).
+const isRegistrationOpen = (event) => {
+  if (event?.isDraft) return false;
+  const now = dayjs();
+  if (event?.startRegistrationDate && now.isBefore(dayjs(event.startRegistrationDate))) return false;
+  if (event?.endRegistrationDate && now.isAfter(dayjs(event.endRegistrationDate))) return false;
+  return true;
+};
 
 const formatDateTime = (value) => (value ? dayjs(value).format(`${SYS_DATE_FORMAT} HH:mm`) : "-");
 
@@ -39,9 +49,7 @@ export default function DashboardEventTable() {
     sortDirection: order,
     search: [
       searchText ? { searchField: "name", searchText } : null,
-      status !== STATUS.ALL
-        ? { searchField: "isDraft", searchText: String(status === STATUS.DRAFT), searchType: "BOOLEAN" }
-        : null,
+      status !== STATUS.ALL ? { searchField: "registrationStatus", searchText: status } : null,
     ].filter(Boolean),
   }), [size, page, sortField, order, searchText, status]);
 
@@ -85,12 +93,16 @@ export default function DashboardEventTable() {
     {
       title: t("back.event.home.statusTitle"),
       key: "status",
-      width: 120,
-      render: (_, record) => (
-        <span className={`text-[13px] font-medium whitespace-nowrap ${record?.isDraft ? "text-[#6e6e73]" : "text-[#0071e3]"}`}>
-          {record?.isDraft ? t("back.event.home.statusDraft") : t("back.event.home.statusActive")}
-        </span>
-      ),
+      width: 140,
+      render: (_, record) => {
+        const open = isRegistrationOpen(record);
+        return (
+          <span className={`inline-flex items-center gap-1.5 text-[13px] font-medium whitespace-nowrap ${open ? "text-[#1a7f37]" : "text-[#6e6e73]"}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${open ? "bg-[#34c759]" : "bg-[#a1a1a6]"}`} />
+            {open ? t("general.openRegistration") : t("general.closedRegistration")}
+          </span>
+        );
+      },
     },
   ];
 
@@ -115,8 +127,8 @@ export default function DashboardEventTable() {
           className="md:!w-[180px]"
           options={[
             { value: STATUS.ALL, label: `${t("back.event.home.statusTitle")}: ${t("general.all")}` },
-            { value: STATUS.ACTIVE, label: `${t("back.event.home.statusTitle")}: ${t("back.event.home.statusActive")}` },
-            { value: STATUS.DRAFT, label: `${t("back.event.home.statusTitle")}: ${t("back.event.home.statusDraft")}` },
+            { value: STATUS.OPEN, label: `${t("back.event.home.statusTitle")}: ${t("general.openRegistration")}` },
+            { value: STATUS.CLOSED, label: `${t("back.event.home.statusTitle")}: ${t("general.closedRegistration")}` },
           ]}
         />
       </div>
