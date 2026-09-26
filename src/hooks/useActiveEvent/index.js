@@ -1,5 +1,7 @@
 import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
+import { AlertConfirm } from "components/alert";
 import useMe from "hooks/useMe";
 import { CLEAR_ACTIVE_EVENT, SET_ACTIVE_EVENT } from "store/reducers/workspaceSlice";
 
@@ -12,6 +14,7 @@ import { CLEAR_ACTIVE_EVENT, SET_ACTIVE_EVENT } from "store/reducers/workspaceSl
  */
 export default function useActiveEvent() {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const { data: me } = useMe({ retry: 0 });
   const userId = me?.id;
 
@@ -36,5 +39,33 @@ export default function useActiveEvent() {
     [activeEvent?.id, clearActiveEvent, setActiveEvent]
   );
 
-  return { activeEvent, setActiveEvent, clearActiveEvent, toggleActiveEvent };
+  // Same as toggleActiveEvent, but replacing or dropping an existing star asks first.
+  // Starring the first event needs no confirmation.
+  const confirmToggleActiveEvent = useCallback(
+    (event) => {
+      if (!event?.id) return;
+      if (!activeEvent) {
+        setActiveEvent(event);
+      } else if (activeEvent.id === event.id) {
+        AlertConfirm({
+          title: t("back.workspace.unstarConfirmTitle"),
+          text: t("back.workspace.unstarConfirmText", { name: activeEvent.name }),
+          confirmButtonText: t("back.workspace.unstar"),
+          cancelButtonText: t("general.cancel"),
+          onOk: clearActiveEvent,
+        });
+      } else {
+        AlertConfirm({
+          title: t("back.workspace.switchConfirmTitle"),
+          text: t("back.workspace.switchConfirmText", { from: activeEvent.name, to: event.name }),
+          confirmButtonText: t("back.workspace.switchConfirm"),
+          cancelButtonText: t("general.cancel"),
+          onOk: () => setActiveEvent(event),
+        });
+      }
+    },
+    [activeEvent, clearActiveEvent, setActiveEvent, t]
+  );
+
+  return { activeEvent, setActiveEvent, clearActiveEvent, toggleActiveEvent, confirmToggleActiveEvent };
 }

@@ -75,6 +75,14 @@ export default function DashboardEventTable() {
       ),
     },
     {
+      title: t("back.event.home.organizer"),
+      dataIndex: "organizerName",
+      key: "organizerName",
+      render: (value) => (
+        <span className="block text-[#424245] truncate max-w-[220px]" title={value}>{value || "-"}</span>
+      ),
+    },
+    {
       title: t("back.event.home.eventDate"),
       dataIndex: "eventDate",
       key: "eventDate",

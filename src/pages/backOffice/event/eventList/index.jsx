@@ -14,6 +14,7 @@ import {
     Button,
     Dropdown,
     message,
+    Spin,
     Switch,
     Table,
     Tooltip,
@@ -34,6 +35,7 @@ import EventPermission from '../eventPermission';
 import useMe from 'hooks/useMe';
 import PageHeader from 'components/pageHeader';
 import useActiveEvent from 'hooks/useActiveEvent';
+import StarredEventView from './StarredEventView';
 
 const VIEWS = {
     LIST: 'list',
@@ -261,7 +263,7 @@ const EventList = () => {
             key: 'index',
             width: 56,
             render: (_text, _record, index) => (
-                <span className="text-[#6e6e73] tabular-nums">{activeEvent ? index + 1 : totalData - ((page - 1) * limitPage) - index}</span>
+                <span className="text-[#6e6e73] tabular-nums">{totalData - ((page - 1) * limitPage) - index}</span>
             ),
         },
         {
@@ -374,6 +376,22 @@ const EventList = () => {
         return <EventPermission eventId={eventId} eventName={eventName} setView={setView} />;
     }
 
+    const openCreate = () => { setEventId(null); setView(VIEWS.CREATE); };
+
+    if (activeEvent) {
+        const record = eventDataWithPerm[0];
+        if (!record) return <div className="bo-card flex justify-center py-24"><Spin /></div>;
+        return (
+            <StarredEventView
+                record={record}
+                actions={buildActions(record).filter((item) => item.type !== 'divider')}
+                editable={canUpdateRecord(record)}
+                onToggleStatus={() => handleUpdateStatus(record)}
+                onCreate={menuPerm.canCreate ? openCreate : undefined}
+            />
+        );
+    }
+
     return (
         <>
             <PageHeader
@@ -382,7 +400,7 @@ const EventList = () => {
                         type="primary"
                         size="large"
                         icon={<PlusOutlined />}
-                        onClick={() => { setEventId(null); setView(VIEWS.CREATE); }}
+                        onClick={openCreate}
                     >
                         {t('back.event.home.createEvent')}
                     </Button>
@@ -395,10 +413,10 @@ const EventList = () => {
                     rowKey="id"
                     columns={columns}
                     dataSource={eventDataWithPerm}
-                    loading={activeEvent ? activeFetching && !activeRecord : isFetching && !data}
+                    loading={isFetching && !data}
                     scroll={{ x: 'max-content' }}
                     onChange={handleChange}
-                    pagination={activeEvent ? false : {
+                    pagination={{
                         pageSize: limitPage,
                         current: page,
                         onChange: (p, ps) => {

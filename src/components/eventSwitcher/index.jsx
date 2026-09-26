@@ -12,7 +12,7 @@ const STATUS = { ALL: "all", ACTIVE: "active", DRAFT: "draft" };
 /** Top-bar search that stars (switches to) another event without going back to the dashboard. */
 export default function EventSwitcher({ className = "" }) {
   const { t } = useTranslation();
-  const { activeEvent, setActiveEvent } = useActiveEvent();
+  const { activeEvent, confirmToggleActiveEvent } = useActiveEvent();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [searchText, setSearchText] = useState("");
@@ -78,7 +78,8 @@ export default function EventSwitcher({ className = "" }) {
         options={options}
         onSelect={(id) => {
           const event = events.find((e) => e.id === id);
-          if (event) setActiveEvent(event);
+          // Picking the event that is already starred does nothing.
+          if (event && event.id !== activeEvent?.id) confirmToggleActiveEvent(event);
           setInput("");
           setOpen(false);
         }}

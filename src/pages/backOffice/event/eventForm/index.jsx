@@ -4,6 +4,7 @@ import CommonForm from "components/commonForm";
 import { AlertError, AlertConfirm } from 'components/alert';
 import PageHeader from 'components/pageHeader';
 import SectionCard from 'components/sectionCard';
+import { hexToRgba } from 'utils/dashboard';
 import StickyActionBar from 'components/stickyActionBar';
 import _ from "lodash";
 import useUploadFileHook from 'hooks/useUploadFileHook';
@@ -18,7 +19,7 @@ import FloatingLabel from 'components/floatingLabel';
 import EventDetails from '../eventDetails';
 import EventConditions from '../eventConditions';
 import ImageUpload from 'components/imageUpload';
-import { checkAndUploadImg, convertStorageToHtml, getImageFileToUpload, getPublicUrl } from 'utils/fileUtils';
+import { checkAndUploadImg, convertStorageToHtml, getImageFileToUpload, getPublicUrl, UploadFailedError } from 'utils/fileUtils';
 import { CalendarOutlined, SaveOutlined, WarningOutlined } from '@ant-design/icons';
 import { eventTypeOption } from 'constants/options/eventTypeOption';
 import ShirtTypes from '../shirtTypes';
@@ -28,6 +29,19 @@ import useCountryStateHook from 'hooks/useCountryStateHook';
 import EventSelections from '../eventSelections';
 import EventAddOns from '../eventAddOns';
 import useMe from 'hooks/useMe';
+
+// Each section's own colour: its tab in the nav and a faint tint on its card.
+// `text` is a darker shade of `color` so the tab label stays readable on the tint.
+const SECTION_TONES = {
+    "ef-general": { color: "#0071e3", text: "#0058b0" },
+    "ef-theme": { color: "#af52de", text: "#8a3bb3" },
+    "ef-settings": { color: "#ff3b30", text: "#c9251c" },
+    "ef-description": { color: "#ff9f0a", text: "#a65c00" },
+    "ef-race": { color: "#34c759", text: "#1f7a37" },
+    "ef-questions": { color: "#30b0c7", text: "#16778a" },
+    "ef-shirts": { color: "#5856d6", text: "#3d3bb0" },
+    "ef-extra": { color: "#a2845e", text: "#7a5f3d" },
+};
 
 const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
     const { t } = useTranslation();
@@ -96,13 +110,15 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                         fileList: logoFileList,
                         prefix,
                         oldKey: eventData?.logoUrl,
-                        isPublic: true
+                        isPublic: true,
+                        strict: true,
                     });
                     const filePictureName = await getImageFileToUpload({
                         fileList: pictureFileList,
                         prefix,
                         oldKey: eventData?.pictureUrl,
-                        isPublic: true
+                        isPublic: true,
+                        strict: true,
                     });
 
                     const payload = await cleanFormValues({
@@ -126,6 +142,8 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                         placement: "topRight",
                     });
                 } catch (err) {
+                    // The upload already showed its own alert; nothing was saved.
+                    if (err instanceof UploadFailedError) return;
                     const response = err?.response;
                     const data = response?.data;
 
@@ -364,6 +382,9 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
         { id: "ef-shirts", label: t("back.event.form.section.shirts") },
         { id: "ef-extra", label: t("back.event.form.section.extra") },
     ].filter(Boolean);
+    const [activeSection, setActiveSection] = useActiveSection(sections);
+    // Props that give a section card its colour and mark it while it is in view.
+    const tone = (id) => ({ id, accent: SECTION_TONES[id].color, active: activeSection === id });
 
     const origin = `${globalThis.location.protocol}//${globalThis.location.host}`;
     const isDraft = mode !== "edit" || !!eventData?.isDraft;
@@ -383,7 +404,7 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                 subtitle={t("back.event.form.subtitle")}
             />
 
-            <SectionNav sections={sections} />
+            <SectionNav sections={sections} active={activeSection} onSelect={setActiveSection} />
 
             <Spin spinning={isLoadingEvent}>
                 <CommonForm
@@ -399,7 +420,7 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                     </CommonForm.Item>
 
                     <div className="grid gap-6">
-                        <SectionCard id="ef-general" title={t("back.event.form.section.general")} description={t("back.event.form.section.generalDesc")}>
+                        <SectionCard {...tone("ef-general")} title={t("back.event.form.section.general")} description={t("back.event.form.section.generalDesc")}>
                             <CommonForm.Item
                                 name="generalInfoTitle"
                                 rules={[{ required: true, message: t("required.generalInfoTitle") }]}
@@ -590,7 +611,7 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                             </Row>
                         </SectionCard>
 
-                        <SectionCard id="ef-theme" title={t("back.event.form.section.theme")} description={t("back.event.form.section.themeDesc")}>
+                        <SectionCard {...tone("ef-theme")} title={t("back.event.form.section.theme")} description={t("back.event.form.section.themeDesc")}>
                             <div className="flex flex-wrap gap-4 mb-2">
                                 <CommonForm.Item name="logoFile" rules={[{ required: true, message: t("required.logo") }]}>
                                     <ImageUpload
@@ -650,7 +671,7 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                         </SectionCard>
 
                         {roleUser === "admin" && (
-                            <SectionCard id="ef-settings" title={t("back.event.form.section.settings")} description={t("back.event.form.section.settingsDesc")} bodyClassName="!py-2">
+                            <SectionCard {...tone("ef-settings")} title={t("back.event.form.section.settings")} description={t("back.event.form.section.settingsDesc")} bodyClassName="!py-2">
                                 <div className="flex items-center justify-between gap-4 py-4 border-b border-[#e5e5ea]">
                                     <div>
                                         <p className="m-0 text-sm font-semibold text-[#1d1d1f]">{t("back.event.form.showChecklist")}</p>
@@ -684,13 +705,13 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                             </SectionCard>
                         )}
 
-                        <SectionCard id="ef-description" title={t("back.event.form.section.description")} description={t("back.event.form.section.descriptionDesc")}>
+                        <SectionCard {...tone("ef-description")} title={t("back.event.form.section.description")} description={t("back.event.form.section.descriptionDesc")}>
                             <CommonForm.Item name="description" rules={[{ required: true, message: t("required.description") }]}>
                                 <FloatingLabel type="tiptap" size="large" label={t("back.event.form.description")} required readOnly={!isEditable} />
                             </CommonForm.Item>
                         </SectionCard>
 
-                        <SectionCard id="ef-race" title={t("back.event.form.section.race")} description={t("back.event.form.section.raceDesc")}>
+                        <SectionCard {...tone("ef-race")} title={t("back.event.form.section.race")} description={t("back.event.form.section.raceDesc")}>
                             <Title>{t("back.event.form.paymentTypes")}</Title>
                             <PaymentTypes form={form} />
                             <div className="border-t border-[#e5e5ea] my-6" />
@@ -700,7 +721,7 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                             <EventTypes form={form} />
                         </SectionCard>
 
-                        <SectionCard id="ef-questions" title={t("back.event.form.section.questions")} description={t("back.event.form.section.questionsDesc")}>
+                        <SectionCard {...tone("ef-questions")} title={t("back.event.form.section.questions")} description={t("back.event.form.section.questionsDesc")}>
                             <Title>{t("back.event.form.selectionFields")}</Title>
                             <EventSelections form={form} />
                             <div className="border-t border-[#e5e5ea] my-6" />
@@ -708,7 +729,7 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                             <EventConditions form={form} />
                         </SectionCard>
 
-                        <SectionCard id="ef-shirts" title={t("back.event.form.section.shirts")} description={t("back.event.form.section.shirtsDesc")}>
+                        <SectionCard {...tone("ef-shirts")} title={t("back.event.form.section.shirts")} description={t("back.event.form.section.shirtsDesc")}>
                             <Title>{t("back.event.form.shirtTypeAndSize")}</Title>
                             <ShirtTypes form={form} />
                             <div className="border-t border-[#e5e5ea] my-6" />
@@ -719,7 +740,7 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                             <EventAddOns form={form} isEditable={isEditable} />
                         </SectionCard>
 
-                        <SectionCard id="ef-extra" title={t("back.event.form.section.extra")} description={t("back.event.form.section.extraDesc")}>
+                        <SectionCard {...tone("ef-extra")} title={t("back.event.form.section.extra")} description={t("back.event.form.section.extraDesc")}>
                             <EventDetails form={form} />
                         </SectionCard>
                     </div>
@@ -740,8 +761,8 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
     )
 }
 
-/** Sticky pill nav that scrolls to each section card and follows the scroll position. */
-const SectionNav = ({ sections }) => {
+/** Which section is in view, following the scroll position. */
+const useActiveSection = (sections) => {
     const [active, setActive] = useState(sections[0]?.id);
     const sectionIds = sections.map((s) => s.id).join();
 
@@ -761,26 +782,41 @@ const SectionNav = ({ sections }) => {
         return () => observer.disconnect();
     }, [sectionIds]);
 
-    return (
-        <div className="sticky top-16 z-20 -mx-1 px-1 py-2 mb-4 bg-[#f5f5f7]/90 backdrop-blur">
-            <div className="bo-card flex gap-1 p-1.5 overflow-x-auto">
-                {sections.map(({ id, label }) => (
+    return [active, setActive];
+};
+
+/** Sticky pill nav, one colour per section, that scrolls to each section card. */
+const SectionNav = ({ sections, active, onSelect }) => (
+    <div className="sticky top-16 z-20 -mx-1 px-1 py-2 mb-4 bg-[#f5f5f7]/90 backdrop-blur">
+        <div className="bo-card flex gap-1.5 p-1.5 overflow-x-auto">
+            {sections.map(({ id, label }) => {
+                const { color, text } = SECTION_TONES[id];
+                const selected = active === id;
+                return (
                     <button
                         key={id}
                         type="button"
                         onClick={() => {
-                            setActive(id);
+                            onSelect(id);
                             document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
                         }}
-                        className={`shrink-0 px-3.5 h-9 rounded-lg text-[13px] cursor-pointer transition-colors ${active === id ? "bg-[rgba(0,113,227,0.1)] text-[#0071e3] font-semibold" : "text-[#424245] hover:bg-[rgba(0,0,0,0.04)]"}`}
+                        className={`shrink-0 inline-flex items-center gap-2 px-3.5 h-9 rounded-lg text-[13px] cursor-pointer transition-all ${selected ? "font-semibold text-white shadow-sm" : "font-medium hover:brightness-95"}`}
+                        style={selected
+                            ? { backgroundColor: color }
+                            : { backgroundColor: hexToRgba(color, 0.1), color: text }}
                     >
+                        <span
+                            aria-hidden
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ backgroundColor: selected ? "#ffffff" : color }}
+                        />
                         {label}
                     </button>
-                ))}
-            </div>
+                );
+            })}
         </div>
-    );
-};
+    </div>
+);
 
 const toHex = (c) => (typeof c === "string" ? c : c?.toHexString?.() || null);
 

@@ -46,6 +46,15 @@ export const convertStorageToHtml = async (html, prefix, getPublicUrl) => {
 };
 
 
+// Thrown when a file could not be uploaded, so the caller stops instead of saving
+// an empty key over the old one. onUploadFile has already shown the error alert.
+export class UploadFailedError extends Error {
+    constructor() {
+        super("upload failed");
+        this.name = "UploadFailedError";
+    }
+}
+
 export const checkAndUploadImg = async (html, prefix, { isPublic = false } = {}) => {
     // Same as above: an empty optional editor field is not an error.
     if (typeof html !== "string" || !html) return html;
@@ -62,6 +71,7 @@ export const checkAndUploadImg = async (html, prefix, { isPublic = false } = {})
         if (src.startsWith("data:image")) {
             const file = dataURLtoFile(src, `image-${Date.now()}.png`);
             const filename = await onUploadFile({ prefix, isPublic, fileList: [{ originFileObj: file }] });
+            if (!filename) throw new UploadFailedError();
             updatedHtml = updatedHtml.replace(fullMatch, `<img src="{$img ${filename}}"`);
         } else if (src.includes("amazonaws.com")) {
             const filename = src.split("/").pop().split("?")[0];
@@ -107,7 +117,9 @@ export async function getImageFileToUpload({
     fileList,
     prefix,
     oldKey,
-    isPublic = false
+    isPublic = false,
+    // true: throw UploadFailedError when the new file fails to upload, instead of returning undefined.
+    strict = false,
 }) {
     const actualOldKey = oldKey || null;
 
@@ -116,7 +128,9 @@ export async function getImageFileToUpload({
     );
 
     if (newFileList.length > 0) {
-        return await onUploadFile({ prefix, isPublic, fileList: newFileList });
+        const key = await onUploadFile({ prefix, isPublic, fileList: newFileList });
+        if (!key && strict) throw new UploadFailedError();
+        return key;
     } else if (!fileList || fileList.length === 0) {
         return null;
     } else if (

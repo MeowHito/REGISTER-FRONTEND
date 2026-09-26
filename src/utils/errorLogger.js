@@ -71,6 +71,22 @@ const redactPayload = (data) => {
     return redactValue(data);
 };
 
+// The backend stores requestData as text, so it must always leave here as a string
+// (an object — e.g. an upload's FormData — fails to deserialize and the log is lost).
+// A FormData body is described by field name only, never its file contents.
+const describeRequestData = (data) => {
+    if (data == null) return data;
+    if (typeof FormData !== 'undefined' && data instanceof FormData) {
+        const fields = [...data.entries()].map(([key, val]) => {
+            if (typeof File !== 'undefined' && val instanceof File) return `${key}=<file ${val.name}, ${val.size} bytes>`;
+            return `${key}=${isSensitiveKey(key) ? REDACTED : String(val)}`;
+        });
+        return `FormData(${fields.join(', ')})`;
+    }
+    const redacted = redactPayload(data);
+    return typeof redacted === 'string' ? redacted : JSON.stringify(redacted);
+};
+
 const buildLogPayload = (level, context, message, meta = {}) => {
     return {
         level,
@@ -153,7 +169,7 @@ const errorLogger = {
             status: axiosError?.response?.status,
             statusText: axiosError?.response?.statusText,
             responseData: redactPayload(axiosError?.response?.data),
-            requestData: isCredentialEndpoint(url) ? OMITTED : redactPayload(axiosError?.config?.data),
+            requestData: isCredentialEndpoint(url) ? OMITTED : describeRequestData(axiosError?.config?.data),
             ...meta
         });
         console.error('[API_ERROR]', payload);
