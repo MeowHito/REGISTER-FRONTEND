@@ -261,6 +261,18 @@ const backOfficeServices = {
     });
   },
 
+  useQueryCountUserByRoleType() {
+    return useQuery({
+      queryKey: ["countUserByRoleType"],
+      queryFn: async () => {
+        const res = await createRequest.get(`/api/user/countByRoleType`);
+        return res.data.data;
+      },
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    });
+  },
+
   useQueryGetAllUserRole({ paging, onSuccess, onError }) {
     return useQueryWithCallbacks(
       {

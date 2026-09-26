@@ -1,5 +1,5 @@
-import { CheckCircleOutlined, PlusOutlined, SearchOutlined, SettingOutlined, StopOutlined, UserOutlined } from '@ant-design/icons';
-import { Button, Image, Input, Popover, Space, Spin, Table } from 'antd';
+import { CheckCircleOutlined, EditOutlined, PlusOutlined, SearchOutlined, StopOutlined } from '@ant-design/icons';
+import { Button, Image, Input, Popover, Segmented, Space, Spin, Table, Tag } from 'antd';
 import { NOT_FOUND_IMG } from 'assets';
 import UseModalHook from 'hooks/useModalHook';
 import React, { useEffect, useMemo, useState } from 'react'
@@ -25,7 +25,10 @@ function UserSetting() {
   const [order, setOrder] = useState('asc');
   const [searchText, setSearchText] = useState('');
   const [searchedColumn, setSearchedColumn] = useState(undefined);
-  const [limitPage, setLimitPage] = useState(5);
+  const [limitPage, setLimitPage] = useState(10);
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [nameInput, setNameInput] = useState('');
+  const [nameSearch, setNameSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalData, setTotalData] = useState(0);
   const [userData, setUserData] = useState([]);
@@ -52,7 +55,15 @@ function UserSetting() {
     handleClose: handleCloseCreateUserProfile,
   } = UseModalHook();
 
-  const queryKey = useMemo(() => ["getAllUsers", { page }], [page]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setNameSearch(nameInput.trim());
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [nameInput]);
+
+  const queryKey = useMemo(() => ["getAllUsers", { page, limitPage, roleFilter, nameSearch }], [page, limitPage, roleFilter, nameSearch]);
 
   const paging = {
     size: limitPage,
@@ -62,11 +73,22 @@ function UserSetting() {
     searchField: searchedColumn,
     searchText: (searchText != "" && searchText != undefined) ? "%" + searchText + "%" : undefined,
     search: [
+      roleFilter !== 'all' && { searchField: "roleType", searchText: roleFilter, searchType: "EQUAL" },
+      nameSearch && { searchField: "name", searchText: nameSearch },
     ].filter(Boolean)
   };
 
   const { data: users, refetch: refetchUser, isFetching: isLoadingUser } = backOfficeServices.useQueryGetAllUser({ paging, queryKey });
   const { data: roles } = backOfficeServices.useQueryGetAllRole();
+  const { data: roleCounts, refetch: refetchRoleCounts } = backOfficeServices.useQueryCountUserByRoleType();
+
+  const refetchUsers = () => {
+    refetchUser();
+    refetchRoleCounts();
+  };
+
+  const roleCount = (roleType) => roleCounts?.[roleType] ?? 0;
+  const allCount = Object.values(roleCounts || {}).reduce((sum, n) => sum + n, 0);
 
   const { mutate: updateUserRole } = backOfficeServices.useMutationUpdateUserRole();
 
@@ -92,7 +114,7 @@ function UserSetting() {
               newRole: newRoleName,
             }),
           });
-          refetchUser();
+          refetchUsers();
         },
         onError: (err) => {
           AlertError({ text: errorToMessage(err) });
@@ -198,6 +220,7 @@ function UserSetting() {
       key: 'companyName',
       sorter: true,
       search: true,
+      hidden: roleFilter === 'guest' || roleFilter === 'admin',
     },
     {
       title: t("back.setting.user.home.role"),
@@ -205,6 +228,7 @@ function UserSetting() {
       key: 'role',
       sorter: true,
       search: true,
+      hidden: roleFilter !== 'all',
     },
     {
       title: t("back.setting.user.home.email"),
@@ -220,9 +244,9 @@ function UserSetting() {
       align: 'center',
       render: (_, { thumbPictureUrl }) => (
         <Image
-          style={{ borderRadius: "9999px" }}
-          width={40}
-          height={40}
+          style={{ borderRadius: "9999px", objectFit: "cover" }}
+          width={36}
+          height={36}
           src={thumbPictureUrl || NOT_FOUND_IMG}
           alt="profile_img"
           fallback={NOT_FOUND_IMG}
@@ -234,9 +258,11 @@ function UserSetting() {
       dataIndex: "active",
       key: "active",
       sorter: true,
-      render: (active) => {
-        return active ? t("general.active") : t("general.inactive");
-      },
+      render: (active) => (
+        <Tag color={active ? "success" : "default"} bordered={false} className="!m-0 !rounded-full !px-2.5">
+          {active ? t("general.active") : t("general.inactive")}
+        </Tag>
+      ),
     },
     {
       title: t("back.setting.tab.role"),
@@ -268,7 +294,7 @@ function UserSetting() {
               <Popover content={t("back.setting.user.home.buttonResetPassword")} trigger={isMobile ? "none" : "hover"}>
                 <Button
                   className="center"
-                  icon={<SettingOutlined />}
+                  icon={<span role="img" aria-label="key" className="text-lg leading-none">🔑</span>}
                   onClick={() => handleResetPassword(id, email)}
                 >
                 </Button>
@@ -277,7 +303,7 @@ function UserSetting() {
             <Popover content={t("back.setting.user.home.edit")} trigger={isMobile ? "none" : "hover"}>
               <Button
                 className="center"
-                icon={<UserOutlined />}
+                icon={<EditOutlined />}
                 onClick={() => handleUserProfile(id)}
               >
               </Button>
@@ -355,32 +381,59 @@ function UserSetting() {
   return (
     <>
       <Spin spinning={isLoadingUser}>
-        <div className="pb-2 w-full flex flex-rol justify-between">
-          <div className="text-xl font-semibold opacity-60">{t("back.setting.user.home.allUsers")} (  {totalData || 0}  )</div>
-          <div className="w-[120px]">
-            <Button
-              type="primary"
-              className="w-full h-full center"
-              icon={<PlusOutlined />}
-              onClick={() => {
-                setEditUser(null);
-                handleOpenCreateUser();
-                setMode("new")
-              }}
-            >
-              {t("back.setting.user.home.buttonUser")}
-            </Button>
+        <div className="w-full flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div className="text-lg font-semibold text-[#1d1d1f]">
+            {t("back.setting.user.home.allUsers")}
+            <span className="ml-2 text-[#6e6e73] font-normal tabular-nums">({totalData || 0})</span>
           </div>
+          <Button
+            type="primary"
+            className="center"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              setEditUser(null);
+              handleOpenCreateUser();
+              setMode("new")
+            }}
+          >
+            {t("back.setting.user.home.buttonUser")}
+          </Button>
         </div>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="max-w-full overflow-x-auto">
+          <Segmented
+            value={roleFilter}
+            onChange={(value) => {
+              setRoleFilter(value);
+              setPage(1);
+            }}
+            options={[
+              { value: 'all', label: `${t("back.setting.user.home.filterAll")} (${allCount})` },
+              { value: 'organizer', label: `${t("back.setting.user.home.filterOrganizer")} (${roleCount('organizer')})` },
+              { value: 'guest', label: `${t("back.setting.user.home.filterGuest")} (${roleCount('guest')})` },
+              { value: 'admin', label: `${t("back.setting.user.home.filterAdmin")} (${roleCount('admin')})` },
+            ]}
+            size={isMobile ? 'small' : 'middle'}
+          />
+          </div>
+          <Input
+            allowClear
+            prefix={<SearchOutlined className="text-[#a1a1a6]" />}
+            placeholder={t("back.setting.user.home.searchName")}
+            value={nameInput}
+            onChange={(e) => setNameInput(e.target.value)}
+            className={isMobile ? "w-full" : "!w-72"}
+          />
+        </div>
+        <div className="rounded-xl border border-[#e5e5ea] overflow-hidden bg-white [&_.ant-table-pagination]:!px-4">
         <Table className="!w-full !text-nowrap"
           rowKey={"id"}
-          columns={columns.map(column => ({
+          columns={columns.filter(column => !column.hidden).map(column => ({
             ...column,
             ...(column.search && getColumnSearchProps(column.dataIndex))
           }))}
           dataSource={userData}
           scroll={{ x: true }}
-          bordered
           pagination={{
             pageSize: limitPage,
             current: page,
@@ -394,6 +447,7 @@ function UserSetting() {
           }}
           onChange={handleChange}
         />
+        </div>
       </Spin>
       <User
         isEditable={mode === "new" || mode === "edit"}
@@ -401,7 +455,7 @@ function UserSetting() {
         open={openCreateUser}
         onOk={handleCloseCreateUser}
         onCancel={handleCloseCreateUser}
-        refetch={refetchUser}
+        refetch={refetchUsers}
         mode={mode}
       />
       <ResetPassword

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Avatar, ConfigProvider, Drawer, Menu, Spin } from "antd";
-import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined } from "@ant-design/icons";
+import { ConfigProvider, Drawer, Menu, Spin } from "antd";
+import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import * as Icons from "@ant-design/icons";
 import { useMediaQuery } from "react-responsive";
 import { useTranslation } from "react-i18next";
@@ -11,7 +11,6 @@ import MenuItemBadge from "components/menuItemBadge";
 import AnnouncementBanner from "components/announcementBanner";
 import BackOfficeHeader from "components/backOfficeHeader";
 import ActiveEventBar from "components/activeEventBar";
-import { useAvatarUrl, useDisplayName, useRoleLabel } from "hooks/useMeDisplay";
 import useMe from "hooks/useMe";
 import { PROFILE_LOADING } from "store/reducers/profileSlice";
 import { handleQueryStatus } from "utils";
@@ -48,9 +47,6 @@ export default function BackOfficeLayout() {
   const currentPathSegs = useMemo(() => location.pathname.split("/"), [location.pathname]);
 
   const { data: me, status: meStatus, fetchStatus: meFetchStatus } = useMe({ retry: 0 });
-  const name = useDisplayName(me);
-  const roleLabel = useRoleLabel(me);
-  const avatarUrl = useAvatarUrl(me);
 
   useEffect(() => {
     handleQueryStatus(
@@ -143,23 +139,6 @@ export default function BackOfficeLayout() {
 
   const sidebarBody = (
     <div className="flex flex-col h-full">
-      <div className={`border-b border-[#e5e5ea] ${narrow ? "py-4 flex justify-center" : "px-4 pt-5 pb-4 text-center"}`}>
-        <Avatar
-          src={avatarUrl || undefined}
-          icon={<UserOutlined />}
-          size={narrow ? 36 : 56}
-          className="!bg-[rgba(0,113,227,0.1)] !text-[#0071e3] ring-1 ring-[#e5e5ea]"
-        />
-        {!narrow && (
-          <>
-            <p className="mt-2.5 mb-0 text-sm font-semibold text-[#1d1d1f] leading-tight truncate">{name || "-"}</p>
-            <span className="inline-flex mt-1.5 items-center h-5 px-2 rounded-full bg-[rgba(0,113,227,0.1)] text-[#0071e3] text-[11px] font-semibold">
-              {roleLabel}
-            </span>
-          </>
-        )}
-      </div>
-
       <div className="flex-1 bo-scroll-y py-2">
         <Menu
           mode="inline"
