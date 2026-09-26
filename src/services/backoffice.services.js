@@ -565,6 +565,20 @@ const backOfficeServices = {
     });
   },
 
+  useQueryEventCalendarImportStatus({ enabled = true, refetchInterval = false } = {}) {
+    return useQuery({
+      queryKey: ["getEventCalendarImportStatus"],
+      queryFn: async () => {
+        const res = await createRequest.get(`api/eventCalendar/import/status`);
+        return res.data.data;
+      },
+      enabled,
+      refetchInterval,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    });
+  },
+
   useQueryGetEventCalendarDetails({ id }) {
     return useQuery({
       queryKey: ["getEventCalendarDetails", id],
@@ -1531,6 +1545,28 @@ const backOfficeServices = {
     return useMutation({
       mutationFn: async (values) => {
         const res = await createRequest.post(`/api/eventCalendar`, values);
+        return res.data;
+      },
+      onSuccess,
+      onError,
+    });
+  },
+
+  useMutationSyncEventCalendarImport(onSuccess, onError) {
+    return useMutation({
+      mutationFn: async (options = {}) => {
+        const res = await createRequest.post(`/api/eventCalendar/import/sync`, options);
+        return res.data;
+      },
+      onSuccess,
+      onError,
+    });
+  },
+
+  useMutationClearEventCalendarImport(onSuccess, onError) {
+    return useMutation({
+      mutationFn: async () => {
+        const res = await createRequest.delete(`/api/eventCalendar/import`);
         return res.data;
       },
       onSuccess,

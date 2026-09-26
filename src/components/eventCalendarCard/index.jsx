@@ -54,6 +54,11 @@ const EventCalendarCard = ({ event }) => {
                     <strong>{t("back.eventCalendarList.location")}:</strong>{" "}
                     {event?.location}
                   </p>
+                  {event?.source && (
+                    <p className="text-xs text-gray-400 mt-1 mb-0">
+                      {t("back.eventCalendarList.sourceCredit")}: {event.source}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

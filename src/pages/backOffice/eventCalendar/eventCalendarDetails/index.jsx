@@ -90,6 +90,24 @@ const EventCalendarDetails = ({ eventId: id, onBack }) => {
       ),
     },
     {
+      key: "source",
+      label: t("back.eventCalendarList.source"),
+      children: event?.source ? (
+        <span>
+          <Tag color="cyan">{t("back.eventCalendarList.sourceImported")}</Tag>
+          {event?.sourceUrl ? (
+            <a href={event.sourceUrl} target="_blank" rel="noopener noreferrer">
+              {t("back.eventCalendarList.viewOriginal")} ({event.source})
+            </a>
+          ) : (
+            event.source
+          )}
+        </span>
+      ) : (
+        <Tag>{t("back.eventCalendarList.sourceManual")}</Tag>
+      ),
+    },
+    {
       key: "submitter",
       label: t("back.eventCalendarList.submitterName"),
       children: event?.submitterName,

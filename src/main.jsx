@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client'
 
-import { ConfigProvider } from "antd";
+import { ConfigProvider, App as AntdApp } from "antd";
 import Preloader from "components/preLoader";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "react-redux";
@@ -38,6 +38,7 @@ dayjs.extend(buddhistEra);
 const queryClient = new QueryClient();
 createRoot(document.getElementById('root')).render(
   <ConfigProvider theme={antdTheme}>
+    <AntdApp component={false}>
     <QueryClientProvider client={queryClient}>
       <Provider store={store}>
         <Preloader />
@@ -52,6 +53,7 @@ createRoot(document.getElementById('root')).render(
         </GoogleOAuthProvider>
       </Provider>
     </QueryClientProvider>
+    </AntdApp>
   </ConfigProvider>
   ,
 )

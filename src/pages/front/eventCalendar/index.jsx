@@ -8,17 +8,24 @@ import {
   Select,
   Badge,
   Skeleton,
-  Space
+  Space,
+  Tooltip,
+  App
 } from "antd";
-import { LeftOutlined, PlusOutlined, RightOutlined } from "@ant-design/icons";
+import { LeftOutlined, PlusOutlined, RightOutlined, CloudDownloadOutlined } from "@ant-design/icons";
 import Search from "antd/es/input/Search";
 import Cookies from "js-cookie";
 import UseModalHook from "hooks/useModalHook";
 import FrontLayout from "components/frontLayout";
 import EventCard from "components/eventCard";
 import EventCalendarForm from "pages/backOffice/eventCalendar/eventCalendarForm";
+import ImportSyncModal from "pages/backOffice/eventCalendar/importSyncModal";
 import EventCalendarCard from "components/eventCalendarCard";
 import generalService from "services/general.services";
+import backOfficeServices from "services/backoffice.services";
+import useMe from "hooks/useMe";
+import { AlertError } from "components/alert";
+import { errorToMessage } from "hooks/functions/errorToMessage";
 import thTH from 'antd/es/date-picker/locale/th_TH';
 import enUS from 'antd/es/date-picker/locale/en_US';
 import { useTranslation } from "react-i18next";
@@ -32,6 +39,7 @@ const { MonthPicker } = DatePicker;
 
 const EventCalendar = () => {
   const { t, i18n } = useTranslation();
+  const { message } = App.useApp();
   const limitPage = 12;
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [startDate, setStartDate] = useState(null);
@@ -49,6 +57,7 @@ const EventCalendar = () => {
   const didMountRef = useRef(false);
 
   const isThai = i18n.language === "th";
+
   
   const eventDateFilter = selectedMonth
     ? {
@@ -118,6 +127,55 @@ const EventCalendar = () => {
   });
 
   const isLoading = isLoadingEvents || isLoadingEventsExternal;
+
+  // Admin-only: pull races from the external calendar site (same job as the back office button).
+  const { data: me } = useMe({ retry: 0 });
+  const isAdmin = me?.role?.roleType === "admin";
+  const { data: importStatus, refetch: refetchImportStatus } =
+    backOfficeServices.useQueryEventCalendarImportStatus({
+      enabled: isAdmin,
+      refetchInterval: (query) => (query.state.data?.running ? 4000 : false),
+    });
+  const syncRunning = !!importStatus?.running;
+  const currentRun = importStatus?.currentRun;
+  const syncRunningLabel = currentRun?.total
+    ? t("back.eventCalendarList.syncProgress", {
+        done: currentRun.listed ?? 0,
+        total: currentRun.total,
+        created: currentRun.created ?? 0,
+      })
+    : t("back.eventCalendarList.syncRunning");
+  const wasSyncRunningRef = useRef(false);
+  useEffect(() => {
+    if (wasSyncRunningRef.current && !syncRunning) {
+      message.success(t("back.eventCalendarList.syncDone"));
+      refetchEventExternalData();
+    }
+    wasSyncRunningRef.current = syncRunning;
+  }, [syncRunning, refetchEventExternalData, t, message]);
+  const [syncModalOpen, setSyncModalOpen] = useState(false);
+  const { mutate: syncImport, isPending: isStartingSync } =
+    backOfficeServices.useMutationSyncEventCalendarImport(
+      (res) => {
+        setSyncModalOpen(false);
+        if (res?.success) {
+          message.info(t("back.eventCalendarList.syncStarted"));
+        } else {
+          AlertError({ text: res?.message });
+        }
+        refetchImportStatus();
+      },
+      (err) => AlertError({ text: errorToMessage(err) })
+    );
+  const lastRun = importStatus?.lastRun;
+  const syncTooltip = syncRunning
+    ? syncRunningLabel
+    : lastRun?.finishedAt
+      ? `${t("back.eventCalendarList.syncLast")} ${dayjs(lastRun.finishedAt).format("DD/MM/YYYY HH:mm")} · ${t(
+          "back.eventCalendarList.syncSummary",
+          { created: lastRun.created ?? 0, updated: lastRun.updated ?? 0, failed: lastRun.failed ?? 0 }
+        )}${importStatus?.pendingCount > 0 ? ` · ${t("back.eventCalendarList.syncPending", { count: importStatus.pendingCount })}` : ""}`
+      : t("back.eventCalendarList.syncNever");
 
   const fullCellRender = (current, info) => {
     if (info.type !== "date") return info.originNode;
@@ -336,7 +394,20 @@ const EventCalendar = () => {
                   </div>
                 </div>
 
-                <div className="flex w-full justify-end lg:w-auto">
+                <div className="flex w-full justify-end gap-2 lg:w-auto">
+                  {isAdmin && importStatus?.enabled !== false && (
+                    <Tooltip title={syncTooltip}>
+                      <Button
+                        onClick={() => setSyncModalOpen(true)}
+                        className="shadow-none whitespace-nowrap !px-3 sm:!px-4 !text-sm sm:!text-base lg:!px-4 lg:!text-base"
+                        icon={<CloudDownloadOutlined />}
+                        loading={isStartingSync || syncRunning}
+                        disabled={syncRunning}
+                      >
+                        {syncRunning ? syncRunningLabel : t("back.eventCalendarList.syncNow")}
+                      </Button>
+                    </Tooltip>
+                  )}
                   <Button
                     type="primary"
                     onClick={handleopenForm}
@@ -386,6 +457,13 @@ const EventCalendar = () => {
           </Col>
         </Row>
       </div>
+      <ImportSyncModal
+        open={syncModalOpen}
+        onCancel={() => setSyncModalOpen(false)}
+        onConfirm={(options) => syncImport(options)}
+        loading={isStartingSync}
+        defaultMonths={importStatus?.horizonMonths}
+      />
       <EventCalendarForm
         mode="create"
         open={openForm}

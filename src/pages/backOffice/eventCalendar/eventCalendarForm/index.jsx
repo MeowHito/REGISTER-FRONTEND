@@ -126,6 +126,7 @@ const EventCalendarForm = ({ open, onCancel, mode, data, onSuccess, isSubmitting
     <Modal
       title={t("back.eventCalendarList.submission")}
       open={open}
+      forceRender
       onCancel={onCancel}
       confirmLoading={isSubmitting}
       onOk={() => {

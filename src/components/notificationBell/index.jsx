@@ -22,6 +22,7 @@ const TYPE_STYLE = {
   HELP_REQUEST: { icon: <CustomerServiceOutlined />, className: "bg-[rgba(255,159,10,0.14)] text-[#b36200]" },
   ANNOUNCEMENT_SUBMITTED: { icon: <NotificationOutlined />, className: "bg-[rgba(255,159,10,0.14)] text-[#b36200]" },
   EVENT_CALENDAR_SUBMITTED: { icon: <CalendarOutlined />, className: "bg-[rgba(48,176,199,0.14)] text-[#1f7f91]" },
+  EVENT_CALENDAR_IMPORTED: { icon: <CalendarOutlined />, className: "bg-[rgba(48,176,199,0.14)] text-[#1f7f91]" },
   ORDER_REVIEW: { icon: <ExclamationCircleOutlined />, className: "bg-[rgba(255,59,48,0.1)] text-[#d70015]" },
   ORDER_PAID: { icon: <CheckCircleOutlined />, className: "bg-[rgba(52,199,89,0.12)] text-[#1d7c34]" },
   EVENT_INVITED: { icon: <TeamOutlined />, className: "bg-[rgba(0,113,227,0.1)] text-[#0071e3]" },
