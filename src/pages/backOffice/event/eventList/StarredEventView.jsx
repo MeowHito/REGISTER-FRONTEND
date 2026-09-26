@@ -6,7 +6,6 @@ import {
     LinkOutlined,
     PlusOutlined,
     SkinOutlined,
-    StarFilled,
     TagOutlined,
     TeamOutlined,
     GiftOutlined,
@@ -17,7 +16,6 @@ import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 
 import backOfficeServices from 'services/backoffice.services';
-import { usePublicImageUrl } from 'utils/fileUtils';
 import { SYS_DATE_FORMAT } from 'constants/helper';
 
 const BLUE = '#0071e3';
@@ -89,7 +87,6 @@ export default function StarredEventView({ record, actions, editable, onToggleSt
     const eventId = record?.id;
     const { data: event, isFetching: eventLoading } = backOfficeServices.useQueryGetEventById({ id: eventId });
     const { data: od, isFetching: statsLoading } = backOfficeServices.useQueryGetDashboardOverview({ eventId });
-    const { data: coverUrl } = usePublicImageUrl({ key: event?.pictureUrl || event?.logoUrl, prefix: 'event', isPublic: true });
 
     const published = !record.isDraft;
     const reg = REG_STATUS[record.eventStatus];
@@ -131,18 +128,11 @@ export default function StarredEventView({ record, actions, editable, onToggleSt
 
     return (
         <div className="bo-card overflow-hidden">
-            {/* Hero: cover, name, status and organizer */}
+            {/* Hero: status and organizer (the name is already in the header's starred-event pill) */}
             <div className="flex flex-col lg:flex-row lg:items-center gap-4 px-5 md:px-6 py-4 border-b border-[#e5e5ea]">
                 <div className="flex items-center gap-4 min-w-0 flex-1">
-                    <div className="shrink-0 w-[68px] h-[68px] rounded-2xl overflow-hidden bg-[rgba(0,113,227,0.08)] flex items-center justify-center text-[#0071e3] text-3xl">
-                        {coverUrl ? <img src={coverUrl} alt="" className="w-full h-full object-cover" /> : <FlagOutlined />}
-                    </div>
                     <div className="min-w-0">
-                        <div className="flex items-center gap-2 min-w-0">
-                            <span className="shrink-0 text-[#f5b301] text-lg leading-none"><StarFilled /></span>
-                            <h1 className="m-0 text-[22px] font-bold leading-tight text-[#1d1d1f] truncate" title={record.name}>{record.name}</h1>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                        <div className="flex flex-wrap items-center gap-1.5">
                             {reg && (
                                 <Chip className={reg.className}>
                                     <span className={`w-1.5 h-1.5 rounded-full ${reg.dot}`} />
