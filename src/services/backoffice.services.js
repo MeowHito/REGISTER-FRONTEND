@@ -859,12 +859,13 @@ const backOfficeServices = {
     );
   },
 
-  useQuerygetHistoryDetail({ orderId }) {
+  // token: the pay-later token from the confirmation email, needed when the buyer isn't signed in.
+  useQuerygetHistoryDetail({ orderId, token }) {
     return useQuery({
-      queryKey: ["fetchPaymentDetailsDirect", orderId],
+      queryKey: ["fetchPaymentDetailsDirect", orderId, token],
       queryFn: async () => {
-        const path = `/api/orderHistory/detail?orderId=${orderId}`;
-        const res = await createRequest.get(path);
+        const path = `/api/orderHistory/detail`;
+        const res = await createRequest.get(path, { params: { orderId, token: token || undefined } });
         return res.data;
       },
       enabled: !!orderId,

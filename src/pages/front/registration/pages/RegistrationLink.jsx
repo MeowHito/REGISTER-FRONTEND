@@ -29,6 +29,7 @@ const RegistrationLink = () => {
         ...detailQuery
     } = backOfficeServices.useQuerygetHistoryDetail({
         orderId: orderToken?.orderNo,
+        token,
     });
 
     const orderStatus = String(orderDetail?.status || "").toUpperCase().trim();

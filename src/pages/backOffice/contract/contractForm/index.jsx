@@ -55,6 +55,7 @@ const ContractForm = ({ data, open, onCancel, refetch }) => {
             .then((values) => {
                 const formattedValues = {
                     ...values,
+                    id: data?.id,
                     contractDate: dayjs(values.contractDate).format("D MMMM YYYY"),
                     address: `${values?.address} ${values?.district} ${values?.amphoe} ${values?.province} ${values?.zipcode}`
                 };
