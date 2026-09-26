@@ -5,7 +5,7 @@ import {
   MoreOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
-import { Button, Dropdown, Table } from "antd";
+import { Button, Dropdown, Table, Tooltip } from "antd";
 import useMe from "hooks/useMe";
 import React, { isValidElement, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -42,6 +42,7 @@ export default function PermissionActionTable({
   onDelete,
   extraActions,
   extraPosition = "end",
+  inlineActions = false,
   recordPermission = false,
   headerExtra,
   ...props
@@ -69,7 +70,7 @@ export default function PermissionActionTable({
         title: "",
         key: "manage",
         align: "center",
-        width: 64,
+        width: inlineActions ? undefined : 64,
         fixed: 'right',
         render: (_, record) => {
           const finalPerm = mergePermissions(menuPerm, record, recordPermission);
@@ -100,6 +101,28 @@ export default function PermissionActionTable({
 
           if (actions.length === 0) return null;
 
+          // Icon buttons right in the row (label in a tooltip), for tables whose rows are opened all the time.
+          if (inlineActions) {
+            return (
+              <div className="flex items-center justify-center gap-1.5">
+                {actions.filter((a) => a.type !== "divider").map((a) => (
+                  <Tooltip key={a.key} title={a.label}>
+                    <Button
+                      size="small"
+                      icon={a.icon}
+                      aria-label={typeof a.label === "string" ? a.label : a.key}
+                      danger={a.danger}
+                      disabled={a.disabled}
+                      type={a.key === "edit" ? "primary" : "default"}
+                      ghost={a.key === "edit"}
+                      onClick={(e) => { e.stopPropagation(); a.onClick?.(); }}
+                    />
+                  </Tooltip>
+                ))}
+              </div>
+            );
+          }
+
           return (
             <Dropdown menu={{ items: actions }} trigger={["click"]} placement="bottomRight">
               <Button type="text" shape="circle" icon={<MoreOutlined className="text-lg" />} aria-label={t("general.manage")} />
@@ -108,7 +131,7 @@ export default function PermissionActionTable({
         },
       } : null,
     ].filter(Boolean);
-  }, [columns, me, menuPerm, onView, onEdit, onDelete, extraActions, t, rawId, recordPermission]);
+  }, [columns, me, menuPerm, onView, onEdit, onDelete, extraActions, t, rawId, recordPermission, inlineActions]);
 
   const createButton = menuPerm.canCreate
     ? customCreate || (onCreate ? (

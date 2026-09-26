@@ -140,6 +140,17 @@
   background: rgba(245, 179, 1, 0.08);
 }
 
+/* Zebra rows (white / grey) in long data tables such as the participant list. */
+.bo-shell .bo-row-stripe > td.ant-table-cell {
+  background: #f5f5f7;
+}
+
+/* A participant an admin or organizer edited by hand: the whole row in dark orange. */
+.bo-shell .bo-row-edited > td.ant-table-cell {
+  color: #c2410c;
+  font-weight: 600;
+}
+
 /* Table footer: "Showing 1-5 of 6" on the left, pager + page size on the right. */
 .bo-shell .ant-table-wrapper .ant-table-pagination.ant-pagination {
   align-items: center;

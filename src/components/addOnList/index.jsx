@@ -50,12 +50,12 @@ export default function AddOnList({ items = [], showApplicant = true }) {
 }
 
 /** Compact tags for a table cell; details (note, whole-order) in the tooltip. */
-export function AddOnTags({ items = [] }) {
+export function AddOnTags({ items = [], className = "max-w-[260px]" }) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language?.toLowerCase();
   if (!items.length) return <span className="text-[#a1a1a6]">-</span>;
   return (
-    <div className="flex flex-wrap gap-1 max-w-[260px]">
+    <div className={`flex flex-wrap gap-1 ${className}`}>
       {items.map((a) => (
         <Tooltip
           key={a.id}

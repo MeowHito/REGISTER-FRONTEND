@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Checkbox, Col, Divider, Modal, Row, Spin } from 'antd';
 import {
     UserOutlined,
@@ -7,6 +7,9 @@ import {
     TrophyOutlined,
     FormOutlined,
     GiftOutlined,
+    HomeOutlined,
+    CarOutlined,
+    HistoryOutlined,
 } from '@ant-design/icons';
 import CommonForm from "components/commonForm";
 import AddOnList from "components/addOnList";
@@ -21,6 +24,13 @@ import dayjs from 'dayjs';
 import { SYS_DATE_FORMAT } from 'constants/helper';
 import { bloodGroupOption } from 'constants/options/bloodGroupOption';
 import useCountryStateHook from 'hooks/useCountryStateHook';
+import masterService from 'services/master.services';
+
+// Change-log field key (backend) → label key under back.event.participant.form.
+const EDIT_FIELD_LABEL = {
+    eventType: 'eventTypeName',
+    teamClub: 'teamName',
+};
 
 const SectionHeader = ({ icon, title }) => (
     <Divider orientation="left" orientationMargin={0} style={{ marginTop: 8, marginBottom: 12 }}>
@@ -46,19 +56,35 @@ const QuestionCard = ({ index, label, required, children }) => (
     </div>
 );
 
-const Participant = ({ isEditable, data, open, onCancel, refetch, mode, nationalityOption, isLoadingNationality, genderOption }) => {
+const Participant = ({ isEditable, data, open, onCancel, refetch, mode, nationalityOption, isLoadingNationality, genderOption, eventId, eventTypeOption = [] }) => {
     const { t, i18n } = useTranslation();
     const [form] = CommonForm.useForm();
-    const [shirtSizeOptions, setShirtSizeOptions] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    // Seed data stores the province as a countryState uuid, the registration page as its Thai name.
+    // The select works on names; an untouched uuid is sent back as it was so it isn't logged as an edit.
+    const provinceRaw = useRef(null);
 
     const { data: participantData, refetch: refetchParticipant, isFetching } = backOfficeServices.useQueryGetParticipantById({ id: data?.id });
-
-    const { data: shirtSizeData } = backOfficeServices.useQueryGetShirtSizeByType({ id: data?.shirtTypeId });
+    const { data: eventData } = backOfficeServices.useQueryGetEventById({ id: eventId, enabled: open });
+    const { data: countryStates } = masterService.useQueryGetAllCountryState();
 
     const isViewMode = mode !== "edit" || !isEditable;
 
     const { isLoadingProvince, provinceOption } = useCountryStateHook({ valueKey: 'stateLocal' });
+
+    const shirtTypes = useMemo(() => eventData?.shirtTypes || [], [eventData]);
+    const shirtTypeId = CommonForm.useWatch('shirtTypeId', form);
+    const eventTypeId = CommonForm.useWatch('eventTypeId', form);
+    const shirtTypeOptions = useMemo(() => shirtTypes.map(({ id, name }) => ({ value: id, label: name })), [shirtTypes]);
+    const shirtSizeOptions = useMemo(() => {
+        const type = shirtTypes.find((s) => s.id === shirtTypeId);
+        return (type?.shirtSizes || []).map(({ id, name }) => ({ value: id, label: name }));
+    }, [shirtTypes, shirtTypeId]);
+    const deliveryByPost = participantData?.deliveryMethod === 'post'
+        || ['shippingAddress', 'shippingProvince', 'shippingAmphoe', 'shippingDistrict', 'shippingZipcode'].some((k) => participantData?.[k]);
+    const edits = [...(participantData?.manualEdits || [])].reverse();
+    const fieldLabel = (key) => t(`back.event.participant.form.${EDIT_FIELD_LABEL[key] || key}`);
+    const fmtEditTime = (v) => (v ? dayjs(v).format(`${SYS_DATE_FORMAT} HH:mm`) : '-');
 
     useEffect(() => {
         if (participantData && open) {
@@ -95,26 +121,19 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
                 }
             });
 
+            const state = (countryStates || []).find((c) => c.id === participantData?.province);
+            provinceRaw.current = state ? { raw: participantData.province, shown: state.stateLocal } : null;
+
             let _field = {
                 ...participantData,
+                province: state ? state.stateLocal : participantData?.province,
                 birthDate: toStartOfDay(participantData?.birthDate),
                 registerDate: participantData?.registerDate ? dayjs(participantData.registerDate).format(SYS_DATE_FORMAT) : '',
                 selectionAnswers: formSelectionAnswers,
             };
             form.setFieldsValue(_field);
         }
-    }, [participantData, open]);
-
-    useEffect(() => {
-        if (shirtSizeData?.length > 0) {
-            const options = shirtSizeData?.map(({ name, id }) => ({
-                value: id, label: name
-            })) || [];
-            setShirtSizeOptions(options);
-        } else {
-            setShirtSizeOptions([]);
-        }
-    }, [shirtSizeData]);
+    }, [participantData, open, countryStates]);
 
     useEffect(() => {
         if (open && data) {
@@ -125,11 +144,19 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
     }, [open, data]);
 
     const { mutateAsync: updateParticipant } = backOfficeServices.useMutationUpdateParticipant(
-        (res) => {
-            const { success, message } = res;
+        (res, payload) => {
+            const { success, message, data: code } = res;
+            // The new distance is full: saved nothing yet, ask and resend with the override.
+            if (!success && code === 'OVER_QUOTA') {
+                AlertConfirm({
+                    text: t("back.event.participant.form.overQuotaConfirm", { message, interpolation: { escapeValue: false } }),
+                    onOk: () => updateParticipant({ ...payload, confirmOverQuota: true }),
+                });
+                return;
+            }
             if (success) {
                 form.resetFields();
-                refetch();
+                refetch(payload);
                 AlertClosed();
                 onCancel();
                 AlertSuccess({});
@@ -190,9 +217,13 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
                         })
                         .filter(Boolean);
 
+                    const province = provinceRaw.current && values?.province === provinceRaw.current.shown
+                        ? provinceRaw.current.raw
+                        : values?.province;
                     let isData = {
                         ...data,
                         ...values,
+                        province,
                         birthDate: toStartOfDayISO(values?.birthDate),
                         selectionAnswers: structuredAnswers,
                     };
@@ -243,7 +274,33 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
                         onFinish={onFinish}
                         autoComplete="off"
                     >
-                        {/* ── Event Information (Read-only) ── */}
+                        {/* ── Manual edits by an admin/organizer ── */}
+                        {edits.length > 0 && (
+                            <div className="mb-4 rounded-lg border border-[#fdba74] bg-[#fff7ed] px-4 py-3">
+                                <div className="flex items-center gap-2 text-sm font-semibold text-[#c2410c]">
+                                    <HistoryOutlined />
+                                    {t("back.event.participant.form.editedBanner", { by: edits[0].by, time: fmtEditTime(edits[0].time), interpolation: { escapeValue: false } })}
+                                </div>
+                                <div className="mt-2 max-h-40 overflow-y-auto">
+                                    <div className="text-xs font-semibold text-[#9a3412] mb-1">{t("back.event.participant.form.editHistory")}</div>
+                                    {edits.map((entry, i) => (
+                                        <div key={i} className="py-1.5 border-t border-[#fed7aa] first:border-0 text-xs text-[#431407]">
+                                            <div className="text-[#9a3412]">{fmtEditTime(entry.time)} · {entry.by}</div>
+                                            {(entry.changes || []).map((c, j) => (
+                                                <div key={j} className="ml-3 break-words">
+                                                    <span className="font-semibold">{fieldLabel(c.field)}:</span>{' '}
+                                                    <span className="line-through opacity-70">{c.before ?? t("back.event.participant.form.emptyValue")}</span>
+                                                    {' → '}
+                                                    <span className="font-semibold">{c.after ?? t("back.event.participant.form.emptyValue")}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── Event Information ── */}
                         <SectionHeader
                             icon={<TrophyOutlined />}
                             title={t("back.event.participant.form.sectionEvent")}
@@ -266,10 +323,19 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
                                 </CommonForm.Item>
                             </Col>
                             <Col xs={24} md={6}>
-                                <CommonForm.Item name="eventTypeName">
+                                <CommonForm.Item
+                                    name="eventTypeId"
+                                    extra={!isViewMode && eventTypeId && eventTypeId !== participantData?.eventTypeId
+                                        ? <span className="text-xs text-[#c2410c]">{t("back.event.participant.form.eventTypeChangeNote")}</span>
+                                        : null}
+                                >
                                     <FloatingLabel
                                         label={t("back.event.participant.form.eventTypeName")}
-                                        readOnly
+                                        type="select"
+                                        disabled={isViewMode}
+                                        options={eventTypeOption.some((o) => o.value === participantData?.eventTypeId)
+                                            ? eventTypeOption
+                                            : [...eventTypeOption, { value: participantData?.eventTypeId, label: participantData?.eventTypeName }]}
                                     />
                                 </CommonForm.Item>
                             </Col>
@@ -283,13 +349,31 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
                             </Col>
                         </Row>
                         <Row gutter={[16, 16]}>
+                            {shirtTypes.length > 0 && (
+                                <Col xs={24} md={6}>
+                                    <CommonForm.Item name="shirtTypeId">
+                                        <FloatingLabel
+                                            label={t("back.event.participant.form.shirtType")}
+                                            type="select"
+                                            disabled={isViewMode}
+                                            options={shirtTypeOptions}
+                                            onChange={() => form.setFieldValue('shirtSizeId', undefined)}
+                                        />
+                                    </CommonForm.Item>
+                                </Col>
+                            )}
                             <Col xs={24} md={6}>
-                                <CommonForm.Item name="shirtSizeId">
+                                <CommonForm.Item
+                                    name="shirtSizeId"
+                                    rules={shirtTypeId ? [{ required: true, message: t("required.shirtSize") }] : []}
+                                >
                                     <FloatingLabel
                                         label={t("back.event.participant.form.shirtSize")}
                                         type="select"
-                                        disabled={isViewMode || !data?.shirtSizeId}
-                                        options={shirtSizeOptions}
+                                        disabled={isViewMode || !shirtTypeId}
+                                        options={shirtSizeOptions.length || !participantData?.shirtSizeId
+                                            ? shirtSizeOptions
+                                            : [{ value: participantData.shirtSizeId, label: participantData.shirtSizeName }]}
                                     />
                                 </CommonForm.Item>
                             </Col>
@@ -524,6 +608,70 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
                                 </CommonForm.Item>
                             </Col>
                         </Row>
+
+                        {/* ── Address ── */}
+                        <SectionHeader
+                            icon={<HomeOutlined />}
+                            title={t("back.event.participant.form.sectionAddress")}
+                        />
+                        <Row gutter={[16, 16]}>
+                            <Col xs={24}>
+                                <CommonForm.Item name="address">
+                                    <FloatingLabel label={t("back.event.participant.form.address")} readOnly={isViewMode} />
+                                </CommonForm.Item>
+                            </Col>
+                            <Col xs={24} md={8}>
+                                <CommonForm.Item name="district">
+                                    <FloatingLabel label={t("back.event.participant.form.district")} readOnly={isViewMode} />
+                                </CommonForm.Item>
+                            </Col>
+                            <Col xs={24} md={8}>
+                                <CommonForm.Item name="amphoe">
+                                    <FloatingLabel label={t("back.event.participant.form.amphoe")} readOnly={isViewMode} />
+                                </CommonForm.Item>
+                            </Col>
+                            <Col xs={24} md={8}>
+                                <CommonForm.Item name="zipcode">
+                                    <FloatingLabel label={t("back.event.participant.form.zipcode")} maxLength={5} readOnly={isViewMode} />
+                                </CommonForm.Item>
+                            </Col>
+                        </Row>
+
+                        {deliveryByPost && (
+                            <>
+                                <SectionHeader
+                                    icon={<CarOutlined />}
+                                    title={t("back.event.participant.form.sectionShipping")}
+                                />
+                                <Row gutter={[16, 16]}>
+                                    <Col xs={24}>
+                                        <CommonForm.Item name="shippingAddress">
+                                            <FloatingLabel label={t("back.event.participant.form.shippingAddress")} readOnly={isViewMode} />
+                                        </CommonForm.Item>
+                                    </Col>
+                                    <Col xs={24} md={6}>
+                                        <CommonForm.Item name="shippingDistrict">
+                                            <FloatingLabel label={t("back.event.participant.form.shippingDistrict")} readOnly={isViewMode} />
+                                        </CommonForm.Item>
+                                    </Col>
+                                    <Col xs={24} md={6}>
+                                        <CommonForm.Item name="shippingAmphoe">
+                                            <FloatingLabel label={t("back.event.participant.form.shippingAmphoe")} readOnly={isViewMode} />
+                                        </CommonForm.Item>
+                                    </Col>
+                                    <Col xs={24} md={6}>
+                                        <CommonForm.Item name="shippingProvince">
+                                            <FloatingLabel label={t("back.event.participant.form.shippingProvince")} readOnly={isViewMode} />
+                                        </CommonForm.Item>
+                                    </Col>
+                                    <Col xs={24} md={6}>
+                                        <CommonForm.Item name="shippingZipcode">
+                                            <FloatingLabel label={t("back.event.participant.form.shippingZipcode")} maxLength={5} readOnly={isViewMode} />
+                                        </CommonForm.Item>
+                                    </Col>
+                                </Row>
+                            </>
+                        )}
 
                         {/* ── Health & Emergency ── */}
                         <SectionHeader

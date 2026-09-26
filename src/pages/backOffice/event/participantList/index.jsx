@@ -1,5 +1,5 @@
-import { SearchOutlined, DownloadOutlined, UploadOutlined, MailOutlined } from '@ant-design/icons';
-import { Button, Input, message, Select, Space, Spin } from 'antd';
+import { SearchOutlined, DownloadOutlined, UploadOutlined, MailOutlined, EditOutlined } from '@ant-design/icons';
+import { Button, Input, message, Select, Space, Spin, Tooltip } from 'antd';
 import UseModalHook from 'hooks/useModalHook';
 import React, { useEffect, useState } from 'react'
 import backOfficeServices from 'services/backoffice.services';
@@ -186,6 +186,17 @@ function ParticipantList({ eventId, eventName, setView, eventCanUpdate = true })
         handleCloseCreateParticipantUpload();
     };
 
+    // A runner moved to another distance leaves this distance's list; follow them there
+    // so the edited (orange) row stays in view.
+    const handleParticipantSaved = (saved) => {
+        if (saved?.eventTypeId && saved.eventTypeId !== eventType) {
+            setPage(1);
+            setEventType(saved.eventTypeId);
+        } else {
+            refetchParticipant();
+        }
+    };
+
     const { mutate: participantDownload, isPending: isLoadingParticipantDownload } = fileService.useMutationDownloadParticipant(eventId);
 
     const handleChange = (pagination, filters, sorter) => {
@@ -206,8 +217,19 @@ function ParticipantList({ eventId, eventName, setView, eventCanUpdate = true })
         {
             key: 'index',
             width: 50,
-            render: (_text, _record, index) => {
-                return totalData - ((page - 1) * limitPage) - index;
+            render: (_text, record, index) => {
+                const no = totalData - ((page - 1) * limitPage) - index;
+                if (!record.manualEditedTime) return no;
+                return (
+                    <Tooltip title={t("back.event.participant.home.editedTooltip", {
+                        by: record.manualEditedBy || '-',
+                        time: dayjs(record.manualEditedTime).format(`${SYS_DATE_FORMAT} HH:mm`),
+                        // React escapes already; i18next's own escaping would print "/" as &#x2F;
+                        interpolation: { escapeValue: false },
+                    })}>
+                        <span className="inline-flex items-center gap-1 whitespace-nowrap">{no}<EditOutlined /></span>
+                    </Tooltip>
+                );
             }
         },
         {
@@ -235,8 +257,8 @@ function ParticipantList({ eventId, eventName, setView, eventCanUpdate = true })
             title: t("back.event.participant.home.addOns"),
             dataIndex: 'addOns',
             key: 'addOns',
-            width: 220,
-            render: (items) => <AddOnTags items={items || []} />,
+            width: 140,
+            render: (items) => <AddOnTags items={items || []} className="max-w-[140px]" />,
         },
         {
             title: t("back.event.participant.home.gender"),
@@ -420,6 +442,12 @@ function ParticipantList({ eventId, eventName, setView, eventCanUpdate = true })
                         ...(column.search && getColumnSearchProps(column.dataIndex))
                     }))}
                     dataSource={participantData}
+                    // Zebra rows for easy reading; rows an admin/organizer edited by hand turn orange.
+                    rowClassName={(record, index) => [
+                        index % 2 === 1 ? 'bo-row-stripe' : '',
+                        record.manualEditedTime ? 'bo-row-edited' : '',
+                    ].join(' ')}
+                    inlineActions
                     bordered
                     scroll={{ x: 'max-content' }}
                     pagination={{
@@ -439,6 +467,13 @@ function ParticipantList({ eventId, eventName, setView, eventCanUpdate = true })
                     totalText={t("back.event.participant.home.allParticipants")}
                     customCreate={<CreateSection />}
                     headerExtra={
+                        <>
+                        {participantData.some((p) => p.manualEditedTime) && (
+                            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#c2410c]">
+                                <span className="w-2.5 h-2.5 rounded-full bg-[#c2410c]" />
+                                {t("back.event.participant.home.editedLegend")}
+                            </span>
+                        )}
                         <Select
                             placeholder={t("back.event.participant.home.eventType")}
                             className="w-full lg:!w-[200px]"
@@ -449,6 +484,7 @@ function ParticipantList({ eventId, eventName, setView, eventCanUpdate = true })
                                 setEventType(value);
                             }}
                         />
+                        </>
                     }
                     onView={(record) => handleRowClick(record, "view")}
                     onEdit={eventCanUpdate ? (record) => {
@@ -470,11 +506,13 @@ function ParticipantList({ eventId, eventName, setView, eventCanUpdate = true })
                 open={openCreateParticipant}
                 onOk={handleCloseCreateParticipant}
                 onCancel={handleCloseCreateParticipant}
-                refetch={refetchParticipant}
+                refetch={handleParticipantSaved}
                 mode={mode}
                 nationalityOption={nationalityOption}
                 isLoadingNationality={isLoadingNationality}
                 genderOption={genderOption}
+                eventId={eventId}
+                eventTypeOption={eventTypeOption}
             />
         </>
     )
