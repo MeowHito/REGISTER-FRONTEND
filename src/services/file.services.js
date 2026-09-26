@@ -73,6 +73,19 @@ const fileService = {
       }
     });
   },
+  /** Answers of one sponsor questionnaire section as Excel (back office, event read access). */
+  useMutationExportQuestionnaire() {
+    return useMutation({
+      mutationFn: async ({ sectionId }) => {
+        const response = await createRequest.get(`/api/questionnaire/export`, {
+          params: { sectionId }, responseType: 'blob',
+        });
+        if (response.headers["content-type"] !== "application/json" && (response.status === 200 || response.status === 204)) {
+          fileDownload(response.data, getFileName(response.headers));
+        }
+      }
+    });
+  },
   useMutationPreviewContractDocument(onSuccess, onError) {
     return useMutation({
       mutationFn: async ({ values }) => {

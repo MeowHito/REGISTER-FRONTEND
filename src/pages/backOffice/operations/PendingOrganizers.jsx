@@ -3,9 +3,13 @@ import { Button, Empty, Table, Tag, message } from "antd";
 import { CheckCircleOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import backOfficeServices from "services/backoffice.services";
+import useMe from "hooks/useMe";
+import { Alert } from "antd";
 
 export default function PendingOrganizers() {
   const { t } = useTranslation();
+  const { data: me } = useMe({ retry: 0 });
+  const canApprove = !!me?.canApproveOrganizer;
 
   const { data, isFetching, refetch } = backOfficeServices.useQueryGetPendingUsers();
 
@@ -56,6 +60,7 @@ export default function PendingOrganizers() {
           type="primary"
           icon={<CheckCircleOutlined />}
           loading={isApproving}
+          disabled={!canApprove}
           onClick={() => handleApprove(r)}
         >
           {t("back.operations.pendingOrganizers.approve")}
@@ -66,6 +71,9 @@ export default function PendingOrganizers() {
 
   return (
     <div className="p-2 md:p-4">
+      {!canApprove && (
+        <Alert type="warning" showIcon className="!mb-3" message={t("back.operations.pendingOrganizers.noRight")} />
+      )}
       <Table
         rowKey="id"
         loading={isFetching}

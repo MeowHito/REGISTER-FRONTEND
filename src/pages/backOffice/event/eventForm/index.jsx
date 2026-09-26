@@ -28,6 +28,8 @@ import { v4 as uuidv4 } from 'uuid';
 import useCountryStateHook from 'hooks/useCountryStateHook';
 import EventSelections from '../eventSelections';
 import EventAddOns from '../eventAddOns';
+import QuestionSections from '../questionSections';
+import FieldConfig from '../fieldConfig';
 import useMe from 'hooks/useMe';
 
 // Each section's own colour: its tab in the nav and a faint tint on its card.
@@ -183,10 +185,28 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                 detail: await checkAndUploadImg(d.detail, prefix, { isPublic: true }),
                 position: index,
             }))),
-            shirtTypes: (values.shirtTypes || []).map(st => ({
+            shirtTypes: (values.shirtTypes || []).map((st, index) => ({
                 ...st,
-                shirtSizes: st.shirtSizes || []
+                category: st.category || "RACE",
+                position: index,
+                eventTypeIds: st.eventTypeIds || [],
+                shirtSizes: (st.shirtSizes || []).map(({ usedCount: _usedCount, ...sz }, szIndex) => ({
+                    ...sz,
+                    position: szIndex,
+                })),
             })),
+            fieldConfig: values.fieldConfig || {},
+            questionSections: await Promise.all((values.questionSections || []).map(async ({ logoFile, ...sec }, index) => ({
+                ...sec,
+                logoUrl: await getImageFileToUpload({
+                    fileList: logoFile,
+                    prefix,
+                    oldKey: typeof sec.logoUrl === "string" ? sec.logoUrl : null,
+                    isPublic: true,
+                }),
+                prefixPath: prefix,
+                position: index,
+            }))),
             isDraft: eventData?.isDraft || false,
 
             addOns: await Promise.all((values.addOns || []).map(async (a, index) => ({
@@ -200,12 +220,13 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                 position: index,
             }))),
 
-            selectionFields: (values.selectionFields || []).map((field) => ({
+            selectionFields: (values.selectionFields || []).map((field, fieldIndex) => ({
                 ...field,
-                options: (field.options || []).map((opt, optIndex) => ({
-                    ...opt,
-                    position: optIndex,
-                })),
+                position: fieldIndex,
+                sectionId: field.sectionId || null,
+                options: ["SINGLE", "MULTIPLE"].includes(field.type)
+                    ? (field.options || []).map((opt, optIndex) => ({ ...opt, position: optIndex }))
+                    : [],
             })),
 
             eventTypes: (values.eventTypes || []).map((et) => {
@@ -224,18 +245,20 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                 return {
                     ...et,
                     isTeam: et?.isTeam ?? false,
+                    teamSize: et?.isTeam ? et.teamSize : null,
+                    teamPricing: et?.isTeam ? (et.teamPricing || "PER_PERSON") : null,
                     eventDate: toStartOfDayISO(et.eventDate),
                     pricing: (et.pricing || [])
                         .filter(p => p.selected)
                         .map(({ selected: _selected, ...rest }) => rest),
                     ageGroups: mergedAgeGroups,
 
-                    selectionFields: (et.selectionFields || []).map((field) => ({
+                    selectionFields: (et.selectionFields || []).map((field, fieldIndex) => ({
                         ...field,
-                        options: (field.options || []).map((opt, optIndex) => ({
-                            ...opt,
-                            position: optIndex,
-                        })),
+                        position: fieldIndex,
+                        options: ["SINGLE", "MULTIPLE"].includes(field.type)
+                            ? (field.options || []).map((opt, optIndex) => ({ ...opt, position: optIndex }))
+                            : [],
                     })),
 
                     maleAgeGroups: undefined,
@@ -293,8 +316,12 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                     addOns: convertedAddOns,
                     shirtTypes: (eventData.shirtTypes || []).map(st => ({
                         ...st,
+                        category: st.category || "RACE",
+                        eventTypeIds: st.eventTypeIds || [],
                         shirtSizes: st.shirtSizes || [],
                     })),
+                    fieldConfig: eventData.fieldConfig || {},
+                    questionSections: (eventData.questionSections || []).map(sec => ({ ...sec, logoFile: undefined })),
                     eventTypes: (eventData.eventTypes || []).map(et => {
                         const maleAgeGroups = (et.ageGroups || [])
                             .filter(a => a.gender === "male")
@@ -307,6 +334,7 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                         return {
                             ...et,
                             isTeam: et?.isTeam ?? false,
+                            teamPricing: et?.teamPricing || "PER_PERSON",
                             eventDate: dayjs(et.eventDate),
                             maleAgeGroups,
                             femaleAgeGroups,
@@ -722,6 +750,15 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                         </SectionCard>
 
                         <SectionCard {...tone("ef-questions")} title={t("back.event.form.section.questions")} description={t("back.event.form.section.questionsDesc")}>
+                            <Title>{t("back.event.form.fieldConfigTitle")}</Title>
+                            <FieldConfig isEditable={isEditable} />
+                            <div className="border-t border-[#e5e5ea] my-6" />
+                            <Title>{t("back.event.form.questionSections")}</Title>
+                            <div className="rounded-xl bg-[#f0f6ff] border border-[#cfe2fb] text-[13px] text-[#0b4f99] px-4 py-3 mb-4">
+                                {t("back.event.form.questionSectionsHelp")}
+                            </div>
+                            <QuestionSections form={form} prefix={prefix} isEditable={isEditable} />
+                            <div className="border-t border-[#e5e5ea] my-6" />
                             <Title>{t("back.event.form.selectionFields")}</Title>
                             <EventSelections form={form} />
                             <div className="border-t border-[#e5e5ea] my-6" />

@@ -11,6 +11,8 @@ import {
     CarOutlined,
     HistoryOutlined,
 } from '@ant-design/icons';
+import PhoneInput from 'components/phoneInput';
+import { Rate, Image as AntImage } from 'antd';
 import CommonForm from "components/commonForm";
 import AddOnList from "components/addOnList";
 import { AlertSuccess, AlertError, AlertConfirm, AlertClosed } from 'components/alert';
@@ -88,6 +90,14 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
         const type = shirtTypes.find((s) => s.id === shirtTypeId);
         return (type?.shirtSizes || []).map(({ id, name }) => ({ value: id, label: name }));
     }, [shirtTypes, shirtTypeId]);
+    // Finisher / special styles are edited under extraShirts.<CATEGORY>; the race shirt stays above.
+    const extraCategories = useMemo(() => ['FINISHER', 'SPECIAL'].filter((c) => shirtTypes.some((s) => s.category === c)), [shirtTypes]);
+    const extraShirts = CommonForm.useWatch('extraShirts', form) || {};
+    const extraTypeOptions = (category) => shirtTypes.filter((s) => s.category === category).map(({ id, name }) => ({ value: id, label: name }));
+    const extraSizeOptions = (category) => {
+        const type = shirtTypes.find((s) => s.id === extraShirts?.[category]?.shirtTypeId);
+        return (type?.shirtSizes || []).map(({ id, name }) => ({ value: id, label: name }));
+    };
     const deliveryByPost = participantData?.deliveryMethod === 'post'
         || ['shippingAddress', 'shippingProvince', 'shippingAmphoe', 'shippingDistrict', 'shippingZipcode'].some((k) => participantData?.[k]);
     const edits = [...(participantData?.manualEdits || [])].reverse();
@@ -102,6 +112,11 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
                 if (!question?.id) return;
                 const field = allFields.find(f => f.id === question.id);
                 if (!field) return;
+
+                if (['TEXT', 'RATING', 'IMAGE'].includes(field.type)) {
+                    formSelectionAnswers[question.id] = value && typeof value === 'object' && !Array.isArray(value) ? value.value : value;
+                    return;
+                }
 
                 if (Array.isArray(value)) {
                     const freeTextValues = {};
@@ -139,6 +154,11 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
                 birthDate: toStartOfDay(participantData?.birthDate),
                 registerDate: participantData?.registerDate ? dayjs(participantData.registerDate).format(SYS_DATE_FORMAT) : '',
                 selectionAnswers: formSelectionAnswers,
+                phoneCountryCode: participantData?.phoneCountryCode || '+66',
+                emergencyPhoneCountryCode: participantData?.emergencyPhoneCountryCode || '+66',
+                extraShirts: Object.fromEntries((participantData?.shirts || [])
+                    .filter((sh) => sh.category && sh.category !== 'RACE')
+                    .map((sh) => [sh.category, { shirtTypeId: sh.shirtTypeId, shirtSizeId: sh.shirtSizeId }])),
             };
             form.setFieldsValue(_field);
         }
@@ -203,6 +223,12 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
                             if (!field || answerRaw == null) return null;
 
                             const question = { id: field.id, value: field.title, valueEn: field.titleEn };
+                            if (field.type === 'TEXT' || field.type === 'RATING') {
+                                return answerRaw === '' ? null : { question, value: answerRaw };
+                            }
+                            if (field.type === 'IMAGE') {
+                                return answerRaw ? { question, value: { value: answerRaw, inputType: 'IMAGE' } } : null;
+                            }
                             const formatOption = (optId) => {
                                 const opt = field.options?.find(o => o.id === optId);
                                 return opt ? { id: opt.id, value: opt.value, valueEn: opt.valueEn, inputType: opt.inputType } : null;
@@ -238,12 +264,16 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
                     const province = provinceRaw.current && values?.province === provinceRaw.current.shown
                         ? provinceRaw.current.raw
                         : values?.province;
+                    const { extraShirts: extraShirtMap, ...rest } = values || {};
                     let isData = {
                         ...data,
-                        ...values,
+                        ...rest,
                         province,
                         birthDate: toStartOfDayISO(values?.birthDate),
                         selectionAnswers: structuredAnswers,
+                        shirts: Object.entries(extraShirtMap || {})
+                            .filter(([, v]) => v?.shirtTypeId)
+                            .map(([category, v]) => ({ category, shirtTypeId: v.shirtTypeId, shirtSizeId: v.shirtSizeId })),
                     };
                     if (data?.id) {
                         await updateParticipant(isData);
@@ -395,6 +425,35 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
                                     />
                                 </CommonForm.Item>
                             </Col>
+                            {extraCategories.map((category) => (
+                                <React.Fragment key={category}>
+                                    <Col xs={24} md={6}>
+                                        <CommonForm.Item name={['extraShirts', category, 'shirtTypeId']}>
+                                            <FloatingLabel
+                                                label={t(`back.event.participant.form.extraShirtType.${category}`)}
+                                                type="select"
+                                                disabled={isViewMode}
+                                                options={extraTypeOptions(category)}
+                                                allowClear
+                                                onChange={() => form.setFieldValue(['extraShirts', category, 'shirtSizeId'], undefined)}
+                                            />
+                                        </CommonForm.Item>
+                                    </Col>
+                                    <Col xs={24} md={6}>
+                                        <CommonForm.Item
+                                            name={['extraShirts', category, 'shirtSizeId']}
+                                            rules={extraShirts?.[category]?.shirtTypeId ? [{ required: true, message: t("required.shirtSize") }] : []}
+                                        >
+                                            <FloatingLabel
+                                                label={t(`back.event.participant.form.extraShirtSize.${category}`)}
+                                                type="select"
+                                                disabled={isViewMode || !extraShirts?.[category]?.shirtTypeId}
+                                                options={extraSizeOptions(category)}
+                                            />
+                                        </CommonForm.Item>
+                                    </Col>
+                                </React.Fragment>
+                            ))}
                             <Col xs={24} md={6}>
                                 <CommonForm.Item name="registerDate">
                                     <FloatingLabel
@@ -612,20 +671,8 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
                                 </CommonForm.Item>
                             </Col>
                             <Col xs={24} md={12}>
-                                <CommonForm.Item
-                                    name="phone"
-                                    rules={[
-                                        {
-                                            pattern: /^0\d{9}$/,
-                                            message: t("validation.phone"),
-                                        },
-                                    ]}
-                                >
-                                    <FloatingLabel
-                                        label={t("back.event.participant.form.phone")}
-                                        readOnly={isViewMode}
-                                    />
-                                </CommonForm.Item>
+                                <PhoneInput form={form} variant="floating" codeName="phoneCountryCode" numberName="phone"
+                                    label={t("back.event.participant.form.phone")} readOnly={isViewMode} />
                             </Col>
                         </Row>
 
@@ -753,20 +800,8 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
                                 </CommonForm.Item>
                             </Col>
                             <Col xs={24} md={8}>
-                                <CommonForm.Item
-                                    name="emergencyPhone"
-                                    rules={[
-                                        {
-                                            pattern: /^0\d{9}$/,
-                                            message: t("validation.phone"),
-                                        },
-                                    ]}
-                                >
-                                    <FloatingLabel
-                                        label={t("back.event.participant.form.emergencyPhone")}
-                                        readOnly={isViewMode}
-                                    />
-                                </CommonForm.Item>
+                                <PhoneInput form={form} variant="floating" codeName="emergencyPhoneCountryCode" numberName="emergencyPhone"
+                                    label={t("back.event.participant.form.emergencyPhone")} readOnly={isViewMode} />
                             </Col>
                         </Row>
 
@@ -790,6 +825,44 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
                                             value: o.id,
                                             label: currentLang === 'en' ? o.valueEn || o.value : o.value,
                                         }));
+
+                                        /* ── TEXT / RATING / IMAGE ── */
+                                        if (field.type === 'TEXT') {
+                                            return (
+                                                <QuestionCard key={field.id} index={index} label={questionLabel} required={field.required}>
+                                                    <CommonForm.Item name={['selectionAnswers', field.id]} className="!mb-0" rules={rules}>
+                                                        <FloatingLabel type="textarea" rows={2} label={questionLabel} readOnly={isViewMode} />
+                                                    </CommonForm.Item>
+                                                </QuestionCard>
+                                            );
+                                        }
+                                        if (field.type === 'RATING') {
+                                            return (
+                                                <QuestionCard key={field.id} index={index} label={questionLabel} required={field.required}>
+                                                    <CommonForm.Item name={['selectionAnswers', field.id]} className="!mb-0" rules={rules}>
+                                                        <Rate disabled={isViewMode} />
+                                                    </CommonForm.Item>
+                                                </QuestionCard>
+                                            );
+                                        }
+                                        if (field.type === 'IMAGE') {
+                                            const url = form.getFieldValue(['selectionAnswers', field.id]);
+                                            return (
+                                                <QuestionCard key={field.id} index={index} label={questionLabel} required={field.required}>
+                                                    <CommonForm.Item name={['selectionAnswers', field.id]} hidden noStyle>
+                                                        <input type="hidden" />
+                                                    </CommonForm.Item>
+                                                    {url ? (
+                                                        <div className="flex items-center gap-3">
+                                                            <AntImage src={url} width={96} height={96} className="rounded-lg object-cover" />
+                                                            <a href={url} target="_blank" rel="noreferrer" className="text-xs">{t("back.event.participant.form.openImage")}</a>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-xs text-gray-400">{t("back.event.participant.form.emptyValue")}</span>
+                                                    )}
+                                                </QuestionCard>
+                                            );
+                                        }
 
                                         /* ── MULTIPLE ── */
                                         if (field.type === 'MULTIPLE') {

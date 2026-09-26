@@ -1,5 +1,5 @@
 import { CheckCircleOutlined, EditOutlined, PlusOutlined, SearchOutlined, StopOutlined } from '@ant-design/icons';
-import { Button, Image, Input, Popover, Segmented, Space, Spin, Table, Tag } from 'antd';
+import { Button, Image, Input, Popover, Segmented, Space, Spin, Switch, Table, Tag } from 'antd';
 import { NOT_FOUND_IMG } from 'assets';
 import UseModalHook from 'hooks/useModalHook';
 import React, { useEffect, useMemo, useState } from 'react'
@@ -124,6 +124,11 @@ function UserSetting() {
   };
 
   const { data: nationalities, isFetching: isLoadingNationality } = masterService.useQueryGetNationality();
+
+  const { mutate: updateUserApprover } = backOfficeServices.useMutationUpdateUserApprover(
+    () => refetchUser(),
+    (err) => AlertError({ text: errorToMessage(err) })
+  );
 
   const { mutate: updateUserStatus } = backOfficeServices.useMutationUpdateUserStatus(
     () => {
@@ -263,6 +268,22 @@ function UserSetting() {
           {active ? t("general.active") : t("general.inactive")}
         </Tag>
       ),
+    },
+    {
+      title: t("back.setting.user.home.approver"),
+      dataIndex: "canApproveOrganizer",
+      key: "canApproveOrganizer",
+      align: 'center',
+      hidden: roleFilter !== 'admin' && roleFilter !== 'all',
+      render: (v, record) => record.roleType === 'admin' ? (
+        <Popover content={t("back.setting.user.home.approverHint")} trigger={isMobile ? "none" : "hover"}>
+          <Switch
+            size="small"
+            checked={!!v}
+            onChange={(checked) => updateUserApprover({ id: record.id, canApproveOrganizer: checked })}
+          />
+        </Popover>
+      ) : null,
     },
     {
       title: t("back.setting.tab.role"),

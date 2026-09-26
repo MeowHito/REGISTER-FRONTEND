@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { extraShirtList } from "./StreamlinedRegistration/utils";
+import { formatPhone } from "constants/phoneCountryCodes";
 import { Checkbox, message } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -140,6 +142,7 @@ const RegistrationDetail = () => {
 					birthDate: toStartOfDayISO(applicant.birthDate),
 					email: applicant.email,
 					phone: applicant.phone,
+					phoneCountryCode: applicant.phoneCountryCode || null,
 					nationality: applicant.nationality,
 					idNo: applicant.idNo,
 					healthIssues: applicant.healthIssues,
@@ -147,7 +150,11 @@ const RegistrationDetail = () => {
 					emergencyContact: applicant.emergencyContact,
 					emergencyRelation: applicant.emergencyRelation,
 					emergencyPhone: applicant.emergencyPhone,
+					emergencyPhoneCountryCode: applicant.emergencyPhoneCountryCode || null,
 					teamClub: applicant.teamClub,
+					teamGroup: applicant.teamGroup || null,
+					// finisher / special shirts; the race shirt is shirtTypeId / shirtSizeId
+					shirts: extraShirtList(applicant),
 					deliveryMethod: applicant.deliveryMethod || "pickup",
 					couponUsed: applicant.couponUsed,
 					price: applicant.price,
@@ -412,11 +419,12 @@ const RegistrationDetail = () => {
 												<DetailRow label={t("back.reg.form.firstName")}>{applicant.firstName} {applicant.lastName}</DetailRow>
 												<DetailRow label={t("back.reg.form.birthDate")}>{dayjs(applicant.birthDate).format(SYS_DATE_FORMAT)}</DetailRow>
 												<DetailRow label={t("back.reg.form.email")}>{applicant.email}</DetailRow>
-												{applicant.phone ? <DetailRow label={t("back.reg.form.phone")}>{applicant.phone}</DetailRow> : null}
+												{applicant.phone ? <DetailRow label={t("back.reg.form.phone")}>{formatPhone(applicant.phoneCountryCode, applicant.phone)}</DetailRow> : null}
 											</DetailSection>
 
 											<DetailSection title={t("back.reg.common.eventType")}>
 												<DetailRow label={t("back.reg.common.type")}>{applicant.eventTypeName}</DetailRow>
+												{applicant.teamGroup ? <DetailRow label={t("back.reg.common.team")}>{t("back.reg.common.teamNo", { no: applicant.teamGroup })} ({applicant.teamIndex}/{applicant.teamSize})</DetailRow> : null}
 												{applicant.teamClub?.trim() ? <DetailRow label={t("back.reg.form.teamClub")}>{applicant.teamClub}</DetailRow> : null}
 												<DetailRow label={t("back.reg.form.ageGroup")}>{applicant.ageGroupName || t("back.reg.form.noCompetitiveAgeGroup")}</DetailRow>
 												{applicant.noShirt ? (
@@ -437,6 +445,11 @@ const RegistrationDetail = () => {
 														</DetailRow>
 													</>
 												)}
+												{extraShirtList(applicant).map((sh) => (
+													<DetailRow key={sh.category} label={t(`back.reg.payment.shirtCategory.${sh.category}`)}>
+														{sh.shirtTypeName} / {sh.shirtSizeName}
+													</DetailRow>
+												))}
 												<DetailRow label={t("back.reg.common.price")}>
 													{applicant.price.toLocaleString()} {t("general.unitBaht")}
 													<span className="text-[#3f4850]"> ({applicant.paymentName || t("back.reg.common.normalPrice")})</span>

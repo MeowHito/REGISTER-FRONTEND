@@ -21,15 +21,22 @@ import { handleQueryStatus } from "utils";
 
 import ApplicantForm from "./ApplicantForm";
 import ShirtPicker from "./ShirtPicker";
+import { shirtFieldPaths } from "./shirts";
 import AddOnPicker from "./AddOnPicker";
+import QuestionnaireStep from "./QuestionnaireStep";
+import { hasQuestions, questionsFor } from "./questionnaire";
 import {
-  finalizeApplicants, totalQty, resolvePricing,
+  finalizeApplicants, totalQty, resolvePricing, ticketPrice,
   sellableAddOns, buildAddOnOrder, addOnsTotal, firstMissingAddOnNote,
 } from "./utils";
-import { primaryBtn, phaseBadgeCls } from "./theme";
+import { primaryBtn, phaseBadgeCls, inputCls, fieldItemCls } from "./theme";
 import useBilingual from "./useBilingual";
+import { resolveFieldConfig } from "./fieldConfig";
+import { onUploadFile } from "hooks/onUploadFile";
+import { getPublicUrl } from "utils/fileUtils";
+import { DEFAULT_PHONE_COUNTRY_CODE } from "constants/phoneCountryCodes";
 
-const BASE_SECTIONS = ["tickets", "info", "shirt", "shipping"];
+const QUESTIONNAIRE_PREFIX = "questionnaire";
 const fmt = (n) => (Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
 
 // Used when the master nationalities API is unavailable so the form stays usable.
@@ -141,10 +148,15 @@ const StreamlinedRegistration = () => {
   const eventTypeRows = useMemo(
     () => (event?.eventTypes || []).map((et) => {
       const p = resolvePricing(et, availability);
+      const teamSize = et.isTeam ? Math.max(Number(et.teamSize) || 2, 2) : 1;
+      // a team needs a slot for every member
+      const teamFits = !et.isTeam || p.availableQuota == null || p.availableQuota >= teamSize;
       return {
         ...et,
         _price: p.price,
-        _available: p.isAvailable,
+        _ticketPrice: ticketPrice(et, p.price),
+        _teamSize: teamSize,
+        _available: p.isAvailable && teamFits,
         _closed: p.isClosed,
         _paymentName: p.paymentName,
         _special: p.isSpecialPrice,
@@ -152,19 +164,21 @@ const StreamlinedRegistration = () => {
     }),
     [event, availability]
   );
+  const fieldConfig = useMemo(() => resolveFieldConfig(event), [event]);
 
-  // Add-ons are an extra step only when this event actually sells some, so the
-  // flow stays four steps for every event that doesn't use the feature.
+  // Add-ons and extra questions are steps only when this event uses them, so the
+  // flow stays four steps for every event that doesn't.
   const addOns = useMemo(() => sellableAddOns(event), [event]);
   const hasAddOns = addOns.length > 0;
+  const hasQuestionStep = useMemo(() => hasQuestions(event, applicantList), [event, applicantList]);
   const SECTIONS = useMemo(
-    () => (hasAddOns ? [...BASE_SECTIONS, "addons"] : BASE_SECTIONS),
-    [hasAddOns]
+    () => ["tickets", "info", "shirt", ...(hasQuestionStep ? ["questions"] : []), "shipping", ...(hasAddOns ? ["addons"] : [])],
+    [hasAddOns, hasQuestionStep]
   );
 
   const shippingFee = event?.shippingFee;
   const subtotal = applicantList.reduce((s, a) => s + (Number(a?.price) || 0), 0);
-  const liveTicketTotal = eventTypeRows.reduce((s, et) => s + (tickets[et.id] || 0) * et._price, 0);
+  const liveTicketTotal = eventTypeRows.reduce((s, et) => s + (tickets[et.id] || 0) * et._ticketPrice, 0);
   const totalShipping = deliveryMethod === "post" && shippingFee != null ? shippingFee : 0;
   const totalAddOns = addOnsTotal(addOns, addOnSelections);
   const grandTotal = (applicantList.length ? subtotal : liveTicketTotal) + totalShipping + totalAddOns;
@@ -193,18 +207,28 @@ const StreamlinedRegistration = () => {
     prev.forEach((p) => { (prevByType[p.eventTypeId] ||= []).push(p); });
     const used = {};
     const list = [];
+    let teamGroup = 0;
     eventTypeRows.forEach((et) => {
       const qty = tickets[et.id] || 0;
       const p = resolvePricing(et, availability);
+      const members = et.isTeam ? et._teamSize : 1;
       for (let i = 0; i < qty; i += 1) {
-        const arr = prevByType[et.id] || [];
-        const k = used[et.id] || 0;
-        used[et.id] = k + 1;
-        list.push({
-          ...(arr[k] || {}),
-          eventTypeId: et.id, eventTypeName: et.name, eventDate: event.eventDate, eventName: event.name,
-          price: p.price, pricingId: p.pricingId, paymentName: p.paymentName, noShirt: false,
-        });
+        // a team ticket expands to one applicant per member; a whole-team price sits on member 1
+        const group = et.isTeam ? ++teamGroup : null;
+        for (let m = 0; m < members; m += 1) {
+          const arr = prevByType[et.id] || [];
+          const k = used[et.id] || 0;
+          used[et.id] = k + 1;
+          const memberPrice = et.isTeam && et.teamPricing === "PER_TEAM" && m > 0 ? 0 : p.price;
+          list.push({
+            phoneCountryCode: DEFAULT_PHONE_COUNTRY_CODE,
+            emergencyPhoneCountryCode: DEFAULT_PHONE_COUNTRY_CODE,
+            ...(arr[k] || {}),
+            eventTypeId: et.id, eventTypeName: et.name, eventDate: event.eventDate, eventName: event.name,
+            price: memberPrice, pricingId: p.pricingId, paymentName: p.paymentName, noShirt: false,
+            teamGroup: group, teamSize: et.isTeam ? members : null, teamIndex: et.isTeam ? m + 1 : null,
+          });
+        }
       }
     });
     form.setFieldValue("applicants", list);
@@ -212,7 +236,19 @@ const StreamlinedRegistration = () => {
     advanceTo("info");
   };
 
-  const namePathsFor = (keys) => applicantList.flatMap((_a, i) => keys.map((k) => ["applicants", i, k]));
+  // Applicant cards in order, with team members bundled under their team header.
+  const applicantGroups = useMemo(() => {
+    const groups = [];
+    applicantList.forEach((a, i) => {
+      const last = groups[groups.length - 1];
+      if (a?.teamGroup && last?.teamGroup === a.teamGroup) {
+        last.items.push({ a, i });
+      } else {
+        groups.push({ teamGroup: a?.teamGroup || null, eventTypeName: a?.eventTypeName, items: [{ a, i }] });
+      }
+    });
+    return groups;
+  }, [applicantList]);
 
   // Remove a single applicant card (e.g. registered for self + a friend, then
   // dropped the friend). Re-index the whole `applicants` array via setFieldsValue
@@ -278,13 +314,46 @@ const StreamlinedRegistration = () => {
     }
   };
 
+  const afterShirt = () => (hasQuestionStep ? "questions" : "shipping");
+
   const confirmShirt = async () => {
     try {
-      await form.validateFields(namePathsFor(["shirtTypeId", "shirtSizeId"]));
+      const current = form.getFieldValue("applicants") || [];
+      await form.validateFields(applicantList.flatMap((_a, i) => shirtFieldPaths(event, current[i], i)));
+      advanceTo(afterShirt());
+    } catch (errInfo) {
+      handleValidateError(errInfo);
+    }
+  };
+
+  const confirmQuestions = async () => {
+    try {
+      await form.validateFields();
       advanceTo("shipping");
     } catch (errInfo) {
       handleValidateError(errInfo);
     }
+  };
+
+  // Picture answers are uploaded here, once, and stored as their public URL.
+  const uploadImageAnswers = async (applicants) => {
+    const out = [];
+    for (const a of applicants) {
+      const answers = { ...(a.selectionAnswers || {}) };
+      for (const q of questionsFor(event, a.eventTypeId)) {
+        if (q.type !== "IMAGE") continue;
+        const raw = answers[q.id];
+        if (raw && typeof raw === "object" && !Array.isArray(raw) && raw.value) continue; // already uploaded
+        const fileList = Array.isArray(raw) ? raw : [];
+        if (!fileList.length) { delete answers[q.id]; continue; }
+        const key = await onUploadFile({ prefix: QUESTIONNAIRE_PREFIX, isPublic: true, fileList });
+        if (!key) throw new Error(bi("validation.uploadFailed"));
+        const url = await getPublicUrl({ key, prefix: QUESTIONNAIRE_PREFIX, isPublic: true });
+        answers[q.id] = { value: url || key };
+      }
+      out.push({ ...a, selectionAnswers: answers });
+    }
+    return out;
   };
 
   const confirmShipping = () => {
@@ -302,7 +371,8 @@ const StreamlinedRegistration = () => {
   const setAddOnSelection = (addOnId, selection) =>
     setAddOnSelections((prev) => ({ ...prev, [addOnId]: selection }));
 
-  const checkout = () => {
+  const [checkingOut, setCheckingOut] = useState(false);
+  const checkout = async () => {
     if (deliveryMethod === "post" && !shippingAddress.trim()) {
       message.warning(bi("back.reg.payment.enterAddress"));
       return;
@@ -313,13 +383,26 @@ const StreamlinedRegistration = () => {
       return;
     }
     const raw = form.getFieldValue("applicants") || [];
-    const withDelivery = raw.map((a, i) => ({
+    // the team name typed on the team header (member 1) belongs to every member
+    const teamNames = {};
+    raw.forEach((a) => { if (a?.teamGroup && a.teamClub && !teamNames[a.teamGroup]) teamNames[a.teamGroup] = a.teamClub; });
+    let withDelivery = raw.map((a, i) => ({
       ...a,
+      teamClub: a?.teamGroup ? (teamNames[a.teamGroup] || a.teamClub) : a.teamClub,
       deliveryMethod,
       // flat shipping fee charged once for the single shipment
       shippingFee: deliveryMethod === "post" && i === 0 ? shippingFee : 0,
       shippingAddress: deliveryMethod === "post" ? shippingAddress.trim() : undefined,
     }));
+    try {
+      setCheckingOut(true);
+      withDelivery = await uploadImageAnswers(withDelivery);
+    } catch (e) {
+      message.error(e?.message || bi("validation.uploadFailed"));
+      return;
+    } finally {
+      setCheckingOut(false);
+    }
     const finalApplicants = finalizeApplicants(withDelivery, event, t);
 
     dispatch(SET_PROPS({ id: "eventData", payload: event }));
@@ -337,6 +420,7 @@ const StreamlinedRegistration = () => {
     if (openSection === "tickets") return confirmTickets();
     if (openSection === "info") return confirmInfo();
     if (openSection === "shirt") return confirmShirt();
+    if (openSection === "questions") return confirmQuestions();
     if (openSection === "shipping") return confirmShipping();
     return checkout();
   };
@@ -362,9 +446,8 @@ const StreamlinedRegistration = () => {
     );
   }
 
-  const stepLabels = hasAddOns
-    ? ["Tickets", "ข้อมูล", "เสื้อ", "จัดส่ง", "เสริม"]
-    : ["Tickets", "ข้อมูล", "เสื้อ", "จัดส่ง"];
+  const stepLabels = ["Tickets", "ข้อมูล", "เสื้อ", ...(hasQuestionStep ? ["คำถาม"] : []), "จัดส่ง", ...(hasAddOns ? ["เสริม"] : [])];
+  const stepNo = (id) => SECTIONS.indexOf(id) + 1;
 
   return (
     <FrontLayout fullWidth>
@@ -415,8 +498,16 @@ const StreamlinedRegistration = () => {
                               {et._special && et._paymentName ? (
                                 <span className={phaseBadgeCls}>{et._paymentName}</span>
                               ) : null}
-                              <span className="text-[#006193] font-bold text-lg">{Number(et._price).toLocaleString()} THB</span>
+                              {et.isTeam ? (
+                                <span className={phaseBadgeCls}>👥 ทีมละ {et._teamSize} คน / Team of {et._teamSize}</span>
+                              ) : null}
+                              <span className="text-[#006193] font-bold text-lg">
+                                {Number(et._ticketPrice).toLocaleString()} THB{et.isTeam ? " / ทีม" : ""}
+                              </span>
                             </div>
+                            {et.isTeam && et.teamPricing !== "PER_TEAM" ? (
+                              <p className="text-xs text-[#3f4850] mt-1">{Number(et._price).toLocaleString()} THB × {et._teamSize} คน</p>
+                            ) : null}
                             {!et._available && <p className="text-xs text-[#ba1a1a] mt-1">{t("front.eventDetail.quotaFull")}</p>}
                           </>
                         )}
@@ -443,11 +534,30 @@ const StreamlinedRegistration = () => {
             <Section id="info" step={2} open={openSection === "info"} reached={isReached("info")}
               title="2. ข้อมูลผู้สมัคร (Athlete Information)" onToggle={goTo}>
               <div className="space-y-5">
-                {applicantList.map((a, i) => (
-                  <ApplicantForm key={i} index={i} ticketLabel={a?.eventTypeName} me={me} event={event}
-                    form={form} provinceOption={provinceOption} isLoadingProvince={isLoadingProvince}
-                    nationalityOption={nationalityOption} isLoadingNationality={isLoadingNationality}
-                    canRemove={applicantList.length > 1} onRemove={removeApplicant} />
+                {applicantGroups.map((g) => (
+                  <div key={g.teamGroup ? `team-${g.teamGroup}` : `solo-${g.items[0].i}`}
+                    className={g.teamGroup ? "rounded-2xl border-2 border-[#006193] p-3 space-y-4 bg-[#f7fafc]" : "space-y-5"}>
+                    {g.teamGroup ? (
+                      <div className="rounded-xl bg-white border border-[#bfc7d2] px-4 py-3">
+                        <div className="font-bold text-[#006193] mb-2">👥 ทีมที่ {g.teamGroup} (Team {g.teamGroup}) · {g.eventTypeName}</div>
+                        <label className="block text-sm font-bold text-[#3f4850] mb-1">
+                          ชื่อทีม / Team Name <span className="text-[#ba1a1a]">*</span>
+                        </label>
+                        <CommonForm.Item name={["applicants", g.items[0].i, "teamClub"]} className={fieldItemCls}
+                          rules={[{ required: true, message: bi("required.teamClub") }]}>
+                          <Input className={inputCls} placeholder="กรอกชื่อทีม / Team name" allowClear />
+                        </CommonForm.Item>
+                      </div>
+                    ) : null}
+                    {g.items.map(({ a, i }) => (
+                      <ApplicantForm key={i} index={i} me={me} event={event}
+                        ticketLabel={a?.teamGroup ? `${a.eventTypeName} · สมาชิกคนที่ ${a.teamIndex}/${a.teamSize}` : a?.eventTypeName}
+                        form={form} provinceOption={provinceOption} isLoadingProvince={isLoadingProvince}
+                        nationalityOption={nationalityOption} isLoadingNationality={isLoadingNationality}
+                        fieldConfig={fieldConfig} isTeamMember={!!a?.teamGroup}
+                        canRemove={applicantList.length > 1 && !a?.teamGroup} onRemove={removeApplicant} />
+                    ))}
+                  </div>
                 ))}
                 <button type="button" className={primaryBtn} onClick={confirmInfo}>
                   Next <ArrowRightOutlined />
@@ -460,7 +570,8 @@ const StreamlinedRegistration = () => {
               title="3. เลือกแบบเสื้อ (Shirt)" onToggle={goTo}>
               <div className="space-y-5">
                 {applicantList.map((a, i) => (
-                  <ShirtPicker key={i} index={i} ticketLabel={a?.eventTypeName} event={event} form={form} />
+                  <ShirtPicker key={i} index={i} ticketLabel={a?.eventTypeName} event={event} form={form}
+                    eventTypeId={a?.eventTypeId} />
                 ))}
                 <button type="button" className={primaryBtn} onClick={confirmShirt}>
                   Complete Selection <CheckCircleOutlined />
@@ -468,9 +579,25 @@ const StreamlinedRegistration = () => {
               </div>
             </Section>
 
-            {/* SECTION 4 — shipping */}
-            <Section id="shipping" step={4} open={openSection === "shipping"} reached={isReached("shipping")}
-              title="4. เลือกประเภทการจัดส่ง (Shipping)" onToggle={goTo}>
+            {/* SECTION — extra questions / sponsor questionnaires (only when the event has any) */}
+            {hasQuestionStep ? (
+              <Section id="questions" step={stepNo("questions")} open={openSection === "questions"} reached={isReached("questions")}
+                title={`${stepNo("questions")}. คำถามเพิ่มเติม (Questions)`} onToggle={goTo}>
+                <div className="space-y-5">
+                  {applicantList.map((a, i) => (
+                    <QuestionnaireStep key={i} index={i} ticketLabel={a?.eventTypeName} event={event}
+                      eventTypeId={a?.eventTypeId} lang={i18n.language} />
+                  ))}
+                  <button type="button" className={primaryBtn} onClick={confirmQuestions}>
+                    Next <ArrowRightOutlined />
+                  </button>
+                </div>
+              </Section>
+            ) : null}
+
+            {/* SECTION — shipping */}
+            <Section id="shipping" step={stepNo("shipping")} open={openSection === "shipping"} reached={isReached("shipping")}
+              title={`${stepNo("shipping")}. เลือกประเภทการจัดส่ง (Shipping)`} onToggle={goTo}>
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-bold text-[#3f4850] mb-3">ประเภทการจัดส่ง (Shipping Method)</label>
@@ -527,8 +654,8 @@ const StreamlinedRegistration = () => {
 
             {/* SECTION 5 — optional packages the organizer sells (hotel, photos…) */}
             {hasAddOns ? (
-              <Section id="addons" step={5} open={openSection === "addons"} reached={isReached("addons")}
-                title="5. แพ็กเกจเสริม (Add-ons)" onToggle={goTo}>
+              <Section id="addons" step={stepNo("addons")} open={openSection === "addons"} reached={isReached("addons")}
+                title={`${stepNo("addons")}. แพ็กเกจเสริม (Add-ons)`} onToggle={goTo}>
                 <div className="space-y-5">
                   <AddOnPicker
                     addOns={addOns}
@@ -563,8 +690,8 @@ const StreamlinedRegistration = () => {
             <span className="text-xs text-[#3f4850]">Total Payment</span>
             <span className="text-2xl font-bold text-[#006193]">{fmt(grandTotal)} THB</span>
           </div>
-          <button type="button" onClick={primaryAction}
-            className="bg-[#fe9400] text-[#633700] font-bold px-7 h-12 rounded-full flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform">
+          <button type="button" onClick={primaryAction} disabled={checkingOut}
+            className="bg-[#fe9400] text-[#633700] font-bold px-7 h-12 rounded-full flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform disabled:opacity-60">
             {openSection === lastSection ? "Checkout" : "ถัดไป"}
             {openSection === lastSection ? <ShoppingCartOutlined /> : <ArrowRightOutlined />}
           </button>

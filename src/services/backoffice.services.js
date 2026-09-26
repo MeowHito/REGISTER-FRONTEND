@@ -996,6 +996,18 @@ const backOfficeServices = {
     });
   },
 
+  /** Grant / revoke an admin's right to approve organizer sign-ups. */
+  useMutationUpdateUserApprover(onSuccess, onError) {
+    return useMutation({
+      mutationFn: async ({ id, canApproveOrganizer }) => {
+        const res = await createRequest.put(`/api/user/updateApprover`, { id, canApproveOrganizer });
+        return res.data;
+      },
+      onSuccess,
+      onError,
+    });
+  },
+
   useMutationUpdateUserStatus(onSuccess, onError) {
     return useMutation({
       mutationFn: async (values) => {
@@ -1556,6 +1568,17 @@ const backOfficeServices = {
     return useMutation({
       mutationFn: async (options = {}) => {
         const res = await createRequest.post(`/api/eventCalendar/import/sync`, options);
+        return res.data;
+      },
+      onSuccess,
+      onError,
+    });
+  },
+
+  useMutationStopEventCalendarImport(onSuccess, onError) {
+    return useMutation({
+      mutationFn: async () => {
+        const res = await createRequest.post(`/api/eventCalendar/import/stop`);
         return res.data;
       },
       onSuccess,

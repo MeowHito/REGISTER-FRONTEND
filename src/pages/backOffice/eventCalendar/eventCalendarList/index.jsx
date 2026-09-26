@@ -9,6 +9,7 @@ import {
   CloudDownloadOutlined,
   InfoCircleOutlined,
   ClearOutlined,
+  StopOutlined,
 } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import Highlighter from "react-highlight-words";
@@ -137,6 +138,15 @@ const EventCalendarList = () => {
         } else {
           AlertError({ text: res?.message });
         }
+        refetchImportStatus();
+      },
+      (err) => AlertError({ text: errorToMessage(err) })
+    );
+
+  const { mutate: stopImport, isPending: isStopping } =
+    backOfficeServices.useMutationStopEventCalendarImport(
+      (res) => {
+        message.info(res?.message);
         refetchImportStatus();
       },
       (err) => AlertError({ text: errorToMessage(err) })
@@ -402,6 +412,16 @@ const EventCalendarList = () => {
       >
         {t("back.eventCalendarList.syncNow")}
       </Button>
+      {syncRunning && (
+        <Button
+          danger
+          icon={<StopOutlined />}
+          onClick={() => stopImport()}
+          loading={isStopping || importStatus?.stopping}
+        >
+          {importStatus?.stopping ? t("back.eventCalendarList.syncStopping") : t("back.eventCalendarList.syncStop")}
+        </Button>
+      )}
       <Button
         danger
         icon={<ClearOutlined />}

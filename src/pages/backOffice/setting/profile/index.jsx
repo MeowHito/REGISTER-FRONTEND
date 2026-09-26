@@ -30,6 +30,7 @@ import SignatureCanvas from "react-signature-canvas";
 import { dataURLtoFile, getImageFileToUpload } from "utils/fileUtils";
 import ImageUpload from "components/imageUpload";
 import FloatingLabel from "components/floatingLabel";
+import PhoneInput from "components/phoneInput";
 import { validateIDCard } from "utils/validate";
 import useMe from "hooks/useMe";
 import { useQueryClient } from "@tanstack/react-query";
@@ -399,9 +400,7 @@ function Profile() {
                 </CommonForm.Item>
               </Col>
               <Col xs={24} md={12}>
-                <CommonForm.Item name="phone" rules={[{ pattern: /^[0-9]{7,15}$/, message: t("validation.phone") }]}>
-                  <FloatingLabel type="phone" maxLength={15} size="large" label={t("general.tel")} />
-                </CommonForm.Item>
+                <PhoneInput form={form} variant="floating" size="large" codeName="phoneCountryCode" numberName="phone" label={t("general.tel")} />
               </Col>
               <Col xs={24}>
                 <CommonForm.Item name="healthIssues">
@@ -429,9 +428,7 @@ function Profile() {
                 </CommonForm.Item>
               </Col>
               <Col xs={24} md={8}>
-                <CommonForm.Item name="emergencyPhone" rules={[{ pattern: /^[0-9]{7,15}$/, message: t("validation.phone") }]}>
-                  <FloatingLabel type="phone" maxLength={15} size="large" label={t("back.setting.profile.emergencyContactTel")} />
-                </CommonForm.Item>
+                <PhoneInput form={form} variant="floating" size="large" codeName="emergencyPhoneCountryCode" numberName="emergencyPhone" label={t("back.setting.profile.emergencyContactTel")} />
               </Col>
             </Row>
           </SectionCard>

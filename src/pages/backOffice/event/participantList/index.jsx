@@ -261,6 +261,13 @@ function ParticipantList({ eventId, eventName, setView, eventCanUpdate = true })
             render: (items) => <AddOnTags items={items || []} className="max-w-[140px]" />,
         },
         {
+            title: t("back.event.participant.form.phone"),
+            dataIndex: 'phone',
+            key: 'phone',
+            search: true,
+            render: (v, r) => (v ? `${r.phoneCountryCode && r.phoneCountryCode !== '+66' ? r.phoneCountryCode + ' ' : ''}${v}` : ''),
+        },
+        {
             title: t("back.event.participant.home.gender"),
             dataIndex: 'gender',
             key: 'gender',

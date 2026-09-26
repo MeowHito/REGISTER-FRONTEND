@@ -6,6 +6,7 @@ import backOfficeServices from "services/backoffice.services";
 import { errorToMessage } from 'hooks/functions/errorToMessage';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
+import PhoneInput from 'components/phoneInput';
 import FloatingLabel from 'components/floatingLabel';
 import ProvinceSelector from 'components/provinceSelector';
 import { validateIDCard } from 'utils/validate';
@@ -224,22 +225,8 @@ const UserProfile = ({ data, open, onCancel, refetch, nationalityOption, isLoadi
                                     </CommonForm.Item>
                                 </Col>
                                 <Col xs={24} md={8}>
-                                    <CommonForm.Item
-                                        name="phone"
-                                        rules={[
-                                            {
-                                                pattern: /^[0-9]{7,15}$/,
-                                                message: t("validation.phone"),
-                                            },
-                                        ]}
-                                    >
-                                        <FloatingLabel
-                                            type="phone"
-                                            maxLength={15}
-                                            size="large"
-                                            label={t("general.tel")}
-                                        />
-                                    </CommonForm.Item>
+                                    <PhoneInput form={form} variant="floating" size="large" codeName="phoneCountryCode" numberName="phone"
+                                        label={t("general.tel")} />
                                 </Col>
                             </Row>
                             <Row gutter={rowGutter}>
@@ -288,22 +275,8 @@ const UserProfile = ({ data, open, onCancel, refetch, nationalityOption, isLoadi
                                     </CommonForm.Item>
                                 </Col>
                                 <Col xs={24} md={8}>
-                                    <CommonForm.Item
-                                        name="emergencyPhone"
-                                        rules={[
-                                            {
-                                                pattern: /^[0-9]{7,15}$/,
-                                                message: t("validation.phone"),
-                                            },
-                                        ]}
-                                    >
-                                        <FloatingLabel
-                                            type="phone"
-                                            maxLength={15}
-                                            size="large"
-                                            label={t("general.tel")}
-                                        />
-                                    </CommonForm.Item>
+                                    <PhoneInput form={form} variant="floating" size="large" codeName="emergencyPhoneCountryCode" numberName="emergencyPhone"
+                                        label={t("general.tel")} />
                                 </Col>
                             </Row>
                             <div className="text-xl font-semibold mb-3">{t("back.setting.user.form.titleAddress")}</div>

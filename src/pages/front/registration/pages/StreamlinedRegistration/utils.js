@@ -53,6 +53,17 @@ export const finalizeApplicants = (rawApplicants, event, t) => {
           valueEn: field.titleEn,
         };
 
+        // Free-text, 1-5 rating and picture answers carry no option: store the raw value.
+        if (field.type === "TEXT" || field.type === "RATING") {
+          if (answerRaw === undefined || answerRaw === null || answerRaw === "") return null;
+          return { question, value: answerRaw };
+        }
+        if (field.type === "IMAGE") {
+          // uploaded before finalize (see StreamlinedRegistration.checkout): { value: url }
+          if (!answerRaw || typeof answerRaw !== "object" || Array.isArray(answerRaw) || !answerRaw.value) return null;
+          return { question, value: { value: answerRaw.value, inputType: "IMAGE" } };
+        }
+
         const formatOption = (optId) => {
           const opt = field.options.find((o) => o.id === optId);
           return opt
@@ -112,6 +123,28 @@ export const finalizeApplicants = (rawApplicants, event, t) => {
     applicant.selectionAnswers = structuredAnswers;
     return applicant;
   });
+};
+
+/**
+ * Extra (finisher / special) shirts of an applicant as the backend's list shape; the race
+ * shirt stays on shirtTypeId / shirtSizeId.
+ */
+export const extraShirtList = (applicant) =>
+  Object.values(applicant?.extraShirts || {})
+    .filter((s) => s && s.shirtTypeId)
+    .map((s) => ({
+      category: s.category,
+      shirtTypeId: s.shirtTypeId,
+      shirtTypeName: s.shirtTypeName,
+      shirtSizeId: s.shirtSizeId,
+      shirtSizeName: s.shirtSizeName,
+    }));
+
+/** Price of one ticket of a distance: per person, or per team for a whole-team price. */
+export const ticketPrice = (eventType, unitPrice) => {
+  if (!eventType?.isTeam) return Number(unitPrice) || 0;
+  const size = Number(eventType.teamSize) || 1;
+  return eventType.teamPricing === "PER_TEAM" ? Number(unitPrice) || 0 : (Number(unitPrice) || 0) * size;
 };
 
 /** Sum of all ticket quantities. */

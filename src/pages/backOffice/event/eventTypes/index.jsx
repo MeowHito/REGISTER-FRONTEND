@@ -20,7 +20,7 @@ const EventTypes = ({ form }) => {
         const out = _.cloneDeep(et);
 
         out.id = uuidv4();
-        out.isTeam = !et?.isTeam;
+        out.isTeam = !!et?.isTeam;
 
         if ("isMaleGroup" in out) out.isMaleGroup = (out.maleAgeGroups || []).length > 0;
         if ("isFemaleGroup" in out) out.isFemaleGroup = (out.femaleAgeGroups || []).length > 0;
@@ -232,6 +232,47 @@ const EventTypes = ({ form }) => {
                                             </div>
                                         </Col>
                                     </Row>
+                                    <CommonForm.Item noStyle shouldUpdate={(prev, curr) =>
+                                        prev?.eventTypes?.[name]?.isTeam !== curr?.eventTypes?.[name]?.isTeam
+                                        || prev?.eventTypes?.[name]?.teamSize !== curr?.eventTypes?.[name]?.teamSize
+                                        || prev?.eventTypes?.[name]?.quota !== curr?.eventTypes?.[name]?.quota}>
+                                        {() => {
+                                            const et = form.getFieldValue(["eventTypes", name]) || {};
+                                            if (!et.isTeam) return null;
+                                            const teams = et.teamSize > 0 && et.quota > 0 ? Math.floor(et.quota / et.teamSize) : null;
+                                            return (
+                                                <div className="rounded-xl bg-[#fff7e6] border border-[#ffd591] px-4 pt-4 pb-1 mb-3">
+                                                    <Row gutter={{ xs: 2, md: 8 }} align="start">
+                                                        <Col xs={24} md={8}>
+                                                            <CommonForm.Item
+                                                                {...restField}
+                                                                name={[name, "teamSize"]}
+                                                                rules={[{ required: true, message: t("required.teamSize") }]}
+                                                                extra={teams != null ? t("back.event.form.teamQuotaHint", { teams }) : null}
+                                                            >
+                                                                <FloatingLabel type="number" size="large" min={2}
+                                                                    label={t("back.event.form.teamSize")} className="w-full" required />
+                                                            </CommonForm.Item>
+                                                        </Col>
+                                                        <Col xs={24} md={16}>
+                                                            <CommonForm.Item
+                                                                {...restField}
+                                                                name={[name, "teamPricing"]}
+                                                                extra={t("back.event.form.teamPricingHint")}
+                                                            >
+                                                                <FloatingLabel type="select" size="large" allowClear={false}
+                                                                    label={t("back.event.form.teamPricing")}
+                                                                    options={[
+                                                                        { value: "PER_PERSON", label: t("back.event.form.teamPricingPerPerson") },
+                                                                        { value: "PER_TEAM", label: t("back.event.form.teamPricingPerTeam") },
+                                                                    ]} />
+                                                            </CommonForm.Item>
+                                                        </Col>
+                                                    </Row>
+                                                </div>
+                                            );
+                                        }}
+                                    </CommonForm.Item>
                                     <Collapse items={items} defaultActiveKey={["1"]} />
                                 </Card>
                             )
@@ -257,7 +298,7 @@ const EventTypes = ({ form }) => {
                                     <CommonForm.Item className="mb-3">
                                         <Button
                                             type="dashed"
-                                            onClick={() => add({ id: uuidv4(), isTeam: false })}
+                                            onClick={() => add({ id: uuidv4(), isTeam: false, teamPricing: "PER_PERSON" })}
                                             block
                                             icon={<PlusOutlined />}
                                             disabled={isAddDisabled}

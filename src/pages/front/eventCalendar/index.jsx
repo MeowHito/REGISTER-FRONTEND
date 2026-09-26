@@ -12,7 +12,7 @@ import {
   Tooltip,
   App
 } from "antd";
-import { LeftOutlined, PlusOutlined, RightOutlined, CloudDownloadOutlined } from "@ant-design/icons";
+import { LeftOutlined, PlusOutlined, RightOutlined, CloudDownloadOutlined, StopOutlined } from "@ant-design/icons";
 import Search from "antd/es/input/Search";
 import Cookies from "js-cookie";
 import UseModalHook from "hooks/useModalHook";
@@ -163,6 +163,14 @@ const EventCalendar = () => {
         } else {
           AlertError({ text: res?.message });
         }
+        refetchImportStatus();
+      },
+      (err) => AlertError({ text: errorToMessage(err) })
+    );
+  const { mutate: stopImport, isPending: isStopping } =
+    backOfficeServices.useMutationStopEventCalendarImport(
+      (res) => {
+        message.info(res?.message);
         refetchImportStatus();
       },
       (err) => AlertError({ text: errorToMessage(err) })
@@ -407,6 +415,17 @@ const EventCalendar = () => {
                         {syncRunning ? syncRunningLabel : t("back.eventCalendarList.syncNow")}
                       </Button>
                     </Tooltip>
+                  )}
+                  {isAdmin && syncRunning && (
+                    <Button
+                      danger
+                      className="shadow-none whitespace-nowrap"
+                      icon={<StopOutlined />}
+                      onClick={() => stopImport()}
+                      loading={isStopping || importStatus?.stopping}
+                    >
+                      {importStatus?.stopping ? t("back.eventCalendarList.syncStopping") : t("back.eventCalendarList.syncStop")}
+                    </Button>
                   )}
                   <Button
                     type="primary"
