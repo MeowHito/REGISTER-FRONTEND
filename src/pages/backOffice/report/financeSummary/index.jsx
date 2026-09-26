@@ -1,527 +1,243 @@
-﻿import React, { useEffect, useRef, useState } from 'react';
-import { Table, Button, Row, Col, Space, Popover, Typography, message, Spin, Input, Modal } from 'antd';
-import CommonForm from "components/commonForm";
-import { DownloadOutlined, SearchOutlined, ClearOutlined, FileAddOutlined } from '@ant-design/icons';
-import FloatingLabel from 'components/floatingLabel';
-import { useTranslation } from 'react-i18next';
-import backOfficeServices from 'services/backoffice.services';
-import fileService from 'services/file.services';
-import { formatCurrency } from 'utils/format';
-import { SYS_DATE_FORMAT } from 'constants/helper';
-import useMe from 'hooks/useMe';
-import useActiveEvent from 'hooks/useActiveEvent';
+import React, { useState } from "react";
+import { Button, Input, Modal, Table, Tooltip } from "antd";
+import { DownloadOutlined, FileTextOutlined, ReloadOutlined } from "@ant-design/icons";
+import { useTranslation } from "react-i18next";
+import backOfficeServices from "services/backoffice.services";
+import fileService from "services/file.services";
+import { EmptyNote, Money, Panel, Receipt, ReportHeader, Stat } from "../parts";
+import { moneyColumn } from "../columns";
+import { fmtInt, fmtMoney, num, pct } from "../format";
 
-const FinanceSummary = () => {
-    const [form] = CommonForm.useForm();
-    const { t } = useTranslation();
-    const [data, setData] = useState([]);
-    const [dataSummary, setDataSummary] = useState([]);
-    const [order, setOrder] = useState('asc');
-    const [searchText, setSearchText] = useState('');
-    const [searchedColumn, setSearchedColumn] = useState(undefined);
-    const [sortedField, setSortedField] = useState(undefined);
-    const [filteredData, setFilteredData] = useState([]);
-    const [organizerOptions, setOrganizerOptions] = useState([]);
-    const [eventOptions, setEventOptions] = useState([]);
-    const [organizerId, setOrganizerId] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [remark, setRemark] = useState('');
-    const inputRef = useRef(null);
+/**
+ * Per-event money summary for the selected period: headline tiles, registrations by
+ * distance / price, add-on sales, and a receipt-style walk from registration fees down to the
+ * final total. Admin can also export Excel and generate the hand-over (ใบส่งมอบเงิน) PDF.
+ */
+export default function FinanceSummary({ filters }) {
+  const { t } = useTranslation();
+  const tr = (k, o) => t(`back.report.ui.finance.${k}`, o);
+  const { isAdmin, eventId, event, startDate, endDate, periodText } = filters;
+  const ready = !!(eventId && startDate && endDate);
 
-    const {
-        data: me
-    } = useMe({ retry: 0 });
-    const userId = me?.id;
-    const roleUser = me?.role?.roleType;
-    const { activeEvent } = useActiveEvent();
+  const { data, isFetching, refetch } = backOfficeServices.useQueryGetFinanceSummary({
+    id: ready ? eventId : undefined,
+    startDate,
+    endDate,
+    paging: {},
+  });
+  const { data: addOns, isFetching: fetchingAddOns, refetch: refetchAddOns } = backOfficeServices.useQueryGetFinanceAddOnSummary({
+    id: ready ? eventId : undefined,
+    startDate,
+    endDate,
+  });
 
-    // Start the filter on the starred event (an admin also needs its organizer picked).
-    useEffect(() => {
-        if (!activeEvent || !roleUser) return;
-        if (roleUser === "admin") {
-            if (!activeEvent.organizerId) return;
-            setOrganizerId(activeEvent.organizerId);
-            form.setFieldsValue({ organizerId: activeEvent.organizerId, eventId: activeEvent.id });
-        } else {
-            form.setFieldsValue({ eventId: activeEvent.id });
-        }
-    }, [activeEvent, roleUser, form]);
+  const rows = data?.content?.content || [];
+  const sum = data?.summary || {};
+  const registrationTotal = rows.reduce((s, r) => s + num(r.total), 0);
+  const qtyTotal = rows.reduce((s, r) => s + num(r.qty), 0);
+  const addOnRows = addOns || [];
+  const addOnTotal = addOnRows.reduce((s, r) => s + num(r.total), 0);
+  const discountTotal = num(sum.totalDiscountCoupon) + num(sum.totalDiscountShirt);
+  const loading = isFetching || fetchingAddOns;
 
-    useEffect(() => {
-        if (roleUser === "organizer" && userId) {
-            setOrganizerId(userId);
-        }
-    }, [userId]);
+  // ---- exports ----
+  const [exporting, setExporting] = useState(false);
+  const { mutateAsync: downloadExcel } = fileService.useMutationDownloadSummaryFinanceExcel();
+  const { mutateAsync: downloadDocument } = fileService.useMutationSummaryFinanceDocument();
+  const [remarkOpen, setRemarkOpen] = useState(false);
+  const [remark, setRemark] = useState("");
+  const [creating, setCreating] = useState(false);
 
-    const { data: dataOrganizer } = backOfficeServices.useQueryGetUserActiveByRole({
-        role: "organizer",
-    });
+  const handleExcel = async () => {
+    try {
+      setExporting(true);
+      await downloadExcel({ id: eventId, startDate, endDate });
+    } catch (error) {
+      console.error("Error Finance Summary Excel", error);
+    } finally {
+      setExporting(false);
+    }
+  };
 
-    useEffect(() => {
-        if (dataOrganizer?.length > 0) {
-            let options = dataOrganizer.map((n) => {
-                return { value: n.id, label: `${n?.firstName || ''} ${n?.lastName || ''}${n?.companyName ? ` (${n.companyName})` : ''}`.trim() };
-            });
+  const handleCreateDocument = async () => {
+    try {
+      setCreating(true);
+      const response = await downloadDocument({ values: { id: eventId, startDate, endDate, remark } });
+      if (response?.url) globalThis.open(response.url, "_blank");
+    } catch (error) {
+      console.error("Error Finance Summary Document", error);
+    } finally {
+      setCreating(false);
+      setRemarkOpen(false);
+      setRemark("");
+    }
+  };
 
-            setOrganizerOptions(options);
-        } else {
-            setOrganizerOptions([]);
-        }
-    }, [dataOrganizer]);
+  // ---- tables ----
+  const c = (k) => tr(`columns.${k}`);
+  const typeColumns = [
+    { title: t("back.report.financeSummary.columns.no"), key: "no", width: 56, align: "center", render: (_v, _r, i) => <span className="text-[#6e6e73] tabular-nums">{i + 1}</span> },
+    { title: c("type"), dataIndex: "eventTypeName", key: "eventTypeName", render: (v) => <span className="font-semibold text-[#1d1d1f]">{v}</span> },
+    moneyColumn({ title: c("price"), dataIndex: "registrationFee", width: 130 }),
+    { title: c("qty"), dataIndex: "qty", key: "qty", align: "right", width: 110, render: (v) => <span className="tabular-nums">{fmtInt(v)}</span> },
+    moneyColumn({ title: c("total"), dataIndex: "total", strong: true, width: 150 }),
+    {
+      title: c("share"),
+      key: "share",
+      width: 150,
+      render: (_v, r) => {
+        const p = pct(r.total, registrationTotal);
+        return (
+          <span className="flex items-center gap-2">
+            <span className="flex-1 h-1.5 rounded-full bg-[#ececf0] overflow-hidden">
+              <span className="block h-full rounded-full bg-[#2a78d6]" style={{ width: `${p}%` }} />
+            </span>
+            <span className="w-9 text-right text-[12px] tabular-nums text-[#424245]">{p}%</span>
+          </span>
+        );
+      },
+    },
+  ];
 
+  const addOnColumns = [
+    { title: t("back.report.financeSummary.columns.no"), key: "no", width: 56, align: "center", render: (_v, _r, i) => <span className="text-[#6e6e73] tabular-nums">{i + 1}</span> },
+    { title: tr("addOnColumns.name"), dataIndex: "eventTypeName", key: "eventTypeName", render: (v) => <span className="font-semibold text-[#1d1d1f]">{v}</span> },
+    moneyColumn({ title: tr("addOnColumns.unitPrice"), dataIndex: "registrationFee", width: 130 }),
+    { title: tr("addOnColumns.qty"), dataIndex: "qty", key: "qty", align: "right", width: 110, render: (v) => <span className="tabular-nums">{fmtInt(v)}</span> },
+    moneyColumn({ title: tr("addOnColumns.total"), dataIndex: "total", strong: true, width: 150 }),
+  ];
 
-    const { data: dataEvent, refetch: refetchEvent } = backOfficeServices.useQueryGetEventByOrganizer({
-        id: organizerId,
-    });
+  // Footer row: label spans No / name / price, then the qty and money totals (and a blank share cell).
+  const totalRow = (label, qty, total, hasShare) => (
+    <Table.Summary fixed>
+      <Table.Summary.Row className="bg-[#fbfbfd]">
+        <Table.Summary.Cell index={0} colSpan={3} className="font-semibold">{label}</Table.Summary.Cell>
+        <Table.Summary.Cell index={1} align="right" className="font-semibold tabular-nums">{fmtInt(qty)}</Table.Summary.Cell>
+        <Table.Summary.Cell index={2} align="right"><Money value={total} strong /></Table.Summary.Cell>
+        {hasShare && <Table.Summary.Cell index={3} />}
+      </Table.Summary.Row>
+    </Table.Summary>
+  );
 
-    useEffect(() => {
-        if (dataEvent?.length > 0) {
-            const options = dataEvent?.map(({ name, id }) => ({
-                value: id, label: name
-            })) || [];
-            setEventOptions(options);
-        } else {
-            setEventOptions([]);
-        }
-    }, [dataEvent]);
+  const receiptLines = [
+    { key: "registration", label: tr("lines.registration"), value: sum.totalAmount, op: "+" },
+    { key: "coupon", label: tr("lines.coupon"), value: sum.totalDiscountCoupon, op: "-" },
+    { key: "shirt", label: tr("lines.shirt"), value: sum.totalDiscountShirt, op: "-" },
+    { key: "shipping", label: tr("lines.shipping"), value: sum.totalShippingFee, op: "+" },
+    { key: "addOn", label: tr("lines.addOn"), value: sum.totalAddOn, op: "+" },
+    { key: "net", label: tr("lines.net"), value: sum.totalNetAmount, op: "=" },
+    ...(isAdmin
+      ? [
+        { key: "fee", label: tr("lines.fee"), value: sum.totalServiceFee, op: "+" },
+        { key: "withFee", label: tr("lines.withFee"), value: sum.totalAmountWithFee, op: "=" },
+      ]
+      : []),
+  ];
 
-    const { data: dataFinanceSummary, isFetching: isLoadingData, refetch } = backOfficeServices.useQueryGetFinanceSummary({
-        id: filteredData?.id,
-        startDate: filteredData?.startDate,
-        endDate: filteredData?.endDate,
-        paging: {
-            sortField: sortedField,
-            sortDirection: order,
-            searchField: searchedColumn,
-            searchText: (searchText != "" && searchText != undefined) ? "%" + searchText + "%" : undefined,
-        },
-    });
+  const actions = (
+    <>
+      <Button icon={<ReloadOutlined />} disabled={!ready} loading={loading} onClick={() => { refetch(); refetchAddOns(); }}>
+        {t("back.report.ui.actions.refresh")}
+      </Button>
+      <Button icon={<DownloadOutlined />} disabled={!ready} loading={exporting} onClick={handleExcel}>
+        {t("back.report.ui.actions.excel")}
+      </Button>
+      {isAdmin && (
+        <Tooltip title={tr("receiptTip")}>
+          <Button type="primary" icon={<FileTextOutlined />} disabled={!ready} onClick={() => setRemarkOpen(true)}>
+            {t("back.report.ui.actions.receipt")}
+          </Button>
+        </Tooltip>
+      )}
+    </>
+  );
 
-    useEffect(() => {
-        if (dataFinanceSummary?.content?.content?.length > 0) {
-            setData(dataFinanceSummary.content.content);
-            setDataSummary(dataFinanceSummary?.summary)
-        } else {
-            setData([])
-            setDataSummary([])
-        }
-    }, [dataFinanceSummary]);
+  return (
+    <div className="flex flex-col">
+      <ReportHeader
+        title={event ? `${tr("title")} · ${event.name}` : tr("title")}
+        description={ready ? `${tr("desc")} · ${periodText}` : tr("desc")}
+        extra={actions}
+      />
 
-    // Add-on sales in the same event/date window, shown as their own table.
-    const { data: addOnSummary } = backOfficeServices.useQueryGetFinanceAddOnSummary({
-        id: filteredData?.id,
-        startDate: filteredData?.startDate,
-        endDate: filteredData?.endDate,
-    });
+      {!ready ? (
+        <EmptyNote text={t("back.report.ui.needEvent")} />
+      ) : (
+        <>
+          <div className={`grid grid-cols-2 md:grid-cols-3 ${isAdmin ? "xl:grid-cols-7" : "xl:grid-cols-5"}`}>
+            <Stat label={tr("stat.registration")} value={fmtMoney(sum.totalAmount)} sub={tr("stat.people", { count: fmtInt(qtyTotal) })} loading={loading} />
+            <Stat label={tr("stat.discount")} value={discountTotal ? `−${fmtMoney(discountTotal)}` : fmtMoney(0)} tone={discountTotal ? "red" : "gray"} sub={tr("stat.discountSub", { coupon: fmtMoney(sum.totalDiscountCoupon), shirt: fmtMoney(sum.totalDiscountShirt) })} loading={loading} />
+            <Stat label={tr("stat.shipping")} value={fmtMoney(sum.totalShippingFee)} loading={loading} />
+            <Stat label={tr("stat.addOn")} value={fmtMoney(sum.totalAddOn)} sub={addOnRows.length ? tr("stat.addOnSub", { count: addOnRows.length }) : undefined} loading={loading} />
+            <Stat label={tr("stat.net")} value={fmtMoney(sum.totalNetAmount)} tone="blue" sub={tr("stat.netSub")} loading={loading} />
+            {isAdmin && <Stat label={tr("stat.fee")} value={fmtMoney(sum.totalServiceFee)} loading={loading} />}
+            {isAdmin && <Stat label={tr("stat.withFee")} value={fmtMoney(sum.totalAmountWithFee)} tone="green" sub={tr("stat.withFeeSub")} loading={loading} />}
+          </div>
 
-    const { mutateAsync: downloadSummaryFinanceExcel } = fileService.useMutationDownloadSummaryFinanceExcel();
-    const { mutateAsync: downloadSummaryFinanceDocument } = fileService.useMutationSummaryFinanceDocument();
-
-    const handleFilter = async (values) => {
-        const { eventId, range } = values;
-        const [startDate, endDate] = range || [];
-
-        const startISO = startDate?.startOf("day").toISOString();
-        const endISO = endDate?.endOf("day").toISOString();
-
-        const isSameFilter =
-            eventId === filteredData?.id &&
-            startISO === filteredData?.startDate &&
-            endISO === filteredData?.endDate;
-
-        if (isSameFilter) {
-            refetch();
-        } else {
-            setFilteredData({
-                id: eventId,
-                startDate: startISO,
-                endDate: endISO,
-            });
-        }
-    };
-
-    const handleDownload = async () => {
-        const { eventId, range } = form.getFieldsValue();
-        const [startDate, endDate] = range || [];
-
-        if (!eventId || !startDate || !endDate) {
-            message.error(t("required.export"));
-            return;
-        }
-
-        try {
-            setLoading(true);
-
-            downloadSummaryFinanceExcel({
-                id: eventId,
-                startDate: startDate?.startOf("day").toISOString(),
-                endDate: endDate?.endOf("day").toISOString(),
-            });
-
-        } catch (error) {
-            console.error("Error Finance Summary Document", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleClear = () => {
-        form.resetFields();
-        if (roleUser === "admin") {
-            setOrganizerId(null);
-            setEventOptions([]);
-        }
-        setFilteredData(null);
-        setData([]);
-    };
-
-    const handleOrganizerChange = (value) => {
-        setOrganizerId(value);
-        form.setFieldsValue({ event: null });
-    };
-
-    const columns = [
-        {
-            title: t("back.report.financeSummary.columns.no"),
-            dataIndex: "key",
-            key: "key",
-            width: 60,
-            align: 'center',
-            render: (_, __, index) => index + 1
-        },
-        {
-            title: t("back.report.financeSummary.columns.detail"),
-            dataIndex: "eventTypeName",
-            key: "eventTypeName",
-            fixed: 'left',
-        },
-        {
-            title: t("back.report.financeSummary.columns.price"),
-            dataIndex: "registrationFee",
-            key: "registrationFee",
-            align: "right",
-            render: (value) => formatCurrency(value)
-        },
-        {
-            title: t("back.report.financeSummary.columns.qty"),
-            dataIndex: "qty",
-            key: "qty",
-            align: "center",
-        },
-        {
-            title: t("back.report.financeSummary.columns.total"),
-            dataIndex: "total",
-            key: "total",
-            align: "right",
-            render: (value) => formatCurrency(value)
-        },
-    ];
-
-    const handleChange = (pagination, filters, sorter) => {
-        setOrder(sorter.order == 'descend' ? 'desc' : 'asc')
-        setSortedField(sorter.field)
-    };
-
-    const handleSearch = (selectedKeys, confirm, dataIndex) => {
-        confirm();
-        setSearchText(selectedKeys[0]);
-        setSearchedColumn(dataIndex);
-    };
-
-    const handleReset = (clearFilters) => {
-        clearFilters();
-        setSearchText('');
-    };
-
-    const getColumnSearchProps = (dataIndex) => ({
-        filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
-            <div style={{ padding: 8 }}>
-                <Input
-                    placeholder={`Search ${dataIndex}`}
-                    value={selectedKeys[0]}
-                    onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
-                    onPressEnter={() => handleSearch(selectedKeys, confirm, dataIndex)}
-                    style={{ width: 188, marginBottom: 8, display: 'block' }}
-                />
-                <Space>
-                    <Button
-                        onClick={() => handleSearch(selectedKeys, confirm, dataIndex)}
-                        icon={<SearchOutlined />}
-                        size="small"
-                        style={{ width: 90 }}
-                    >
-                        Search
-                    </Button>
-                    <Button onClick={() => handleReset(clearFilters)} size="small" style={{ width: 90 }}>
-                        Reset
-                    </Button>
-                </Space>
-            </div>
-        ),
-        filterIcon: (filtered) => <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />,
-        onFilter: (value, record) =>
-            (record[dataIndex]?.toString().toLowerCase() || '').includes(value.toLowerCase()),
-        render: (text) =>
-            searchedColumn === dataIndex ? (
-                <Highlighter
-                    highlightStyle={{ backgroundColor: '#188fff55', padding: 0 }}
-                    searchWords={[searchText]}
-                    autoEscape
-                    textToHighlight={text.toString()}
-                />
-            ) : (
-                text
-            ),
-    });
-
-    const renderRowSummary = (labelKey, value) => (
-        <div className="flex justify-between mb-2 pb-2 border-b border-gray-200">
-            <span>{t(`back.report.financeSummary.columns.${labelKey}`)}</span>
-            <span style={{ wordSpacing: '6px' }}>{formatCurrency(value)} {t("back.report.financeSummary.currency")}</span>
-        </div>
-    );
-
-    useEffect(() => {
-        if (isModalOpen) {
-            setTimeout(() => {
-                inputRef.current?.focus();
-            }, 100);
-        }
-    }, [isModalOpen]);
-
-    const handleOpenRemarkModal = () => {
-        const { eventId, range } = form.getFieldsValue();
-        const [startDate, endDate] = range || [];
-
-        if (!eventId || !startDate || !endDate) {
-            message.error(t("required.export"));
-            return;
-        }
-
-        setIsModalOpen(true);
-    };
-
-    const handleCancelRemarkModal = () => {
-        setIsModalOpen(false);
-        setRemark('');
-    };
-
-    const handleConfirmRemark = async () => {
-        const { eventId, range } = form.getFieldsValue();
-        const [startDate, endDate] = range || [];
-
-        if (!eventId || !startDate || !endDate) {
-            message.error(t("required.export"));
-            return;
-        }
-
-        try {
-            setLoading(true);
-            const response = await downloadSummaryFinanceDocument({
-                values: {
-                    id: eventId,
-                    startDate: startDate?.startOf("day").toISOString(),
-                    endDate: endDate?.endOf("day").toISOString(),
-                    remark: remark
-                }
-            });
-            globalThis.open(response.url, "_blank");
-
-        } catch (error) {
-            console.error("Error Finance Summary Document", error);
-        } finally {
-            setLoading(false);
-            setIsModalOpen(false);
-            setRemark('');
-        }
-    };
-
-    return (
-        <div className="md:max-w-screen-lg xl:max-w-screen-xl mx-auto">
-            <CommonForm
-                form={form}
-                name="finance-summary-report"
-                layout="vertical"
-                onFinish={handleFilter}
-                autoComplete="off"
-            >
-                <Row gutter={[16, 16]} align="top">
-                    <Col xs={24} md={24}>
-                        <div className="text-xl font-semibold opacity-60 mb-4">
-                            {t("back.report.financeSummary.title")}
-                        </div>
-                    </Col>
-                </Row>
-                <Row gutter={[16, 16]} align="top">
-                    {roleUser === "admin" && (
-                        <Col xs={24} sm={12} md={5}>
-                            <CommonForm.Item
-                                name="organizerId"
-                                rules={[{ required: true, message: t("required.organizer") }]}
-                            >
-                                <FloatingLabel
-                                    label={t("back.report.financeSummary.labels.organizer")}
-                                    type="select"
-                                    options={organizerOptions}
-                                    onChange={handleOrganizerChange}
-                                    required
-                                />
-                            </CommonForm.Item>
-                        </Col>
-                    )}
-                    <Col xs={24} sm={12} md={5}>
-                        <CommonForm.Item
-                            name="eventId"
-                            rules={[{ required: true, message: t("required.event") }]}
-                        >
-                            <FloatingLabel
-                                label={t("back.report.financeSummary.labels.event")}
-                                type="select"
-                                options={eventOptions}
-                                onDropdownVisibleChange={(open) => open && refetchEvent()}
-                                required
-                            />
-                        </CommonForm.Item>
-                    </Col>
-                    <Col xs={24} sm={12} md={5}>
-                        <CommonForm.Item
-                            name="range"
-                            rules={[{ required: true, message: t("required.dateRange") }]}
-                        >
-                            <FloatingLabel
-                                label={t("back.report.financeSummary.labels.range")}
-                                type="range"
-                                format={SYS_DATE_FORMAT}
-                                required
-                            />
-                        </CommonForm.Item>
-                    </Col>
-                    <Col xs={24} sm={12} md={6}>
-                        <CommonForm.Item>
-                            <Space size="middle">
-                                <Popover content={t("back.report.financeSummary.popover.filter")}>
-                                    <Button
-                                        icon={<SearchOutlined />}
-                                        size="large"
-                                        type="primary"
-                                        htmlType="submit"
-                                    >
-                                    </Button>
-                                </Popover>
-                                <Popover content={t("back.report.financeSummary.popover.export")}>
-                                    <Button
-                                        icon={<DownloadOutlined />}
-                                        size="large"
-                                        color="primary"
-                                        variant="outlined"
-                                        onClick={handleDownload}
-                                        loading={loading}
-                                    >
-                                    </Button>
-                                </Popover>
-                                <Popover content={t("back.report.financeSummary.popover.clear")}>
-                                    <Button
-                                        icon={<ClearOutlined />}
-                                        size="large"
-                                        onClick={handleClear}
-                                        danger
-                                    >
-                                    </Button>
-                                </Popover>
-                                {roleUser === "admin" && (
-                                    <Popover content={t("back.report.financeSummary.popover.createReceipt")}>
-                                        <Button
-                                            icon={<FileAddOutlined />}
-                                            color="primary"
-                                            size="large"
-                                            variant="outlined"
-                                            onClick={handleOpenRemarkModal}>
-                                        </Button>
-                                    </Popover>
-                                )}
-                            </Space>
-                        </CommonForm.Item>
-                    </Col>
-                </Row>
-            </CommonForm>
-            <Spin spinning={isLoadingData}>
+          <div className="grid grid-cols-1 xl:grid-cols-12">
+            <div className="xl:col-span-8 flex flex-col">
+              <Panel title={tr("byType")} description={tr("byTypeDesc")}>
                 <Table
-                    rowKey={(record) => `${record.eventTypeName}-${record.registrationFee}`}
-                    columns={columns.map(column => ({
-                        ...column,
-                        ...(column.search && getColumnSearchProps(column.dataIndex))
-                    }))}
-                    dataSource={data}
-                    bordered
-                    pagination={false}
-                    scroll={{ x: true }}
-                    onChange={handleChange}
+                  className="bo-flush-table"
+                  size="middle"
+                  rowKey={(r) => `${r.eventTypeName}-${r.registrationFee}`}
+                  loading={isFetching}
+                  columns={typeColumns}
+                  dataSource={rows}
+                  pagination={false}
+                  scroll={{ x: "max-content" }}
+                  locale={{ emptyText: t("back.report.ui.noRows") }}
+                  summary={() => (rows.length ? totalRow(tr("sum"), qtyTotal, registrationTotal, true) : null)}
                 />
-                {addOnSummary?.length > 0 && (
-                    <div style={{ marginTop: 24 }}>
-                        <Typography.Title level={5}>{t("back.report.financeSummary.addOnTitle")}</Typography.Title>
-                        <Table
-                            rowKey={(record) => `${record.eventTypeName}-${record.registrationFee}`}
-                            columns={[
-                                { ...columns[0] },
-                                { ...columns[1], title: t("back.report.financeSummary.columns.addOn") },
-                                { ...columns[2], title: t("back.report.financeSummary.columns.unitPrice") },
-                                { ...columns[3], title: t("back.report.financeSummary.columns.addOnQty") },
-                                { ...columns[4] },
-                            ].map(({ sorter: _sorter, search: _search, ...c }) => c)}
-                            dataSource={addOnSummary.map((row, i) => ({ ...row, key: i + 1 }))}
-                            bordered
-                            pagination={false}
-                            scroll={{ x: true }}
-                        />
-                    </div>
-                )}
-                <div style={{ marginTop: 24 }}>
-                    <Typography.Title level={5}>{t("back.report.financeSummary.summaryTitle")}</Typography.Title>
+              </Panel>
+              {addOnRows.length > 0 && (
+                <Panel title={tr("addOns")} description={tr("addOnsDesc")}>
+                  <Table
+                    className="bo-flush-table"
+                    size="middle"
+                    rowKey={(r) => `${r.eventTypeName}-${r.registrationFee}`}
+                    loading={fetchingAddOns}
+                    columns={addOnColumns}
+                    dataSource={addOnRows}
+                    pagination={false}
+                    scroll={{ x: "max-content" }}
+                    summary={() => totalRow(tr("sum"), addOnRows.reduce((acc, r) => acc + num(r.qty), 0), addOnTotal, false)}
+                  />
+                </Panel>
+              )}
+            </div>
 
-                    <div style={{ maxWidth: 500, marginTop: 15 }}>
-                        {renderRowSummary("totalAmount", dataSummary.totalAmount)}
-                        {renderRowSummary("totalDiscountCoupon", dataSummary.totalDiscountCoupon)}
-                        {renderRowSummary("totalDiscountShirt", dataSummary.totalDiscountShirt)}
-                        {renderRowSummary("totalShippingFee", dataSummary.totalShippingFee)}
-                        {renderRowSummary("totalAddOn", dataSummary.totalAddOn)}
-                        {renderRowSummary("totalNetAmount", dataSummary.totalNetAmount)}
-                        {roleUser === "admin" && (
-                            <>
-                                {renderRowSummary("totalServiceFee", dataSummary.totalServiceFee)}
-                                {renderRowSummary("totalAmountWithFee", dataSummary.totalAmountWithFee)}
-                            </>
-                        )}
-                    </div>
-                </div>
-            </Spin>
-            <Modal
-                title={t("back.report.financeSummary.modal.title")}
-                open={isModalOpen}
-                onOk={handleConfirmRemark}
-                onCancel={handleCancelRemarkModal}
-                okText={t("back.report.financeSummary.createReceipt")}
-                cancelText={t("general.cancelConfirm")}
-                confirmLoading={loading}
-            >
-                <CommonForm layout="vertical">
-                    <CommonForm.Item
-                        label={t("back.report.financeSummary.modal.labels.remark")}
-                    >
-                        <Input.TextArea
-                            rows={4}
-                            autoFocus
-                            placeholder={t("back.report.financeSummary.modal.placeholders.remark")}
-                            value={remark}
-                            onChange={(e) => setRemark(e.target.value)}
-                        />
-                    </CommonForm.Item>
-                </CommonForm>
-            </Modal>
-        </div>
-    );
-};
+            <Panel className="xl:col-span-4" title={tr("receipt")} description={tr("receiptDesc")} bodyClassName="px-4 md:px-5 py-3">
+              <Receipt lines={receiptLines} currency={t("back.report.financeSummary.currency")} />
+              <p className="m-0 mt-3 text-[11px] leading-relaxed text-[#6e6e73]">
+                {tr("countNote")}
+                {isAdmin ? ` ${tr("feeNote")}` : ""}
+              </p>
+            </Panel>
+          </div>
+        </>
+      )}
 
-export default FinanceSummary;
-
+      <Modal
+        title={t("back.report.financeSummary.modal.title")}
+        open={remarkOpen}
+        onOk={handleCreateDocument}
+        onCancel={() => { setRemarkOpen(false); setRemark(""); }}
+        okText={t("back.report.financeSummary.createReceipt")}
+        cancelText={t("general.cancelConfirm")}
+        confirmLoading={creating}
+      >
+        <p className="mt-0 mb-3 text-[13px] text-[#6e6e73]">
+          {event?.name} · {periodText}
+        </p>
+        <Input.TextArea
+          rows={4}
+          autoFocus
+          placeholder={t("back.report.financeSummary.modal.placeholders.remark")}
+          value={remark}
+          onChange={(e) => setRemark(e.target.value)}
+        />
+      </Modal>
+    </div>
+  );
+}

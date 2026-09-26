@@ -1485,6 +1485,167 @@
           "total": "Total"
         }
       },
+      "ui": {
+        "tabs": {
+          "finance": "Finance summary",
+          "participants": "Registrants",
+          "revenue": "Revenue overview",
+          "revenueDetail": "Revenue detail"
+        },
+        "filter": {
+          "event": "Event",
+          "allEvents": "All events",
+          "period": "Period",
+          "byMonth": "Month",
+          "custom": "Custom",
+          "pickEvent": "Pick an event",
+          "from": "From",
+          "to": "To",
+          "countedBy": "Every report counts orders by registration date (order created)",
+          "presets": {
+            "last7": "Last 7 days",
+            "thisMonth": "This month",
+            "lastMonth": "Last month",
+            "thisYear": "This year"
+          }
+        },
+        "actions": {
+          "refresh": "Refresh",
+          "excel": "Download Excel",
+          "receipt": "Create hand-over document"
+        },
+        "needEvent": "Pick an event and a period above to see the report",
+        "needPeriod": "Pick a period above to see the report",
+        "noRows": "No rows in this period",
+        "found": "{{count}} rows",
+        "searchPlaceholder": "Type and press Enter",
+        "status": {
+          "success": "Paid",
+          "pending": "Awaiting payment",
+          "review": "Under review",
+          "failed": "Failed",
+          "cancelled": "Cancelled"
+        },
+        "searchFields": {
+          "fullName": "Registrant name",
+          "orderId": "Order ID",
+          "transactionId": "Transaction ID",
+          "eventTypeName": "Type / distance",
+          "paymentMethod": "Payment method",
+          "paymentStatus": "Status"
+        },
+        "orderColumns": {
+          "no": "No.",
+          "registrant": "Registrant / distance",
+          "order": "Order ID / Transaction ID",
+          "status": "Status / method",
+          "method": "Payment method",
+          "registeredAt": "Registered",
+          "paidAt": "Paid",
+          "registration": "Registration",
+          "coupon": "Coupon",
+          "shirt": "No-shirt discount",
+          "shipping": "Shipping",
+          "addOn": "Add-ons",
+          "net": "Net total",
+          "netHint": "Registration − discounts + shipping + add-ons",
+          "fee": "Fee",
+          "feeHint": "Action's fee, charged to the registrant on top of the net total",
+          "withFee": "Charged to registrant",
+          "withFeeHint": "Net total + fee = what the registrant actually paid"
+        },
+        "finance": {
+          "title": "Finance summary",
+          "desc": "The event's money for the selected period, paid orders only",
+          "receiptTip": "Generate the PDF hand-over statement for this period",
+          "stat": {
+            "registration": "Registration fees",
+            "people": "{{count}} people",
+            "discount": "Discounts",
+            "discountSub": "Coupon {{coupon}} · No shirt {{shirt}}",
+            "shipping": "Shipping",
+            "addOn": "Add-ons",
+            "addOnSub": "{{count}} items",
+            "net": "Total amount",
+            "netSub": "After discounts, with shipping and add-ons",
+            "fee": "Action fee",
+            "withFee": "Paid by registrants",
+            "withFeeSub": "Total amount + fee"
+          },
+          "byType": "Registration by type / price",
+          "byTypeDesc": "People and money for each distance, split by the price paid (e.g. Early Bird / regular)",
+          "columns": {
+            "type": "Type / distance",
+            "price": "Price (THB)",
+            "qty": "People",
+            "total": "Amount (THB)",
+            "share": "Share of registration"
+          },
+          "sum": "Total",
+          "addOns": "Add-ons",
+          "addOnsDesc": "Add-on sales in the same period",
+          "addOnColumns": {
+            "name": "Add-on",
+            "unitPrice": "Unit price (THB)",
+            "qty": "Qty",
+            "total": "Amount (THB)"
+          },
+          "receipt": "Totals",
+          "receiptDesc": "From registration fees down to the final total",
+          "lines": {
+            "registration": "Registration fees",
+            "coupon": "Coupon discount",
+            "shirt": "No-shirt discount",
+            "shipping": "Shipping",
+            "addOn": "Add-ons",
+            "net": "Total amount",
+            "fee": "Action fee",
+            "withFee": "Paid by registrants"
+          },
+          "countNote": "Paid orders only, counted by registration date within the selected period.",
+          "feeNote": "The fee is charged to registrants on top of the total; it is not deducted from the organizer's amount."
+        },
+        "participants": {
+          "title": "Registrants",
+          "desc": "Everyone who registered in the period, in every payment status, with each person's money",
+          "hint": "Click a column header to sort · search on the right"
+        },
+        "revenueDetail": {
+          "title": "Revenue detail",
+          "desc": "Paid registrants in the period, with Action's fee on every row",
+          "hint": "Click a column header to sort · search on the right"
+        },
+        "revenue": {
+          "title": "Revenue overview (all events)",
+          "desc": "Money received by every event in the period, by contract and payment method (paid orders only)",
+          "stat": {
+            "events": "Events with revenue",
+            "rows": "{{count}} rows (event × method)",
+            "registration": "Registration",
+            "addOn": "Add-ons",
+            "fee": "Action fee",
+            "shipping": "Shipping",
+            "total": "Grand total",
+            "totalSub": "Registration + add-ons + fee + shipping"
+          },
+          "feeHint": "Registration + add-ons at the payment method's rate",
+          "subtotalHint": "Registration + add-ons + fee (before shipping)",
+          "table": "By contract / event / payment method",
+          "tableDesc": "Rows of the same event share one cell; each row is one payment method",
+          "columns": {
+            "contractNo": "Contract no.",
+            "event": "Event",
+            "method": "Payment method",
+            "registration": "Registration",
+            "addOn": "Add-ons",
+            "fee": "Fee",
+            "subtotal": "Before shipping",
+            "shipping": "Shipping",
+            "total": "Total"
+          },
+          "sum": "Total"
+        }
+      },
       "addOnColumn": "Add-ons"
     },
     "setting": {

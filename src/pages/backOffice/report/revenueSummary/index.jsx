@@ -1,321 +1,139 @@
-﻿import { ClearOutlined, DownloadOutlined, SearchOutlined } from '@ant-design/icons';
-import { Button, Col, Input, message, Popover, Row, Space, Spin, Table, Typography } from 'antd';
-import CommonForm from "components/commonForm";
-import FloatingLabel from 'components/floatingLabel';
-import { SYS_YEAR_MONTH_FORMAT } from 'constants/helper';
-import dayjs from 'dayjs';
-import React, { useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next';
-import backOfficeServices from 'services/backoffice.services';
-import fileService from 'services/file.services';
-import { formatCurrency } from 'utils/format';
+import React, { useMemo, useState } from "react";
+import { Button, Table } from "antd";
+import { DownloadOutlined, ReloadOutlined } from "@ant-design/icons";
+import { useTranslation } from "react-i18next";
+import backOfficeServices from "services/backoffice.services";
+import fileService from "services/file.services";
+import { EmptyNote, Money, Panel, ReportHeader, Stat } from "../parts";
+import { moneyColumn } from "../columns";
+import { fmtInt, fmtMoney, methodLabel, num } from "../format";
 
-const { Text } = Typography;
+/**
+ * Admin only: what every event took in during the period, one row per event × payment
+ * method (the backend computes the whole list in memory, so it is fetched unpaged and totalled
+ * here). Rows of the same event share one event cell so the grouping is visible at a glance.
+ */
+export default function RevenueSummary({ filters }) {
+  const { t } = useTranslation();
+  const tr = (k, o) => t(`back.report.ui.revenue.${k}`, o);
+  const { startDate, endDate, periodText } = filters;
+  const ready = !!(startDate && endDate);
 
-const RevenueSummary = () => {
-    const [form] = CommonForm.useForm();
-    const { t } = useTranslation();
-    const [data, setData] = useState([]);
-    const [startDate, setStartDate] = useState(null);
-    const [endDate, setEndDate] = useState(null);
-    const [totalData, setTotalData] = useState(0);
-    const [limitPage, setLimitPage] = useState(10);
-    const [page, setPage] = useState(1);
-    const [order, setOrder] = useState('asc');
-    const [searchText, setSearchText] = useState('');
-    const [searchedColumn, setSearchedColumn] = useState(undefined);
-    const [sortedField, setSortedField] = useState(undefined);
-    const [loading, setLoading] = useState(false);
+  const { data, isFetching, refetch } = backOfficeServices.useQueryGetRevenueSummary({
+    startDate: ready ? startDate : undefined,
+    endDate: ready ? endDate : undefined,
+    paging: { page: 0, size: 2000 },
+  });
 
-    const { data: dataRevenueSummary, isFetching: isLoadingData, refetch } = backOfficeServices.useQueryGetRevenueSummary({
-        startDate,
-        endDate,
-        paging: {
-            page: page - 1,
-            size: limitPage,
-            sortField: sortedField,
-            sortDirection: order,
-            searchField: searchedColumn,
-            searchText: (searchText != "" && searchText != undefined) ? "%" + searchText + "%" : undefined,
-        },
-    });
+  // Sorted by contract then event so each event's rows are contiguous; `span` marks the first
+  // row of a group with the group's size (rowSpan) and the rest with 0.
+  const rows = useMemo(() => {
+    const list = [...(data?.content || [])].sort((a, b) =>
+      String(a.contractNo || "").localeCompare(String(b.contractNo || ""), "th")
+      || String(a.eventName || "").localeCompare(String(b.eventName || ""), "th")
+      || String(a.paymentMethod || "").localeCompare(String(b.paymentMethod || "")));
+    const out = [];
+    for (let i = 0; i < list.length; i += 1) {
+      const key = `${list[i].contractNo}|${list[i].eventName}`;
+      let span = 0;
+      if (i === 0 || key !== `${list[i - 1].contractNo}|${list[i - 1].eventName}`) {
+        span = 1;
+        while (i + span < list.length && `${list[i + span].contractNo}|${list[i + span].eventName}` === key) span += 1;
+      }
+      out.push({ ...list[i], key: `${key}|${list[i].paymentMethod}|${i}`, span });
+    }
+    return out;
+  }, [data]);
 
-    useEffect(() => {
-        if (dataRevenueSummary?.content?.length > 0) {
-            setData(dataRevenueSummary.content);
-            setTotalData(dataRevenueSummary.totalElements);
-        } else {
-            setData([])
-            setTotalData(0);
-        }
-    }, [dataRevenueSummary]);
+  const totals = useMemo(() => rows.reduce((acc, r) => ({
+    registrationFee: acc.registrationFee + num(r.registrationFee),
+    addOnTotal: acc.addOnTotal + num(r.addOnTotal),
+    serviceFee: acc.serviceFee + num(r.serviceFee),
+    total: acc.total + num(r.total),
+    shippingFee: acc.shippingFee + num(r.shippingFee),
+    totalWithShipping: acc.totalWithShipping + num(r.totalWithShipping),
+  }), { registrationFee: 0, addOnTotal: 0, serviceFee: 0, total: 0, shippingFee: 0, totalWithShipping: 0 }), [rows]);
+  const eventCount = rows.filter((r) => r.span > 0).length;
 
-    const { mutateAsync: revenueDownload } = fileService.useMutationDownloadSummaryRevenueExcel();
+  const [exporting, setExporting] = useState(false);
+  const { mutateAsync: downloadExcel } = fileService.useMutationDownloadSummaryRevenueExcel();
+  const handleExcel = async () => {
+    try {
+      setExporting(true);
+      await downloadExcel({ startDate, endDate });
+    } catch (error) {
+      console.error("Error Revenue Summary Excel", error);
+    } finally {
+      setExporting(false);
+    }
+  };
 
-    const handleFilter = (values) => {
-        const { revenueDate } = values;
-        if (!revenueDate) return;
-        const selectedDate = dayjs(revenueDate);
-        const newStartDate = selectedDate.startOf('month').toISOString();
-        const newEndDate = selectedDate.endOf('month').toISOString();
+  const groupCell = (r) => ({ rowSpan: r.span });
+  const c = (k) => tr(`columns.${k}`);
+  const columns = [
+    { title: c("contractNo"), dataIndex: "contractNo", key: "contractNo", width: 120, onCell: groupCell, render: (v) => <span className="font-mono text-[12px]">{v || "–"}</span> },
+    { title: c("event"), dataIndex: "eventName", key: "eventName", width: 260, onCell: groupCell, render: (v) => <span className="font-semibold text-[#1d1d1f]">{v}</span> },
+    { title: c("method"), dataIndex: "paymentMethod", key: "paymentMethod", width: 130, render: (v) => methodLabel(v) },
+    moneyColumn({ title: c("registration"), dataIndex: "registrationFee", width: 130 }),
+    moneyColumn({ title: c("addOn"), dataIndex: "addOnTotal", width: 120 }),
+    moneyColumn({ title: c("fee"), dataIndex: "serviceFee", width: 130, hint: tr("feeHint") }),
+    moneyColumn({ title: c("subtotal"), dataIndex: "total", width: 140, hint: tr("subtotalHint") }),
+    moneyColumn({ title: c("shipping"), dataIndex: "shippingFee", width: 110 }),
+    moneyColumn({ title: c("total"), dataIndex: "totalWithShipping", strong: true, width: 150 }),
+  ];
 
-        if (newStartDate === startDate && newEndDate === endDate) {
-            refetch();
-        } else {
-            setStartDate(newStartDate);
-            setEndDate(newEndDate);
-        }
-    };
-
-    const handleDownload = async () => {
-        const { revenueDate } = form.getFieldsValue();
-        if (!revenueDate || !dayjs(revenueDate).isValid()) {
-            message.error(t("required.date"));
-            return;
-        }
-
-        const selectedDate = dayjs(revenueDate);
-        const startDate = selectedDate.startOf('month').toISOString();
-        const endDate = selectedDate.endOf('month').toISOString();
-
-        try {
-            setLoading(true);
-
-            await revenueDownload({
-                startDate,
-                endDate,
-            });
-
-        } catch (error) {
-            console.error("Error Participant Summary Excel", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleClear = () => {
-        form.resetFields();
-        setPage(1)
-        setStartDate(null);
-        setEndDate(null);
-        setData([]);
-    };
-
-    const columns = [
-        {
-            title: t("back.report.revenueSummary.columns.contractNo"),
-            dataIndex: "contractNo",
-            key: "contractNo",
-        },
-        {
-            title: t("back.report.revenueSummary.columns.eventName"),
-            dataIndex: "eventName",
-            key: "eventName",
-        },
-        {
-            title: t("back.report.revenueSummary.columns.paymentMethod"),
-            dataIndex: "paymentMethod",
-            key: "paymentMethod",
-        },
-        {
-            title: t("back.report.revenueSummary.columns.registrationFee"),
-            dataIndex: "registrationFee",
-            key: "registrationFee",
-            align: "right",
-            render: (value) => formatCurrency(value)
-        },
-        {
-            title: t("back.report.addOnColumn"),
-            dataIndex: "addOnTotal",
-            key: "addOnTotal",
-            align: "right",
-            render: (value) => formatCurrency(value)
-        },
-        {
-            title: t("back.report.revenueSummary.columns.serviceFee"),
-            dataIndex: "serviceFee",
-            key: "serviceFee",
-            align: "right",
-            render: (value) => formatCurrency(value)
-        },
-        {
-            title: t("back.report.revenueSummary.columns.total"),
-            dataIndex: "total",
-            key: "total",
-            align: "right",
-            render: (value) => formatCurrency(value)
-        },
-        {
-            title: t("back.report.revenueSummary.columns.shippingFee"),
-            dataIndex: "shippingFee",
-            key: "shippingFee",
-            align: "right",
-            render: (value) => formatCurrency(value)
-        },
-        {
-            title: t("back.report.revenueSummary.columns.totalWithShipping"),
-            dataIndex: "totalWithShipping",
-            key: "totalWithShipping",
-            align: "right",
-            render: (value) => formatCurrency(value)
-        },
-    ];
-
-    const handleChange = (pagination, filters, sorter) => {
-        setOrder(sorter.order == 'descend' ? 'desc' : 'asc')
-        setSortedField(sorter.field)
-    };
-
-    const handleSearch = (selectedKeys, confirm, dataIndex) => {
-        confirm();
-        setSearchText(selectedKeys[0]);
-        setSearchedColumn(dataIndex);
-    };
-
-    const handleReset = (clearFilters) => {
-        clearFilters();
-        setSearchText('');
-    };
-
-    const getColumnSearchProps = (dataIndex) => ({
-        filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
-            <div style={{ padding: 8 }}>
-                <Input
-                    placeholder={`Search ${dataIndex}`}
-                    value={selectedKeys[0]}
-                    onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
-                    onPressEnter={() => handleSearch(selectedKeys, confirm, dataIndex)}
-                    style={{ width: 188, marginBottom: 8, display: 'block' }}
-                />
-                <Space>
-                    <Button
-                        onClick={() => handleSearch(selectedKeys, confirm, dataIndex)}
-                        icon={<SearchOutlined />}
-                        size="small"
-                        style={{ width: 90 }}
-                    >
-                        Search
-                    </Button>
-                    <Button onClick={() => handleReset(clearFilters)} size="small" style={{ width: 90 }}>
-                        Reset
-                    </Button>
-                </Space>
-            </div>
-        ),
-        filterIcon: (filtered) => <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />,
-        onFilter: (value, record) =>
-            (record[dataIndex]?.toString().toLowerCase() || '').includes(value.toLowerCase()),
-        render: (text) =>
-            searchedColumn === dataIndex ? (
-                <Highlighter
-                    highlightStyle={{ backgroundColor: '#188fff55', padding: 0 }}
-                    searchWords={[searchText]}
-                    autoEscape
-                    textToHighlight={text.toString()}
-                />
-            ) : (
-                text
-            ),
-    });
-
-    return (
-        <div className="md:max-w-screen-lg xl:max-w-screen-xl mx-auto">
-            <CommonForm
-                form={form}
-                name="revenue-summary-report"
-                layout="vertical"
-                onFinish={handleFilter}
-                autoComplete="off"
-            >
-                <Row gutter={[16, 16]} align="top">
-                    <Col xs={24} md={24}>
-                        <div className="text-xl font-semibold opacity-60 mb-4">
-                            {t("back.report.revenueSummary.title")}
-                        </div>
-                    </Col>
-                </Row>
-                <Row gutter={[16, 16]} align="top">
-                    <Col xs={24} sm={12} md={5}>
-                        <CommonForm.Item
-                            name="revenueDate"
-                            rules={[{ required: true, message: t("required.month") }]}
-                        >
-                            <FloatingLabel
-                                type="date"
-                                format={SYS_YEAR_MONTH_FORMAT}
-                                label={"เดือน"}
-                                picker="month"
-                                required
-                            />
-                        </CommonForm.Item>
-                    </Col>
-                    <Col xs={24} sm={12} md={6}>
-                        <CommonForm.Item>
-                            <Space size="middle">
-                                <Popover content={t("back.report.revenueSummary.popover.filter")}>
-                                    <Button
-                                        icon={<SearchOutlined />}
-                                        size="large"
-                                        type="primary"
-                                        htmlType="submit"
-                                        disabled={isLoadingData}
-                                        loading={isLoadingData}
-                                    >
-                                    </Button>
-                                </Popover>
-                                <Popover content={t("back.report.revenueSummary.popover.export")}>
-                                    <Button
-                                        icon={<DownloadOutlined />}
-                                        size="large"
-                                        color="primary"
-                                        variant="outlined"
-                                        onClick={handleDownload}
-                                        disabled={loading}
-                                        loading={loading}
-                                    >
-                                    </Button>
-                                </Popover>
-                                <Popover content={t("back.report.revenueSummary.popover.clear")}>
-                                    <Button
-                                        icon={<ClearOutlined />}
-                                        size="large"
-                                        onClick={handleClear}
-                                        danger
-                                    >
-                                    </Button>
-                                </Popover>
-                            </Space>
-                        </CommonForm.Item>
-                    </Col>
-                </Row>
-            </CommonForm>
-            <Spin spinning={isLoadingData}>
-                <Table className="!w-full !text-nowrap"
-                    rowKey={(record) => `${record.contractNo}-${record.paymentMethod}`}
-                    columns={columns.map(column => ({
-                        ...column,
-                        ...(column.search && getColumnSearchProps(column.dataIndex))
-                    }))}
-                    dataSource={data}
-                    bordered
-                    scroll={{ x: true }}
-                    pagination={{
-                        pageSize: limitPage,
-                        current: page,
-                        onChange: (page, pageSize) => {
-                            setPage(page);
-                            setLimitPage(pageSize);
-                        },
-                        total: totalData,
-                        pageSizeOptions: ['10', '20', '50', '100'],
-                        showSizeChanger: true
-                    }}
-                    onChange={handleChange}
-                />
-            </Spin>
-        </div>
-    )
+  return (
+    <div className="flex flex-col">
+      <ReportHeader
+        title={tr("title")}
+        description={ready ? `${tr("desc")} · ${periodText}` : tr("desc")}
+        extra={(
+          <>
+            <Button icon={<ReloadOutlined />} disabled={!ready} loading={isFetching} onClick={() => refetch()}>{t("back.report.ui.actions.refresh")}</Button>
+            <Button type="primary" icon={<DownloadOutlined />} disabled={!ready} loading={exporting} onClick={handleExcel}>{t("back.report.ui.actions.excel")}</Button>
+          </>
+        )}
+      />
+      {!ready ? (
+        <EmptyNote text={t("back.report.ui.needPeriod")} />
+      ) : (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
+            <Stat label={tr("stat.events")} value={fmtInt(eventCount)} sub={tr("stat.rows", { count: fmtInt(rows.length) })} loading={isFetching} />
+            <Stat label={tr("stat.registration")} value={fmtMoney(totals.registrationFee)} loading={isFetching} />
+            <Stat label={tr("stat.addOn")} value={fmtMoney(totals.addOnTotal)} loading={isFetching} />
+            <Stat label={tr("stat.fee")} value={fmtMoney(totals.serviceFee)} tone="green" sub={tr("feeHint")} loading={isFetching} />
+            <Stat label={tr("stat.shipping")} value={fmtMoney(totals.shippingFee)} loading={isFetching} />
+            <Stat label={tr("stat.total")} value={fmtMoney(totals.totalWithShipping)} tone="blue" sub={tr("stat.totalSub")} loading={isFetching} />
+          </div>
+          <Panel title={tr("table")} description={tr("tableDesc")}>
+            <Table
+              className="bo-flush-table"
+              size="middle"
+              rowKey="key"
+              loading={isFetching}
+              columns={columns}
+              dataSource={rows}
+              pagination={false}
+              scroll={{ x: "max-content" }}
+              locale={{ emptyText: t("back.report.ui.noRows") }}
+              summary={() => (rows.length ? (
+                <Table.Summary fixed>
+                  <Table.Summary.Row className="bg-[#fbfbfd]">
+                    <Table.Summary.Cell index={0} colSpan={3} className="font-semibold">{tr("sum")}</Table.Summary.Cell>
+                    <Table.Summary.Cell index={1} align="right"><Money value={totals.registrationFee} strong /></Table.Summary.Cell>
+                    <Table.Summary.Cell index={2} align="right"><Money value={totals.addOnTotal} strong /></Table.Summary.Cell>
+                    <Table.Summary.Cell index={3} align="right"><Money value={totals.serviceFee} strong /></Table.Summary.Cell>
+                    <Table.Summary.Cell index={4} align="right"><Money value={totals.total} strong /></Table.Summary.Cell>
+                    <Table.Summary.Cell index={5} align="right"><Money value={totals.shippingFee} strong /></Table.Summary.Cell>
+                    <Table.Summary.Cell index={6} align="right"><Money value={totals.totalWithShipping} strong /></Table.Summary.Cell>
+                  </Table.Summary.Row>
+                </Table.Summary>
+              ) : null)}
+            />
+          </Panel>
+        </>
+      )}
+    </div>
+  );
 }
-
-export default RevenueSummary
-
