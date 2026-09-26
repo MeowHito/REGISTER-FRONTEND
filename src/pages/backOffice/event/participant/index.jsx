@@ -26,6 +26,13 @@ import { bloodGroupOption } from 'constants/options/bloodGroupOption';
 import useCountryStateHook from 'hooks/useCountryStateHook';
 import masterService from 'services/master.services';
 
+// Only the number is stored; the document type is inferred from it (13 digits = Thai ID card).
+const ID_TYPE_OPTIONS = [
+    { value: 'citizen', label: 'back.event.participant.form.idTypeCitizen' },
+    { value: 'passport', label: 'back.event.participant.form.idTypePassport' },
+];
+const isThaiIdNo = (v) => /^\d{13}$/.test(v || '');
+
 // Change-log field key (backend) → label key under back.event.participant.form.
 const EDIT_FIELD_LABEL = {
     eventType: 'eventTypeName',
@@ -75,6 +82,7 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
     const shirtTypes = useMemo(() => eventData?.shirtTypes || [], [eventData]);
     const shirtTypeId = CommonForm.useWatch('shirtTypeId', form);
     const eventTypeId = CommonForm.useWatch('eventTypeId', form);
+    const idType = CommonForm.useWatch('idType', form);
     const shirtTypeOptions = useMemo(() => shirtTypes.map(({ id, name }) => ({ value: id, label: name })), [shirtTypes]);
     const shirtSizeOptions = useMemo(() => {
         const type = shirtTypes.find((s) => s.id === shirtTypeId);
@@ -127,6 +135,7 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
             let _field = {
                 ...participantData,
                 province: state ? state.stateLocal : participantData?.province,
+                idType: !participantData?.idNo || isThaiIdNo(participantData.idNo) ? 'citizen' : 'passport',
                 birthDate: toStartOfDay(participantData?.birthDate),
                 registerDate: participantData?.registerDate ? dayjs(participantData.registerDate).format(SYS_DATE_FORMAT) : '',
                 selectionAnswers: formSelectionAnswers,
@@ -134,6 +143,15 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
             form.setFieldsValue(_field);
         }
     }, [participantData, open, countryStates]);
+
+    // Re-check the number under the newly chosen document type.
+    useEffect(() => {
+        if (open && !isViewMode && form.getFieldValue('idNo')) {
+            form.validateFields(['idNo']).catch(() => {});
+        }
+        // Only on a type switch, not on every open/mode change.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [idType]);
 
     useEffect(() => {
         if (open && data) {
@@ -496,37 +514,55 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
                         </Row>
                         <Row gutter={[16, 16]}>
                             <Col xs={24} md={8}>
+                                <CommonForm.Item name="idType">
+                                    <FloatingLabel
+                                        type="radio"
+                                        size="large"
+                                        optionType="default"
+                                        options={ID_TYPE_OPTIONS}
+                                        label={t("back.event.participant.form.idType")}
+                                        required
+                                        disabled={isViewMode}
+                                    />
+                                </CommonForm.Item>
+                            </Col>
+                            <Col xs={24} md={8}>
                                 <CommonForm.Item
                                     name="idNo"
+                                    // Digits only for an ID card; a passport is upper-case letters and digits.
+                                    normalize={(v) => idType === 'passport'
+                                        ? (v || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+                                        : (v || '').replace(/\D/g, '')}
                                     rules={[
                                         {
                                             required: true,
-                                            message: t("required.idNo"),
+                                            message: t(idType === 'passport' ? "required.passport" : "required.idNo"),
                                         },
                                         {
                                             validator: (_, value) => {
                                                 if (!value) return Promise.resolve();
-
-                                                const isCitizen = /^[0-9]{13}$/.test(value);
-                                                const isPassport = /^[A-Z0-9]{5,20}$/i.test(value);
-
-                                                if (isCitizen && !validateIDCard(value)) {
-                                                    return Promise.reject(t("validation.idNo"));
+                                                if (idType === 'passport') {
+                                                    // ICAO 9303: at most 9 characters (a Thai passport is 2 letters + 7 digits).
+                                                    return /^[A-Z0-9]{6,9}$/.test(value)
+                                                        ? Promise.resolve()
+                                                        : Promise.reject(t("validation.passport"));
                                                 }
-
-                                                if (!isCitizen && !isPassport) {
-                                                    return Promise.reject(t("validation.idNoAndPassport"));
+                                                if (!isThaiIdNo(value)) {
+                                                    return Promise.reject(t("validation.idNoDigits"));
                                                 }
-
-                                                return Promise.resolve();
+                                                return validateIDCard(value)
+                                                    ? Promise.resolve()
+                                                    : Promise.reject(t("validation.idNo"));
                                             },
                                         },
                                     ]}
                                 >
                                     <FloatingLabel
-                                        maxLength={20}
+                                        maxLength={idType === 'passport' ? 9 : 13}
                                         size="large"
-                                        label={t("back.event.participant.form.idNo")}
+                                        label={t(idType === 'passport'
+                                            ? "back.event.participant.form.passportNo"
+                                            : "back.event.participant.form.idCardNo")}
                                         required
                                         readOnly={isViewMode}
                                     />
@@ -548,22 +584,6 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
                                         label={t("back.event.participant.form.birthDate")}
                                         required
                                         disabled={isViewMode}
-                                    />
-                                </CommonForm.Item>
-                            </Col>
-                            <Col xs={24} md={8}>
-                                <CommonForm.Item name="province">
-                                    <FloatingLabel
-                                        label={t("back.event.participant.form.province")}
-                                        type="select"
-                                        showSearch
-                                        allowClear
-                                        disabled={isViewMode || isLoadingProvince}
-                                        options={provinceOption}
-                                        filterOption={(input, option) => {
-                                            const str = option.filterLabel || (typeof option.label === 'string' ? option.label : '');
-                                            return str.toLowerCase().includes(input.toLowerCase());
-                                        }}
                                     />
                                 </CommonForm.Item>
                             </Col>
@@ -620,17 +640,33 @@ const Participant = ({ isEditable, data, open, onCancel, refetch, mode, national
                                     <FloatingLabel label={t("back.event.participant.form.address")} readOnly={isViewMode} />
                                 </CommonForm.Item>
                             </Col>
-                            <Col xs={24} md={8}>
+                            <Col xs={24} md={6}>
                                 <CommonForm.Item name="district">
                                     <FloatingLabel label={t("back.event.participant.form.district")} readOnly={isViewMode} />
                                 </CommonForm.Item>
                             </Col>
-                            <Col xs={24} md={8}>
+                            <Col xs={24} md={6}>
                                 <CommonForm.Item name="amphoe">
                                     <FloatingLabel label={t("back.event.participant.form.amphoe")} readOnly={isViewMode} />
                                 </CommonForm.Item>
                             </Col>
-                            <Col xs={24} md={8}>
+                            <Col xs={24} md={6}>
+                                <CommonForm.Item name="province">
+                                    <FloatingLabel
+                                        label={t("back.event.participant.form.province")}
+                                        type="select"
+                                        showSearch
+                                        allowClear
+                                        disabled={isViewMode || isLoadingProvince}
+                                        options={provinceOption}
+                                        filterOption={(input, option) => {
+                                            const str = option.filterLabel || (typeof option.label === 'string' ? option.label : '');
+                                            return str.toLowerCase().includes(input.toLowerCase());
+                                        }}
+                                    />
+                                </CommonForm.Item>
+                            </Col>
+                            <Col xs={24} md={6}>
                                 <CommonForm.Item name="zipcode">
                                     <FloatingLabel label={t("back.event.participant.form.zipcode")} maxLength={5} readOnly={isViewMode} />
                                 </CommonForm.Item>
