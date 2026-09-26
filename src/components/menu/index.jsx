@@ -25,8 +25,8 @@ export default function Menu() {
   const menus = me?.role.permissions
     .map(p => p.menu)
     .sort((a, b) => a.position - b.position) || []
-  // Only roles granted the dashboard menu (admin, organizer) get the shortcut. It keeps the
-  // "Dashboard" label, which the sidebar now uses for eventStats (the "dashboard" menu reads "Event").
+  // Only roles granted the dashboard menu (admin, organizer) get the "manage events" shortcut,
+  // which opens /dashboard (the event picker).
   const dashboardMenu = menus.find((m) => m.title === "dashboard" && m.path);
 
   const currentLanguage = i18n.language?.toLowerCase();
@@ -96,7 +96,7 @@ export default function Menu() {
           {
             key: "dashboard",
             icon: <DashboardOutlined />,
-            label: <Link to={dashboardMenu.path}>{t("back.menu.eventStats.name")}</Link>,
+            label: <Link to={dashboardMenu.path}>{t("back.workspace.manageEvents")}</Link>,
           },
         ]
       : []),
@@ -269,7 +269,7 @@ export default function Menu() {
                     onClick={() => setDrawerOpen(false)}
                     className="w-full block text-center py-3 rounded-xl border-2 border-brand text-brand font-bold"
                   >
-                    {t("back.menu.eventStats.name")}
+                    {t("back.workspace.manageEvents")}
                   </Link>
                 )}
                 <button

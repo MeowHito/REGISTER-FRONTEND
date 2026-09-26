@@ -2151,7 +2151,23 @@
         "participants": "View, search, edit and download participants",
         "share": "Copy the event page link to share",
         "permission": "Invite collaborators and set their permissions"
-      }
+      },
+      "manageEvents": "Manage events"
+    },
+    "stats": {
+      "noData": "No data yet",
+      "registered": "Registered",
+      "paid": "Paid",
+      "ofCapacity": "of {{capacity}} quota ({{percent}}%)",
+      "ofRegistered": "{{percent}}% of registered",
+      "holdingSlots": "Holding slots until payment expires",
+      "window": "Registration window",
+      "byDistance": "Registered by distance",
+      "payments": "Payment status",
+      "allDistances": "All distances",
+      "otherProvinces": "Other provinces ({{count}})",
+      "starHint": "Star an event on the Event page to keep it selected",
+      "monthly": "Monthly"
     }
   },
   "general": {

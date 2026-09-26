@@ -1,5 +1,5 @@
 import { Avatar, Dropdown } from "antd";
-import { DownOutlined, HistoryOutlined, LogoutOutlined, MenuOutlined, SolutionOutlined, UserOutlined } from "@ant-design/icons";
+import { DashboardOutlined, DownOutlined, HistoryOutlined, LogoutOutlined, MenuOutlined, SolutionOutlined, UserOutlined } from "@ant-design/icons";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { logo_black } from "assets";
@@ -21,6 +21,8 @@ export default function BackOfficeHeader({ onOpenMenu }) {
   const roleLabel = useRoleLabel(me);
   const avatarUrl = useAvatarUrl(me);
   const isGuest = !me?.role?.roleType || me?.role?.roleType === "guest";
+  // Roles granted the dashboard menu (admin, organizer) get a shortcut to the event picker.
+  const dashboardMenu = me?.role?.permissions?.map((p) => p.menu).find((m) => m?.title === "dashboard" && m.path);
 
   const navMenu = [
     { text: t("front.menu.eventCalendar"), link: "/eventCalendar" },
@@ -41,6 +43,9 @@ export default function BackOfficeHeader({ onOpenMenu }) {
     { type: "divider" },
     ...(isGuest
       ? [{ key: "history", icon: <HistoryOutlined />, label: <Link to="/historyList">{t("front.menu.registrationHistory")}</Link> }]
+      : []),
+    ...(dashboardMenu
+      ? [{ key: "manageEvents", icon: <DashboardOutlined />, label: <Link to={dashboardMenu.path}>{t("back.workspace.manageEvents")}</Link> }]
       : []),
     { key: "profile", icon: <SolutionOutlined />, label: <Link to="/setting">{t("front.menu.profile.title")}</Link> },
     { key: "logout", icon: <LogoutOutlined />, danger: true, label: t("front.menu.logout") },

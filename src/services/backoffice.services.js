@@ -481,14 +481,19 @@ const backOfficeServices = {
     });
   },
 
-  useQueryGetDashboardOverview({ eventId }) {
+  // eventTypeId (optional) narrows every figure to one distance.
+  useQueryGetDashboardOverview({ eventId, eventTypeId }) {
     return useQuery({
-      queryKey: ["getDashboardOverview", eventId],
+      queryKey: ["getDashboardOverview", eventId, eventTypeId ?? null],
       queryFn: async () => {
-        const res = await createRequest.get(`api/dashboard/overview/${eventId}`);
+        const res = await createRequest.get(`api/dashboard/overview/${eventId}`, {
+          params: eventTypeId ? { eventTypeId } : undefined,
+        });
         return res.data.data;
       },
       enabled: !!eventId,
+      // Keep the last figures on screen while another distance loads.
+      placeholderData: (previous) => previous,
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
     });
@@ -506,14 +511,19 @@ const backOfficeServices = {
     });
   },
 
-  useQueryGetDashboardRegistration({ eventId }) {
+  // eventTypeId (optional) narrows every figure to one distance.
+  useQueryGetDashboardRegistration({ eventId, eventTypeId }) {
     return useQuery({
-      queryKey: ["getDashboardRegistration", eventId],
+      queryKey: ["getDashboardRegistration", eventId, eventTypeId ?? null],
       queryFn: async () => {
-        const res = await createRequest.get(`api/dashboard/registration/${eventId}`);
+        const res = await createRequest.get(`api/dashboard/registration/${eventId}`, {
+          params: eventTypeId ? { eventTypeId } : undefined,
+        });
         return res.data.data;
       },
       enabled: !!eventId,
+      // Keep the last figures on screen while another distance loads.
+      placeholderData: (previous) => previous,
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
     });
