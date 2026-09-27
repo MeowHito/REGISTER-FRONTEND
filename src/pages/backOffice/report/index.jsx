@@ -1,5 +1,5 @@
 import React from "react";
-import { DatePicker, Segmented, Select, Tabs } from "antd";
+import { DatePicker, Segmented, Tabs } from "antd";
 import { CalendarOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useSearchParams } from "react-router-dom";
@@ -13,15 +13,15 @@ import RevenueDetailSummary from "./revenueDetailSummary";
 
 // Tabs are addressable (?tab=participants). The two revenue tabs are admin-only, like their APIs.
 const TABS = [
-  { key: "finance", Component: FinanceSummary, adminOnly: false, scope: "event" },
-  { key: "participants", Component: ParticipantSummary, adminOnly: false, scope: "event" },
-  { key: "revenue", Component: RevenueSummary, adminOnly: true, scope: "all" },
-  { key: "revenueDetail", Component: RevenueDetailSummary, adminOnly: true, scope: "event" },
+  { key: "finance", Component: FinanceSummary, adminOnly: false },
+  { key: "participants", Component: ParticipantSummary, adminOnly: false },
+  { key: "revenue", Component: RevenueSummary, adminOnly: true },
+  { key: "revenueDetail", Component: RevenueDetailSummary, adminOnly: true },
 ];
 
 /**
- * Reports. One filter strip (event + period) drives every tab, so switching reports never
- * means re-entering the same event and dates; each tab explains what it counts in its header.
+ * Reports. The event is the starred one in the top bar (no picker here, it would duplicate it);
+ * one period filter drives every tab, and each tab explains what it counts in its header.
  */
 export default function Report() {
   const { t } = useTranslation();
@@ -32,7 +32,6 @@ export default function Report() {
   const tabs = TABS.filter((tab) => isAdmin || !tab.adminOnly);
   const requested = searchParams.get("tab");
   const active = tabs.find((tab) => tab.key === requested) || tabs[0];
-  const eventScoped = active.scope === "event";
 
   const presets = [
     { label: t("back.report.ui.filter.presets.last7"), value: [dayjs().subtract(6, "day"), dayjs()] },
@@ -51,25 +50,6 @@ export default function Report() {
   return (
     <div className="flex flex-col">
       <div className="bo-card flex flex-wrap items-end gap-x-5 gap-y-3 px-4 md:px-5 py-3">
-        {field(
-          t("back.report.ui.filter.event"),
-          eventScoped ? (
-            <Select
-              showSearch
-              optionFilterProp="label"
-              placeholder={t("back.report.ui.filter.pickEvent")}
-              loading={filters.loadingEvents}
-              value={filters.eventId}
-              onChange={filters.setEventId}
-              options={filters.eventOptions}
-              className="w-[min(100%,360px)] min-w-[240px]"
-            />
-          ) : (
-            <span className="inline-flex items-center h-10 px-3 rounded-lg bg-[#ececf0] text-[13px] text-[#424245] min-w-[240px]">
-              {t("back.report.ui.filter.allEvents")}
-            </span>
-          ),
-        )}
         {field(
           t("back.report.ui.filter.period"),
           <div className="flex flex-wrap items-center gap-2">

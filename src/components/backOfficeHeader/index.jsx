@@ -55,7 +55,7 @@ export default function BackOfficeHeader({ onOpenMenu }) {
   return (
     <header className="bo-header sticky top-0 z-50 h-16">
       <div className="h-full flex items-center justify-between gap-3 px-4 md:px-6">
-        <div className="flex items-center gap-3 md:gap-8 min-w-0">
+        <div className="flex items-center gap-3 md:gap-5 min-w-0">
           {onOpenMenu && (
             <button
               type="button"
@@ -72,12 +72,12 @@ export default function BackOfficeHeader({ onOpenMenu }) {
               CONSOLE
             </span>
           </Link>
-          <nav className="hidden lg:flex items-center gap-6">
+          <nav className="hidden lg:flex items-center gap-5 shrink-0">
             {navMenu.map((item) => (
               <Link
                 key={item.link}
                 to={item.link}
-                className={`text-sm font-medium transition-colors ${location.pathname.startsWith(item.link) ? "!text-[#0071e3]" : "!text-[#424245] hover:!text-[#1d1d1f]"}`}
+                className={`text-sm font-medium whitespace-nowrap transition-colors ${location.pathname.startsWith(item.link) ? "!text-[#0071e3]" : "!text-[#424245] hover:!text-[#1d1d1f]"}`}
               >
                 {item.text}
               </Link>

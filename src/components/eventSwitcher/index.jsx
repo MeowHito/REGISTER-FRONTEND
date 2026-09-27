@@ -84,7 +84,7 @@ export default function EventSwitcher({ className = "" }) {
           setOpen(false);
         }}
         popupMatchSelectWidth={320}
-        className="w-[200px] 2xl:w-[240px]"
+        className="w-[170px] 2xl:w-[240px]"
         size="large"
       />
       <Select

@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { SYS_DATE_FORMAT, SYS_DATE_TIME_FORMAT } from "constants/helper";
 import Tiptap from "components/tiptap";
 import DateSelect from "components/dateSelect";
+import { isBackOfficePath } from "utils";
 
 const { TextArea } = Input;
 const { RangePicker } = DatePicker;
@@ -59,7 +60,19 @@ const FloatingLabel = forwardRef((props, ref) => {
           ? value.length > 0
           : true)) || isTiptap;
 
-  const labelClass = isOccupied ? "label as-label" : "label as-placeholder";
+  // Back office: a filled field's label turns bold, so what is still missing stands out.
+  const isFilled =
+    isBackOfficePath(globalThis.location?.pathname) &&
+    (value === 0 || value === false || (!!value &&
+      (isDatePicker
+        ? dayjs.isDayjs(value)
+        : Array.isArray(value)
+          ? value.some((v) => v != null && v !== "")
+          : isTiptap && typeof value === "string"
+            ? /<img/i.test(value) || value.replace(/<[^>]*>|&nbsp;/g, "").trim() !== ""
+            : true)));
+
+  const labelClass = `${isOccupied ? "label as-label" : "label as-placeholder"}${isFilled ? " is-filled" : ""}`;
   const requiredMark = required ? <span className="text-red-500">*</span> : null;
 
   const handleFocus = (e) => {

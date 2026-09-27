@@ -1608,6 +1608,39 @@ const backOfficeServices = {
     });
   },
 
+  useMutationBulkEventCalendarStatus(onSuccess, onError) {
+    return useMutation({
+      mutationFn: async (values) => {
+        const res = await createRequest.put(`/api/eventCalendar/bulk-status`, values);
+        return res.data;
+      },
+      onSuccess,
+      onError,
+    });
+  },
+
+  useMutationBulkEventCalendarMajor(onSuccess, onError) {
+    return useMutation({
+      mutationFn: async (values) => {
+        const res = await createRequest.put(`/api/eventCalendar/bulk-major`, values);
+        return res.data;
+      },
+      onSuccess,
+      onError,
+    });
+  },
+
+  useMutationBulkDeleteEventCalendar(onSuccess, onError) {
+    return useMutation({
+      mutationFn: async (values) => {
+        const res = await createRequest.post(`/api/eventCalendar/bulk-delete`, values);
+        return res.data;
+      },
+      onSuccess,
+      onError,
+    });
+  },
+
   useMutationUpdateEventCalendar(onSuccess, onError) {
     return useMutation({
       mutationFn: async (values) => {

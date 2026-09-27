@@ -45,6 +45,7 @@ export default function PermissionActionTable({
   inlineActions = false,
   recordPermission = false,
   headerExtra,
+  subHeader,
   ...props
 }) {
   const { data: me } = useMe({ retry: 0 });
@@ -159,6 +160,7 @@ export default function PermissionActionTable({
           </div>
         </div>
       )}
+      {subHeader}
       <Table
         {...props}
         bordered={false}

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { PUBLIC_API } from "utils";
 import createRequest from "../utils/request";
+import dayjs from "dayjs";
 
 function useQueryWithCallbacks(options, { onSuccess, onError } = {}) {
   const onSuccessRef = useRef(onSuccess);
@@ -221,6 +222,35 @@ const generalService = {
       },
       { onSuccess, onError }
     );
+  },
+
+  // Upcoming admin-picked Major races for the /eventCalendar banner, nearest first.
+  useQueryGetMajorEventCalendar({ size = 10 } = {}) {
+    const from = dayjs().startOf("day");
+    return useQuery({
+      queryKey: ["getMajorEventCalendar", from.format("YYYY-MM-DD"), size],
+      queryFn: async () => {
+        const path = `${PUBLIC_API}/event/getExternalEvents`;
+        const res = await createRequest.post(path, {
+          paging: {
+            page: 0,
+            size,
+            sortField: "eventDate",
+            sortDirection: "ASC",
+            search: [
+              { searchField: "isMajor", searchText: "true", searchType: "BOOLEAN" },
+              {
+                searchField: "eventDate",
+                searchText: `${from.toISOString()},${from.add(10, "year").toISOString()}`,
+                searchType: "DATERANGE",
+              },
+            ],
+          },
+        });
+        return res.data.data?.content ?? [];
+      },
+      refetchOnWindowFocus: false,
+    });
   },
 
   useQueryCheckparticipantName({ eventId, name }) {

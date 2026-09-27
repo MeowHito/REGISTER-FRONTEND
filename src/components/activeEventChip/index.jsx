@@ -13,11 +13,11 @@ export default function ActiveEventChip({ className = "" }) {
 
   return (
     <div
-      className={`items-center gap-2.5 h-11 pl-3 pr-1.5 rounded-xl border border-[rgba(245,179,1,0.45)] bg-[rgba(245,179,1,0.1)] min-w-0 max-w-[420px] ${className}`}
+      className={`items-center gap-2 h-9 pl-2.5 pr-1 rounded-lg border border-[rgba(245,179,1,0.45)] bg-[rgba(245,179,1,0.1)] min-w-0 max-w-[460px] ${className}`}
     >
       {/* Colour on a wrapper: antd's .anticon rule beats a utility class on the icon itself. */}
-      <span className="text-[#f5b301] text-lg leading-none shrink-0"><StarFilled /></span>
-      <span className="min-w-0 flex-1 text-base font-bold text-[#1d1d1f] truncate" title={activeEvent.name}>
+      <span className="text-[#f5b301] text-sm leading-none shrink-0"><StarFilled /></span>
+      <span className="min-w-0 flex-1 text-sm font-semibold text-[#1d1d1f] truncate" title={activeEvent.name}>
         {activeEvent.name}
       </span>
       <Button size="small" className="shrink-0" onClick={() => navigate("/dashboard")}>

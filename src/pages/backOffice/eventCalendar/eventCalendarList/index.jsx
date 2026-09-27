@@ -10,10 +10,13 @@ import {
   InfoCircleOutlined,
   ClearOutlined,
   StopOutlined,
+  StarFilled,
+  StarOutlined,
 } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import Highlighter from "react-highlight-words";
 import backOfficeServices from "services/backoffice.services";
+import createRequest from "utils/request";
 import { AlertConfirm, AlertError } from "components/alert";
 import { errorToMessage } from "hooks/functions/errorToMessage";
 import { handleQueryStatus } from "utils";
@@ -32,6 +35,14 @@ const VIEWS = {
   DETAILS: "details",
 };
 
+// Long imported names get cut to one line; the full name is in the tooltip. (The table scrolls
+// horizontally, so antd's column `ellipsis` can't apply — the cap has to live on the content.)
+const EventName = ({ name, children }) => (
+  <Tooltip title={name} placement="topLeft" mouseEnterDelay={0.3}>
+    <div className="max-w-[340px] truncate">{children ?? name}</div>
+  </Tooltip>
+);
+
 const EventCalendarList = () => {
   const { t } = useTranslation();
   const { message } = App.useApp();
@@ -46,6 +57,8 @@ const EventCalendarList = () => {
   const [updateStatus, setUpdateStatus] = useState(null);
   const [view, setView] = useState(VIEWS.LIST);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [selectingAll, setSelectingAll] = useState(false);
 
   const { data: me } = useMe({ retry: 0 });
   const roleUser = me?.role?.roleType;
@@ -196,11 +209,11 @@ const EventCalendarList = () => {
       }
     );
 
-  const showRejectModal = (eventId) => {
+  const showRejectModal = (onReject, title = t("back.eventCalendarList.confirmReject")) => {
     let rejectReason = "";
 
     Modal.confirm({
-      title: t("back.eventCalendarList.confirmReject"),
+      title,
       content: (
         <div>
           <TextArea
@@ -214,10 +227,112 @@ const EventCalendarList = () => {
       ),
       okText: t("general.okConfirm"),
       cancelText: t("general.cancelConfirm"),
-      onOk: () => {
-        handleReject(eventId, rejectReason);
-      },
+      onOk: () => onReject(rejectReason),
     });
+  };
+
+  const { mutate: bulkStatus, isPending: isBulkUpdating } =
+    backOfficeServices.useMutationBulkEventCalendarStatus(
+      (res) => {
+        if (res?.success) {
+          message.success(t("back.eventCalendarList.bulkDone", { count: res?.data ?? 0 }));
+          setSelectedIds([]);
+        } else {
+          AlertError({ text: res?.message });
+        }
+        refetchEventCalendar();
+      },
+      (err) => AlertError({ text: errorToMessage(err) })
+    );
+
+  const { mutate: bulkDelete, isPending: isBulkDeleting } =
+    backOfficeServices.useMutationBulkDeleteEventCalendar(
+      (res) => {
+        if (res?.success) {
+          message.success(t("back.eventCalendarList.bulkDone", { count: res?.data ?? 0 }));
+          setSelectedIds([]);
+        } else {
+          AlertError({ text: res?.message });
+        }
+        refetchEventCalendar();
+      },
+      (err) => AlertError({ text: errorToMessage(err) })
+    );
+
+  const [majorUpdating, setMajorUpdating] = useState(null);
+  const { mutate: bulkMajor, isPending: isBulkMajor } =
+    backOfficeServices.useMutationBulkEventCalendarMajor(
+      (res) => {
+        setMajorUpdating(null);
+        if (res?.success) {
+          message.success(res?.message);
+        } else {
+          AlertError({ text: res?.message });
+        }
+        refetchEventCalendar();
+      },
+      (err) => {
+        setMajorUpdating(null);
+        AlertError({ text: errorToMessage(err) });
+      }
+    );
+
+  const toggleMajor = (record) => {
+    setMajorUpdating(record.eventId);
+    bulkMajor({ ids: [record.eventId], isMajor: !record.isMajor });
+  };
+
+  const handleBulkMajor = (isMajor) => {
+    AlertConfirm({
+      text: t(
+        isMajor ? "back.eventCalendarList.bulkSetMajorConfirm" : "back.eventCalendarList.bulkUnsetMajorConfirm",
+        { count: selectedIds.length }
+      ),
+      onOk: () => bulkMajor({ ids: selectedIds, isMajor }),
+    });
+  };
+
+  const handleBulkApprove = () => {
+    AlertConfirm({
+      text: t("back.eventCalendarList.bulkApproveConfirm", { count: selectedIds.length }),
+      onOk: () => bulkStatus({ ids: selectedIds, isApproved: true }),
+    });
+  };
+
+  const handleBulkReject = () => {
+    showRejectModal(
+      (rejectReason) => bulkStatus({ ids: selectedIds, isApproved: false, rejectReason }),
+      t("back.eventCalendarList.bulkRejectTitle", { count: selectedIds.length })
+    );
+  };
+
+  const handleBulkDelete = () => {
+    AlertConfirm({
+      text: t("back.eventCalendarList.bulkDeleteConfirm", { count: selectedIds.length }),
+      onOk: () => bulkDelete({ ids: selectedIds }),
+    });
+  };
+
+  // The header checkbox only covers the current page; this pulls every id that matches the current search.
+  const selectAllMatching = async () => {
+    setSelectingAll(true);
+    try {
+      const res = await createRequest.get(`api/eventCalendar/getEventCalendar`, {
+        params: {
+          paging: JSON.stringify({
+            page: 0,
+            size: Math.max(totalData, 1),
+            searchField: searchedColumn,
+            searchText: searchText ? "%" + searchText + "%" : undefined,
+          }),
+        },
+      });
+      setSelectedIds((res.data?.data?.content || []).map((r) => r.eventId));
+    } catch (err) {
+      AlertError({ text: errorToMessage(err) });
+    } finally {
+      setSelectingAll(false);
+    }
   };
 
   const columns = [
@@ -233,8 +348,27 @@ const EventCalendarList = () => {
       title: t("back.eventCalendarList.eventName"),
       dataIndex: "eventName",
       key: "eventName",
+      render: (name) => <EventName name={name} />,
       sorter: roleUser === "admin",
       search: roleUser === "admin",
+    },
+    // Major = headline race; the nearest upcoming one is the banner on /eventCalendar.
+    isAdmin && {
+      title: t("back.eventCalendarList.major"),
+      dataIndex: "isMajor",
+      key: "isMajor",
+      align: "center",
+      render: (isMajor, record) => (
+        <Tooltip title={isMajor ? t("back.eventCalendarList.unsetMajor") : t("back.eventCalendarList.setMajor")}>
+          <Button
+            type="text"
+            size="small"
+            loading={majorUpdating === record.eventId}
+            icon={isMajor ? <StarFilled className="!text-[#f5a623]" /> : <StarOutlined className="!text-[#c7c7cc]" />}
+            onClick={() => toggleMajor(record)}
+          />
+        </Tooltip>
+      ),
     },
     {
       title: t("back.eventCalendarList.eventDate"),
@@ -256,18 +390,6 @@ const EventCalendarList = () => {
         ),
     },
     {
-      title: t("back.eventCalendarList.submitterName"),
-      dataIndex: "submitterName",
-      key: "submitterName",
-      sorter: roleUser === "admin",
-      search: roleUser === "admin",
-    },
-    {
-      title: t("back.eventCalendarList.phone"),
-      dataIndex: "phone",
-      key: "phone",
-    },
-    {
       title: t("back.eventCalendarList.status"),
       dataIndex: "isApproved",
       key: "isApproved",
@@ -286,7 +408,7 @@ const EventCalendarList = () => {
         return <Tag color={color}>{label}</Tag>;
       },
     },
-  ];
+  ].filter(Boolean);
 
   const handleChange = (pagination, filters, sorter) => {
     setOrder(sorter.order == "descend" ? "desc" : "asc");
@@ -347,17 +469,20 @@ const EventCalendarList = () => {
       (record[dataIndex]?.toString().toLowerCase() || "").includes(
         value.toLowerCase()
       ),
-    render: (text) =>
-      searchedColumn === dataIndex ? (
-        <Highlighter
-          highlightStyle={{ backgroundColor: "#188fff55", padding: 0 }}
-          searchWords={[searchText]}
-          autoEscape
-          textToHighlight={text.toString()}
-        />
-      ) : (
-        text
-      ),
+    render: (text) => (
+      <EventName name={text}>
+        {searchedColumn === dataIndex ? (
+          <Highlighter
+            highlightStyle={{ backgroundColor: "#188fff55", padding: 0 }}
+            searchWords={[searchText]}
+            autoEscape
+            textToHighlight={text?.toString() ?? ""}
+          />
+        ) : (
+          text
+        )}
+      </EventName>
+    ),
   });
 
   const lastRun = importStatus?.lastRun;
@@ -441,6 +566,44 @@ const EventCalendarList = () => {
     </div>
   );
 
+  const pageAllSelected =
+    eventCalendarData.length > 0 && eventCalendarData.every((r) => selectedIds.includes(r.eventId));
+  const bulkBar = isAdmin && selectedIds.length > 0 && (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 md:px-5 py-2.5 bg-[#f0f7ff] border-b border-[#e5e5ea] text-sm">
+      <span className="font-medium text-[#1d1d1f]">
+        {t("back.eventCalendarList.selectedCount", { count: selectedIds.length })}
+      </span>
+      {pageAllSelected && selectedIds.length < totalData && (
+        <Button type="link" size="small" className="!px-0" loading={selectingAll} onClick={selectAllMatching}>
+          {t("back.eventCalendarList.selectAllMatching", { count: totalData })}
+        </Button>
+      )}
+      {selectedIds.length === totalData && totalData > eventCalendarData.length && (
+        <span className="text-[#6e6e73]">{t("back.eventCalendarList.allMatchingSelected", { count: totalData })}</span>
+      )}
+      <Button type="link" size="small" className="!px-0" onClick={() => setSelectedIds([])}>
+        {t("back.eventCalendarList.clearSelection")}
+      </Button>
+      <div className="flex flex-wrap gap-2 md:ml-auto">
+        <Button size="small" type="primary" icon={<CheckOutlined />} loading={isBulkUpdating} onClick={handleBulkApprove}>
+          {t("back.eventCalendarList.approve")}
+        </Button>
+        <Button size="small" danger icon={<CloseOutlined />} loading={isBulkUpdating} onClick={handleBulkReject}>
+          {t("back.eventCalendarList.reject")}
+        </Button>
+        <Button size="small" icon={<StarFilled className="!text-[#f5a623]" />} loading={isBulkMajor} onClick={() => handleBulkMajor(true)}>
+          {t("back.eventCalendarList.setMajor")}
+        </Button>
+        <Button size="small" icon={<StarOutlined />} loading={isBulkMajor} onClick={() => handleBulkMajor(false)}>
+          {t("back.eventCalendarList.unsetMajor")}
+        </Button>
+        <Button size="small" danger type="primary" icon={<DeleteOutlined />} loading={isBulkDeleting} onClick={handleBulkDelete}>
+          {t("general.buttonDelete")}
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <Spin spinning={isLoading}>
       {view === VIEWS.LIST && (
@@ -448,8 +611,18 @@ const EventCalendarList = () => {
           <PageHeader menu="eventCalendarList" />
           <PermissionActionTable
             headerExtra={importPanel}
+            subHeader={bulkBar}
             className="!w-full !text-nowrap"
             rowKey="eventId"
+            rowSelection={
+              isAdmin
+                ? {
+                    selectedRowKeys: selectedIds,
+                    preserveSelectedRowKeys: true,
+                    onChange: (keys) => setSelectedIds(keys),
+                  }
+                : undefined
+            }
             columns={columns.map((c) => ({
               ...c,
               ...(c.search && getColumnSearchProps(c.dataIndex)),
@@ -474,26 +647,30 @@ const EventCalendarList = () => {
             totalData={totalData}
             recordPermission={true}
             extraPosition="start"
+            inlineActions
             extraActions={(record) =>
               [
-                roleUser === "admin" && record?.isApproved !== true && (
+                // Always four icons so they line up down the table; the one matching the current status is greyed out.
+                roleUser === "admin" && (
                   <Button
                     key="approve"
                     type="link"
                     icon={<CheckOutlined />}
                     onClick={() => handleApprove(record?.eventId)}
+                    disabled={record?.isApproved === true}
                     loading={updateStatus === record?.eventId}
                   >
                     {t("back.eventCalendarList.approve")}
                   </Button>
                 ),
-                roleUser === "admin" && record?.isApproved !== false && (
+                roleUser === "admin" && (
                   <Button
                     key="reject"
                     type="link"
                     danger
                     icon={<CloseOutlined />}
-                    onClick={() => showRejectModal(record?.eventId)}
+                    onClick={() => showRejectModal((reason) => handleReject(record?.eventId, reason))}
+                    disabled={record?.isApproved === false}
                     loading={updateStatus === record?.eventId}
                   >
                     {t("back.eventCalendarList.reject")}
