@@ -5,7 +5,6 @@ import { Checkbox, message } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import FrontLayout from 'components/frontLayout';
-import RegistrationSteps from '../components/RegistrationSteps';
 import backOfficeServices from "services/backoffice.services";
 import { AlertError, AlertWarning } from 'components/alert';
 import dayjs from 'dayjs';
@@ -15,6 +14,7 @@ import { SET_ORDER } from 'store/reducers/contextSlice';
 import { SYS_DATE_FORMAT } from 'constants/helper';
 import { useTranslation } from 'react-i18next';
 import { toStartOfDayISO } from 'utils/format';
+import { scrollPageToTop } from 'utils';
 
 function addHoursToNow(hours) {
 	const now = new Date();
@@ -62,6 +62,7 @@ const RegistrationDetail = () => {
 	const { mutateAsync: sendEmail } = backOfficeServices.useMutationSendEmail();
 
 	useEffect(() => {
+		scrollPageToTop();
 		if (order?.orderNo) {
 			navigate("/registrationPayment", { replace: true });
 			return;
@@ -379,16 +380,15 @@ const RegistrationDetail = () => {
 
 	return (
 		<FrontLayout fullWidth>
-			<RegistrationSteps currentStep={1} />
-			<div className="bg-[#f7fafc] min-h-screen pb-12">
+			<div className="bg-[#f7fafc] pb-6">
 				<div className="max-w-screen-md lg:max-w-screen-lg mx-auto px-4 py-6">
 					{/* event header */}
 					<div className="mb-6 border-l-4 border-[#fe9400] pl-4">
 						<h2 className="text-2xl font-bold text-[#181c1e] mb-1">
-							{eventData?.name || applicants[0]?.eventName || t("back.reg.common.applicantInfo")}
+							{eventData?.name || applicants[0]?.eventName || t("front.reg.review")}
 						</h2>
 						<p className="text-sm font-bold text-[#3f4850] flex items-center gap-2">
-							📋 {t("back.reg.common.applicantInfo")} / Review &amp; Confirm
+							📋 {t("front.reg.review")}
 						</p>
 					</div>
 
@@ -398,8 +398,6 @@ const RegistrationDetail = () => {
 							{applicants.map((applicant, idx) => {
 								const price = Number(applicant.price || 0);
 								const discount = Number(applicant.discountNoShirt || 0);
-								const deliveryFee = applicant.deliveryMethod === 'post' ? applicant.shippingFee : 0;
-								const total = (price - discount) + deliveryFee;
 								return (
 									<div key={idx} className="bg-white border border-[#bfc7d2] rounded-xl overflow-hidden shadow-sm">
 										<div className="flex items-center justify-between gap-2 px-5 py-3 bg-[#f1f4f6] border-b border-[#e5e9eb]">
@@ -408,9 +406,6 @@ const RegistrationDetail = () => {
 												<span className="text-[#3f4850] font-normal ml-1">
 													({applicant.firstName} {applicant.lastName})
 												</span>
-											</span>
-											<span className="text-[#006193] font-bold whitespace-nowrap">
-												{total.toLocaleString()} {t("general.unitBaht")}
 											</span>
 										</div>
 
@@ -423,7 +418,10 @@ const RegistrationDetail = () => {
 											</DetailSection>
 
 											<DetailSection title={t("back.reg.common.eventType")}>
-												<DetailRow label={t("back.reg.common.type")}>{applicant.eventTypeName}</DetailRow>
+												<DetailRow label={t("back.reg.common.type")}>
+													{applicant.eventTypeName}
+													<span className="text-[#3f4850]"> ({applicant.paymentName || t("back.reg.common.normalPrice")})</span>
+												</DetailRow>
 												{applicant.teamGroup ? <DetailRow label={t("back.reg.common.team")}>{t("back.reg.common.teamNo", { no: applicant.teamGroup })} ({applicant.teamIndex}/{applicant.teamSize})</DetailRow> : null}
 												{applicant.teamClub?.trim() ? <DetailRow label={t("back.reg.form.teamClub")}>{applicant.teamClub}</DetailRow> : null}
 												<DetailRow label={t("back.reg.form.ageGroup")}>{applicant.ageGroupName || t("back.reg.form.noCompetitiveAgeGroup")}</DetailRow>
@@ -450,10 +448,6 @@ const RegistrationDetail = () => {
 														{sh.shirtTypeName} / {sh.shirtSizeName}
 													</DetailRow>
 												))}
-												<DetailRow label={t("back.reg.common.price")}>
-													{applicant.price.toLocaleString()} {t("general.unitBaht")}
-													<span className="text-[#3f4850]"> ({applicant.paymentName || t("back.reg.common.normalPrice")})</span>
-												</DetailRow>
 											</DetailSection>
 
 											<DetailSection title={t("back.reg.payment.shipping")}>
@@ -462,7 +456,6 @@ const RegistrationDetail = () => {
 												</DetailRow>
 												{applicant.deliveryMethod === 'post' ? (
 													<>
-														<DetailRow label={t("back.reg.payment.shippingFee")}>{deliveryFee} {t("general.unitBaht")}</DetailRow>
 														{(applicant.shippingAddress || applicant.shippingDistrict || applicant.shippingAmphoe || applicant.shippingProvince || applicant.shippingZipcode) ? (
 															<DetailRow label={t("back.reg.payment.shippingAddress")}>
 																{formatAddress(applicant.shippingAddress, applicant.shippingDistrict, applicant.shippingAmphoe, applicant.shippingProvince, applicant.shippingZipcode, t)}
@@ -471,13 +464,6 @@ const RegistrationDetail = () => {
 													</>
 												) : null}
 											</DetailSection>
-
-											<div className="border-t border-[#e5e9eb] pt-3 space-y-1 text-sm">
-												<div className="flex justify-between"><span className="text-[#3f4850]">{t("back.reg.common.price")}</span><span>{price.toLocaleString()} {t("general.unitBaht")}</span></div>
-												{discount > 0 ? <div className="flex justify-between"><span className="text-[#3f4850]">{t("back.reg.common.discount")}</span><span className="text-[#ba1a1a]">- {discount.toLocaleString()} {t("general.unitBaht")}</span></div> : null}
-												{deliveryFee > 0 ? <div className="flex justify-between"><span className="text-[#3f4850]">{t("back.reg.payment.shippingFee")}</span><span>{deliveryFee.toLocaleString()} {t("general.unitBaht")}</span></div> : null}
-												<div className="flex justify-between font-bold pt-1"><span>{t("back.reg.payment.total")}</span><span className="text-[#006193]">{total.toLocaleString()} {t("general.unitBaht")}</span></div>
-											</div>
 										</div>
 									</div>
 								);
@@ -546,19 +532,20 @@ const RegistrationDetail = () => {
 									</div>
 								) : null}
 
-								<div className="flex flex-col gap-3">
-									<button type="button" onClick={processOrder}
-										disabled={isSubmitting || (order?.eventConditions?.length > 0 ? checkedValues.length !== checkboxOptions.length : false)}
-										className="w-full bg-[#fe9400] text-[#633700] font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-										{isSubmitting ? <LoadingOutlined /> : null}
-										{t("general.next")}
-									</button>
+								<div className="flex gap-3">
 									{!order?.orderNo ? (
-										<button type="button" onClick={() => navigate(`/registrationInfo/${order?.eventId}`)}
-											className="w-full bg-white border border-[#bfc7d2] text-[#3f4850] font-bold py-3 rounded-xl hover:border-[#006193] transition-all">
+										<button type="button"
+											onClick={() => navigate(`/registrationInfo/${order?.eventId}`, { state: { resume: true } })}
+											className="flex-1 bg-white border border-[#bfc7d2] text-[#3f4850] font-bold py-3.5 rounded-xl hover:border-[#006193] transition-all">
 											{t("general.back")}
 										</button>
 									) : null}
+									<button type="button" onClick={processOrder}
+										disabled={isSubmitting || (order?.eventConditions?.length > 0 ? checkedValues.length !== checkboxOptions.length : false)}
+										className="flex-1 bg-[#fe9400] text-[#633700] font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+										{isSubmitting ? <LoadingOutlined /> : null}
+										{t("general.next")}
+									</button>
 								</div>
 							</div>
 						</aside>

@@ -21,6 +21,15 @@ export const FIELD_CONFIG_DEFAULTS = {
   teamClub: "OPTIONAL",
 };
 
+/**
+ * Fields the organizer configures as one row. The three emergency-contact fields are stored
+ * separately (the backend and old events know them by key) but are set together, so "hidden"
+ * removes the whole emergency-contact block from the form.
+ */
+export const FIELD_GROUPS = [
+  { key: "emergencyGroup", keys: ["emergencyContact", "emergencyRelation", "emergencyPhone"] },
+];
+
 /** Effective mode of every field for an event (defaults filled in). */
 export const resolveFieldConfig = (event) => {
   const stored = event?.fieldConfig || {};

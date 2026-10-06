@@ -77,3 +77,12 @@ export const mergePermissions = (menuPerm, record, recordPermission) => {
     canDelete: menuPerm.canDelete && (perm?.canDelete ?? true),
   };
 };
+/**
+ * Scroll the page back to the top. The public pages scroll inside <body> (overflow-y: auto),
+ * so window.scrollTo alone does nothing there; cover both.
+ */
+export function scrollPageToTop() {
+  globalThis.scrollTo({ top: 0, behavior: "auto" });
+  document.body?.scrollTo?.({ top: 0, behavior: "auto" });
+  document.documentElement?.scrollTo?.({ top: 0, behavior: "auto" });
+}

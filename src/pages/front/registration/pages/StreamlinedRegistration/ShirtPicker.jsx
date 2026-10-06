@@ -5,13 +5,7 @@ import { useTranslation } from "react-i18next";
 import CommonForm from "components/commonForm";
 import BoxRadio from "./BoxRadio";
 import { shirtCategoriesFor } from "./shirts";
-
-const CATEGORY_LABEL = {
-  RACE: "เสื้อแข่งขัน (Race Shirt)",
-  FINISHER: "เสื้อ Finisher (Finisher Shirt)",
-  SPECIAL: "เสื้อพิเศษ (Special Shirt)",
-};
-
+import { ticketBadgeCls } from "./theme";
 
 /**
  * One category block: style boxes + size boxes. The race shirt writes to the applicant's
@@ -62,18 +56,17 @@ const CategoryBlock = ({ index, category, styles, form, t }) => {
 
   return (
     <div className="space-y-4">
-      <div className="text-sm font-bold text-[#006193] border-b border-[#e5e9eb] pb-1">{CATEGORY_LABEL[category]}</div>
+      {/* The category heading doubles as the "pick a style" label — no second label underneath. */}
+      <div className="text-sm font-bold text-[#006193] border-b border-[#e5e9eb] pb-1">
+        {t(`back.reg.payment.shirtCategory.${category}`)}
+        {styles.length > 1 ? <span className="text-[#ba1a1a]"> *</span> : null}
+      </div>
       {styles.length > 1 ? (
-        <div>
-          <label className="block text-sm font-bold text-[#3f4850] mb-3">
-            เลือกแบบเสื้อ (Shirt Style) <span className="text-[#ba1a1a]">*</span>
-          </label>
-          <CommonForm.Item name={typePath} className="!mb-0" rules={[{ required: true, message: t("required.shirtType") }]}>
-            <BoxRadio columns={2}
-              options={styles.map((s) => ({ value: s.id, label: s.name, icon: <SkinOutlined />, sub: s.description }))}
-              onChange={handleType} />
-          </CommonForm.Item>
-        </div>
+        <CommonForm.Item name={typePath} className="!mb-0" rules={[{ required: true, message: t("required.shirtType") }]}>
+          <BoxRadio columns={2}
+            options={styles.map((s) => ({ value: s.id, label: s.name, icon: <SkinOutlined />, sub: s.description }))}
+            onChange={handleType} />
+        </CommonForm.Item>
       ) : (
         <CommonForm.Item name={typePath} hidden noStyle>
           <Input type="hidden" />
@@ -83,12 +76,12 @@ const CategoryBlock = ({ index, category, styles, form, t }) => {
       <div>
         <div className="flex justify-between items-center mb-3">
           <label className="block text-sm font-bold text-[#3f4850]">
-            เลือกไซส์ (Shirt Size) <span className="text-[#ba1a1a]">*</span>
+            {t("front.reg.shirtSize")} <span className="text-[#ba1a1a]">*</span>
           </label>
           {sizes.length ? (
             <button type="button" onClick={() => setChartOpen(true)}
               className="text-[#006193] text-xs font-bold flex items-center gap-1 hover:underline">
-              📏 Size Chart
+              📏 {t("front.reg.sizeChart")}
             </button>
           ) : null}
         </div>
@@ -118,7 +111,7 @@ const ShirtPicker = ({ index, ticketLabel, event, form, eventTypeId }) => {
 
   if (groups.length === 0) {
     return (
-      <div className="rounded-xl border border-[#bfc7d2] bg-white px-5 py-4 text-sm text-[#3f4850]">
+      <div className="rounded-xl border border-[#bfc7d2] bg-white px-4 py-4 text-sm text-[#3f4850]">
         {t("back.reg.common.applicantInfo")} #{index + 1} — {t("front.eventDetail.noShirtInfo")}
       </div>
     );
@@ -126,13 +119,11 @@ const ShirtPicker = ({ index, ticketLabel, event, form, eventTypeId }) => {
 
   return (
     <div className="rounded-xl border border-[#bfc7d2] bg-white overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-3 border-b border-[#e5e9eb] bg-[#f1f4f6]">
+      <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-[#e5e9eb] bg-[#f1f4f6]">
         <span className="font-bold text-[#181c1e]">{t("back.reg.common.applicantInfo")} #{index + 1}</span>
-        {ticketLabel ? (
-          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#cce5ff] text-[#006193]">{ticketLabel}</span>
-        ) : null}
+        {ticketLabel ? <span className={ticketBadgeCls}>{ticketLabel}</span> : null}
       </div>
-      <div className="p-5 space-y-6">
+      <div className="p-4 space-y-6">
         {groups.map(({ category, styles }) => (
           <CategoryBlock key={category} index={index} category={category} styles={styles} form={form} t={t} />
         ))}

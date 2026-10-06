@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Button, message } from 'antd';
 import FrontLayout from 'components/frontLayout';
-import RegistrationSteps from '../../components/RegistrationSteps';
 import backOfficeServices from 'services/backoffice.services';
-import { handleQueryStatus } from 'utils';
+import { handleQueryStatus, scrollPageToTop } from 'utils';
 import { useDispatch, useSelector } from 'react-redux';
 import { SET_ORDER } from "store/reducers/contextSlice";
 import { useNavigate } from 'react-router-dom';
@@ -90,6 +89,11 @@ const RegistrationPayment = () => {
     const isFreeOrder = totalAmountWithFee <= 0;
     const hasSelectedPayment = !!selectedPayment;
     const canProceed = !isProceeding && !isFetchingOrderDetail && isPayable && (hasSelectedPayment || isFreeOrder || isTestMode);
+    const needsMethod = isPayable && !isFreeOrder && !isTestMode && !hasSelectedPayment;
+    const promptForMethod = () => {
+        message.warning(t("front.reg.selectPaymentFirst"));
+        document.getElementById("payment-methods")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
 
     useEffect(() => {
         if (!isFetchingOrderDetail && currentStatus && currentStatus !== "PENDING") {
@@ -103,6 +107,7 @@ const RegistrationPayment = () => {
     }, [paymentDueDatetime]);
 
     useEffect(() => {
+        scrollPageToTop();
         if (!order?.orderNo || !order?.applicants?.length) {
             message.warning(t("back.reg.payment.orderNotFound"));
             navigate("/", { replace: true });
@@ -190,7 +195,7 @@ const RegistrationPayment = () => {
             }
 
             if (totalAmountWithFee > 0 && !selectedPayment && !fresh.data?.testMode) {
-                message.error("กรุณาเลือกช่องทางการชำระเงิน");
+                message.error(t("front.reg.selectPaymentFirst"));
                 return;
             }
 
@@ -438,8 +443,7 @@ const RegistrationPayment = () => {
 
     return (
         <FrontLayout>
-            <RegistrationSteps currentStep={2} />
-            <div className="payment-container" style={{ maxWidth: "700px", margin: "0 auto" }}>
+            <div className="payment-container pt-4" style={{ maxWidth: "700px", margin: "0 auto" }}>
                 <div className="text-2xl font-bold text-center text-gray-800 mb-4">💳 {t("back.reg.payment.title")}</div>
 
                 <OrderDetails
@@ -489,19 +493,22 @@ const RegistrationPayment = () => {
                     />
                 )}
 
+                {/* Before a method is picked the button stays bright and tapping it points at the
+                    method list, instead of sitting there greyed out. */}
                 <div className="flex justify-center mt-6">
                     <Button
                         type="primary"
+                        className="w-full sm:w-auto !h-12 !rounded-xl !font-bold !text-base !shadow-md"
                         style={{
-                            padding: "0 24px",
-                            height: "44px",
-
+                            padding: "0 32px",
                             ...(canProceed
-                                ? { backgroundColor: "#FFB946", borderColor: "#FFB946" }
-                                : {}),
+                                ? { backgroundColor: "#FFB946", borderColor: "#FFB946", color: "#633700" }
+                                : needsMethod
+                                    ? { backgroundColor: "#006193", borderColor: "#006193", color: "#fff" }
+                                    : {}),
                         }}
-                        onClick={handleNext}
-                        disabled={!canProceed}
+                        onClick={needsMethod ? promptForMethod : handleNext}
+                        disabled={!canProceed && !needsMethod}
                         loading={isProceeding}
                     >
                         {isTestMode

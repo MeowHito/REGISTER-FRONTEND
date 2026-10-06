@@ -62,9 +62,9 @@ export default function EventResults({ provinceId = null, eventType = null, even
   const hasMore = items.length < total;
 
   return (
-    <section className="bg-white py-10 md:py-14">
+    <section className="bg-white pt-5 pb-10 md:py-14">
       <div className="container md:max-w-screen-xl mx-auto px-5 md:px-4">
-        <div className="mb-6 md:mb-8">
+        <div className="mb-4 md:mb-8">
           <h2 className="text-[clamp(20px,7vw,30px)] leading-[1.05] md:text-3xl font-extrabold text-gray-900">
             {hasFilter ? t('front.home.searchResults') : t('front.home.upcomingEvents')}
           </h2>

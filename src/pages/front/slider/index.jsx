@@ -78,7 +78,7 @@ function Slider() {
   const showHeroSkeleton = isLoadingSliders && images.length === 0
 
   const Hero = (
-    <section className="relative overflow-hidden flex items-start md:items-center h-[280px] md:h-auto md:aspect-[16/5] bg-gray-100">
+    <section className="relative overflow-hidden flex items-start md:items-center h-[230px] md:h-auto md:aspect-[16/5] bg-gray-100">
       {/* Background images */}
       <div className="absolute inset-0">
         {showHeroSkeleton && (
@@ -98,8 +98,8 @@ function Slider() {
   )
 
   const SearchBar = (
-    <div className="max-w-screen-xl mx-auto px-3 md:px-5 -mt-28 md:-mt-10 relative z-20">
-      <div className="mobile-home-search bg-white border border-gray-200 rounded-2xl shadow-[0_18px_45px_rgba(15,23,42,0.18)] p-4 flex flex-col md:flex-row gap-3 md:items-center">
+    <div className="max-w-screen-xl mx-auto px-3 md:px-5 -mt-24 md:-mt-10 relative z-20">
+      <div className="mobile-home-search bg-white border border-gray-200 rounded-2xl shadow-[0_18px_45px_rgba(15,23,42,0.18)] p-3 md:p-4 flex flex-col md:flex-row gap-2 md:gap-3 md:items-center">
         <Select
           placeholder={t('front.event.selectProvince')}
           allowClear

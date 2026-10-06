@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Select } from "antd";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
+import { selectCls } from "./theme";
 
 /**
  * Day / Month / Year selector that emits a dayjs value (always Gregorian/ค.ศ.),
@@ -13,7 +14,7 @@ import { useTranslation } from "react-i18next";
  * (self-prefill, friend-reset) re-sync the dropdowns without clobbering an
  * in-progress selection.
  */
-const DobSelect = ({ value, onChange }) => {
+const DobSelect = ({ id, value, onChange }) => {
   const { t, i18n } = useTranslation();
   const isTh = i18n.language?.toLowerCase() === "th";
   const d = value && dayjs.isDayjs(value) ? value : value ? dayjs(value) : null;
@@ -66,18 +67,17 @@ const DobSelect = ({ value, onChange }) => {
     });
   }, []);
 
-  const cls =
-    "w-full [&_.ant-select-selector]:!h-12 [&_.ant-select-selector]:!rounded-lg [&_.ant-select-selector]:!border-[#bfc7d2] [&_.ant-select-selector]:!items-center";
+  const cls = selectCls;
 
   return (
-    <div className="grid grid-cols-3 gap-2">
-      <Select className={cls} placeholder={t("time.day")} value={day} options={dayOptions}
+    <div id={id} className="grid grid-cols-3 gap-2">
+      <Select className={cls} placeholder={t("front.reg.day")} value={day} options={dayOptions}
         onChange={(v) => { setDay(v); commit(v, month, year); }}
         getPopupContainer={(n) => n.parentNode} />
-      <Select className={cls} placeholder={t("time.month")} value={month} options={monthOptions}
+      <Select className={cls} placeholder={t("front.reg.month")} value={month} options={monthOptions}
         onChange={(v) => { setMonth(v); commit(day, v, year); }}
         getPopupContainer={(n) => n.parentNode} />
-      <Select className={cls} showSearch placeholder={isTh ? "ปี (ค.ศ.)" : t("time.year")}
+      <Select className={cls} showSearch placeholder={t("front.reg.year")}
         value={year} options={yearOptions} optionFilterProp="label"
         onChange={(v) => { setYear(v); commit(day, month, v); }}
         getPopupContainer={(n) => n.parentNode} />

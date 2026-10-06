@@ -1,4 +1,4 @@
-import { CalendarOutlined, LeftOutlined, SearchOutlined } from '@ant-design/icons';
+import { ArrowRightOutlined, CalendarOutlined, LeftOutlined, SearchOutlined } from '@ant-design/icons';
 import { Button, Spin } from 'antd';
 import { NOT_FOUND_IMG } from 'assets';
 import DisplayIfAvailable from 'components/displayIfAvailable';
@@ -474,12 +474,13 @@ function EventDetail({ eventId, setView }) {
 
             {/* Always-visible floating register CTA while registration is open */}
             {canRegister && (
-                <div className="fixed bottom-0 inset-x-0 z-50 px-4 pb-4 pointer-events-none md:bottom-6 md:right-6 md:left-auto md:inset-x-auto md:px-0 md:pb-0">
+                <div className="fixed bottom-0 inset-x-0 z-50 px-4 pb-4 pt-6 pointer-events-none bg-gradient-to-t from-white via-white/80 to-transparent md:bg-none md:bottom-6 md:right-6 md:left-auto md:inset-x-auto md:px-0 md:pb-0 md:pt-0">
                     <button
                         onClick={handleRegister}
-                        className="pointer-events-auto w-full md:w-auto bg-brand hover:bg-brand-dark text-white font-bold text-lg px-8 py-4 md:py-3 rounded-2xl md:rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.25)] transition-all active:scale-95 flex items-center justify-center gap-2"
+                        className="pointer-events-auto w-full md:w-auto bg-gradient-to-r from-[#1d4ed8] to-[#2563eb] hover:from-[#1e40af] hover:to-[#1d4ed8] text-white font-bold text-[17px] tracking-wide px-8 h-[52px] rounded-full shadow-[0_8px_24px_rgba(37,99,235,0.35)] ring-4 ring-white/70 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                     >
                         {t("general.openRegistration")}
+                        <ArrowRightOutlined className="text-base" />
                     </button>
                 </div>
             )}

@@ -81,14 +81,15 @@ const PhoneInput = ({
 
   return (
     <div className="flex gap-2 items-start">
+      {/* Only the dialling code shows while closed so the number box keeps most of the width. */}
       <CommonForm.Item
         name={codePath}
-        className={`${itemClassName} w-[128px] shrink-0`}
+        className={`${itemClassName} w-[92px] shrink-0`}
         getValueProps={(v) => ({ value: toSelectValue(v) })}
         normalize={(v) => fromSelectValue(v)}
       >
         <Select
-          className={selectClassName}
+          className={`${selectClassName} [&_.ant-select-selector]:!px-2`}
           options={options}
           disabled={readOnly}
           showSearch

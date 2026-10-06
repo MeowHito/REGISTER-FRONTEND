@@ -1,7 +1,7 @@
 import { Segmented } from "antd";
 import CommonForm from "components/commonForm";
 import { useTranslation } from "react-i18next";
-import { FIELD_CONFIG_DEFAULTS, FIELD_MODES } from "pages/front/registration/pages/StreamlinedRegistration/fieldConfig";
+import { FIELD_CONFIG_DEFAULTS, FIELD_GROUPS, FIELD_MODES } from "pages/front/registration/pages/StreamlinedRegistration/fieldConfig";
 
 /** value = { fieldKey: "HIDDEN" | "OPTIONAL" | "REQUIRED" } — missing keys mean the default. */
 const FieldConfigTable = ({ value, onChange, disabled }) => {
@@ -9,10 +9,27 @@ const FieldConfigTable = ({ value, onChange, disabled }) => {
     const current = value || {};
     const options = FIELD_MODES.map((m) => ({ value: m, label: t(`back.event.form.fieldMode.${m}`) }));
 
+    // One row per field, except grouped fields (emergency contact) which share a row and a value.
+    const rows = [];
+    const grouped = new Set(FIELD_GROUPS.flatMap((g) => g.keys));
+    Object.entries(FIELD_CONFIG_DEFAULTS).forEach(([key, def]) => {
+        if (!grouped.has(key)) {
+            rows.push({ key, keys: [key], def });
+            return;
+        }
+        const group = FIELD_GROUPS.find((g) => g.keys.includes(key));
+        if (group.keys[0] === key) rows.push({ key: group.key, keys: group.keys, def });
+    });
+
     return (
         <div className="divide-y divide-[#e5e5ea] rounded-xl border border-[#e5e5ea] overflow-hidden">
-            {Object.entries(FIELD_CONFIG_DEFAULTS).map(([key, def]) => {
-                const mode = current[key] || def;
+            {rows.map(({ key, keys, def }) => {
+                const mode = current[keys[0]] || def;
+                const setMode = (m) => {
+                    const next = { ...current };
+                    keys.forEach((k) => { next[k] = m; });
+                    onChange?.(next);
+                };
                 return (
                     <div key={key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 py-2.5 bg-white">
                         <div>
@@ -28,7 +45,7 @@ const FieldConfigTable = ({ value, onChange, disabled }) => {
                             disabled={disabled}
                             value={mode}
                             options={options}
-                            onChange={(m) => onChange?.({ ...current, [key]: m })}
+                            onChange={setMode}
                         />
                     </div>
                 );

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import CommonForm from "components/commonForm";
 import { dummyRequest } from "hooks/dummyRequest";
 import { getPublicUrl } from "utils/fileUtils";
-import { inputCls, selectCls, fieldItemCls } from "./theme";
+import { ticketBadgeCls, inputCls, selectCls, fieldItemCls } from "./theme";
 import useBilingual from "./useBilingual";
 import { questionsFor } from "./questionnaire";
 
@@ -156,11 +156,11 @@ const QuestionnaireStep = ({ index, ticketLabel, event, eventTypeId, lang }) => 
 
   return (
     <div className="rounded-xl border border-[#bfc7d2] bg-white overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-3 border-b border-[#e5e9eb] bg-[#f1f4f6]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[#e5e9eb] bg-[#f1f4f6]">
         <span className="font-bold text-[#181c1e]">{t("back.reg.common.applicantInfo")} #{index + 1}</span>
-        {ticketLabel ? <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#cce5ff] text-[#006193]">{ticketLabel}</span> : null}
+        {ticketLabel ? <span className={ticketBadgeCls}>{ticketLabel}</span> : null}
       </div>
-      <div className="p-5 space-y-6">
+      <div className="p-4 space-y-6">
         {groups.map(({ section, questions: qs }, gi) => (
           <div key={section?.id || `plain-${gi}`} className={section ? "rounded-xl border border-[#e5e9eb] p-4 space-y-4" : "space-y-4"}>
             {section && (

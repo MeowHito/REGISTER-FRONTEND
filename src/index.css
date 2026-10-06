@@ -68,7 +68,7 @@ code {
 
 @media (max-width: 767px) {
   .mobile-home-search {
-    row-gap: 12px !important;
+    row-gap: 8px !important;
   }
 
   .mobile-home-search .home-search-ac .ant-select-selector {
@@ -77,13 +77,13 @@ code {
 
   .mobile-home-search .ant-select,
   .mobile-home-search .ant-picker {
-    height: 60px !important;
+    height: 52px !important;
   }
 
   .mobile-home-search .ant-select-selector,
   .mobile-home-search .ant-picker {
-    min-height: 60px !important;
-    height: 60px !important;
+    min-height: 52px !important;
+    height: 52px !important;
     border: 0 !important;
     border-radius: 10px !important;
     background: #f3f4f6 !important;

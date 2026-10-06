@@ -1,11 +1,11 @@
 import { logo_black } from "assets";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import LanguageSelector from "components/languageSelector";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "react-responsive";
-import { Avatar, Drawer, Dropdown } from "antd";
-import { DashboardOutlined, DownOutlined, HistoryOutlined, LogoutOutlined, MenuOutlined, SolutionOutlined, UserOutlined } from "@ant-design/icons";
+import { Avatar, Dropdown } from "antd";
+import { CalendarOutlined, DashboardOutlined, DownOutlined, HistoryOutlined, LoginOutlined, LogoutOutlined, MenuOutlined, SolutionOutlined, TeamOutlined, UserOutlined } from "@ant-design/icons";
 import useMe, { useLogout } from "hooks/useMe";
 import { isFullWidthPath } from "utils";
 import { usePublicImageUrl } from "utils/fileUtils";
@@ -15,7 +15,6 @@ export default function Menu() {
   const navigate = useNavigate();
   const location = useLocation();
   const isTablet = useMediaQuery({ query: "(max-width: 992px)" });
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const { data: me, status } = useMe({ retry: 0 });
   const isLoggedIn = status === "success" && !!me;
@@ -31,9 +30,9 @@ export default function Menu() {
 
   const currentLanguage = i18n.language?.toLowerCase();
 
+  // "Contact us" is hidden from the navigation for now (the /contact page still exists).
   const navMenu = useMemo(() => [
     { text: t("front.menu.eventCalendar"), link: "/eventCalendar" },
-    { text: t("front.menu.contact"), link: "/contact" },
   ], [currentLanguage]);
 
   const isActive = (link) => location.pathname === link || location.pathname.startsWith(link + "/");
@@ -111,6 +110,23 @@ export default function Menu() {
     if (key === "logout") handleLogout();
   };
 
+  // Phone menu: a small dropdown under the ☰ / avatar. The calendar has its own icon next to
+  // the logo, so the dropdown only carries account actions.
+  const mobileMenuItems = isLoggedIn
+    ? userMenuItems
+    : [
+        {
+          key: "login",
+          icon: <LoginOutlined />,
+          label: <Link to="/login">{t("front.menu.loginRegister")}</Link>,
+        },
+        {
+          key: "organizer",
+          icon: <TeamOutlined />,
+          label: <Link to="/organizer/register">{t("front.menu.organizer")}</Link>,
+        },
+      ];
+
   const navLinkClass = (link) =>
     `font-semibold text-[15px] transition-colors pb-1 ${
       isActive(link)
@@ -127,6 +143,19 @@ export default function Menu() {
             <img src={logo_black} alt="Logo" className="h-9 md:h-12 w-auto align-middle" />
           </Link>
 
+          {/* Phone: calendar shortcut right next to the logo */}
+          {isTablet && (
+            <Link
+              to="/eventCalendar"
+              aria-label={t("front.reg.calendar")}
+              className={`-ml-4 w-9 h-9 flex items-center justify-center rounded-full transition-all active:scale-95 ${
+                isActive("/eventCalendar") ? "bg-brand-fixed text-brand" : "text-inkx-variant hover:bg-gray-100"
+              }`}
+            >
+              <CalendarOutlined style={{ fontSize: 19 }} />
+            </Link>
+          )}
+
           {!isTablet && (
             <div className="flex items-center gap-7">
               {navMenu.map((item) => (
@@ -140,7 +169,7 @@ export default function Menu() {
 
         {/* Right: actions */}
         <div className="flex items-center gap-2 md:gap-3">
-          {!isTablet && <LanguageSelector className="flex" />}
+          <LanguageSelector className="flex" />
 
           {isLoggedIn ? (
             !isTablet && (
@@ -181,125 +210,32 @@ export default function Menu() {
 
           {/* Mobile */}
           {isTablet && (
-            <>
-              <LanguageSelector className="flex" />
-              {isLoggedIn && (
-                <Avatar
-                  src={avatarUrl || undefined}
-                  icon={<UserOutlined />}
-                  size={30}
-                  onClick={() => setDrawerOpen(true)}
-                  className="!bg-brand cursor-pointer ring-1 ring-gray-200"
-                />
-              )}
+            <Dropdown
+              menu={{ items: mobileMenuItems, onClick: handleUserMenuClick }}
+              trigger={["click"]}
+              placement="bottomRight"
+              overlayClassName="mobile-nav-dropdown"
+            >
               <button
                 type="button"
-                aria-label="Open menu"
-                onClick={() => setDrawerOpen(true)}
-                className="w-8 h-8 flex items-center justify-center rounded-full text-inkx-variant hover:bg-gray-100 active:scale-95 transition-all"
+                aria-label={t("front.reg.menu")}
+                className="flex items-center gap-1.5 h-9 pl-1 pr-2 rounded-full text-inkx-variant hover:bg-gray-100 active:scale-95 transition-all"
               >
+                {isLoggedIn ? (
+                  <Avatar
+                    src={avatarUrl || undefined}
+                    icon={<UserOutlined />}
+                    size={28}
+                    className="!bg-brand ring-1 ring-gray-200"
+                  />
+                ) : null}
                 <MenuOutlined style={{ fontSize: 18 }} />
               </button>
-            </>
+            </Dropdown>
           )}
         </div>
       </nav>
 
-      {/* Mobile drawer */}
-      <Drawer
-        placement="right"
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        width={280}
-        styles={{ body: { padding: 0 } }}
-        title={<img src={logo_black} alt="Logo" className="h-8 w-auto" />}
-      >
-        <div className="flex flex-col h-full">
-          <nav className="flex-1 p-4 space-y-1">
-            {navMenu.map((item) => (
-              <Link
-                key={item.link}
-                to={item.link}
-                onClick={() => setDrawerOpen(false)}
-                className={`block px-4 py-3 rounded-xl font-semibold ${
-                  isActive(item.link) ? "text-brand bg-brand-fixed" : "text-inkx-variant hover:bg-gray-100"
-                }`}
-              >
-                {item.text}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="p-4 border-t border-gray-200 space-y-3">
-            {isLoggedIn ? (
-              <>
-                <div className="flex flex-col items-center text-center pb-2">
-                  <Avatar
-                    src={avatarUrl || undefined}
-                    icon={<UserOutlined />}
-                    size={56}
-                    className="!bg-brand mb-2 ring-2 ring-gray-100"
-                  />
-                  <span className="font-semibold text-gray-800 leading-tight">
-                    {currentName || me?.email}
-                  </span>
-                  {me?.email && (
-                    <span className="text-xs text-gray-400 mt-0.5 break-all">{me.email}</span>
-                  )}
-                </div>
-                {isGuestUser && (
-                  <Link
-                    to="/historyList"
-                    onClick={() => setDrawerOpen(false)}
-                    className="w-full block text-center py-3 rounded-xl border-2 border-brand text-brand font-bold"
-                  >
-                    {t("front.menu.registrationHistory")}
-                  </Link>
-                )}
-                <Link
-                  to="/setting"
-                  onClick={() => setDrawerOpen(false)}
-                  className="w-full block text-center py-3 rounded-xl border-2 border-brand text-brand font-bold"
-                >
-                  {t("front.menu.profile.title")}
-                </Link>
-                {dashboardMenu && (
-                  <Link
-                    to={dashboardMenu.path}
-                    onClick={() => setDrawerOpen(false)}
-                    className="w-full block text-center py-3 rounded-xl border-2 border-brand text-brand font-bold"
-                  >
-                    {t("back.workspace.manageEvents")}
-                  </Link>
-                )}
-                <button
-                  onClick={() => { setDrawerOpen(false); handleLogout(); }}
-                  className="w-full py-3 rounded-xl bg-brand text-white font-bold"
-                >
-                  {t("front.menu.logout")}
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  onClick={() => setDrawerOpen(false)}
-                  className="w-full block text-center py-3 rounded-xl border-2 border-brand text-brand font-bold"
-                >
-                  {t("front.menu.loginRegister")}
-                </Link>
-                <Link
-                  to="/organizer/register"
-                  onClick={() => setDrawerOpen(false)}
-                  className="w-full block text-center py-3 rounded-xl bg-brand text-white font-bold"
-                >
-                  {t("front.menu.organizer")}
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </Drawer>
     </div>
   );
 }

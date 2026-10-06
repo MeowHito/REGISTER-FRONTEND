@@ -9,7 +9,6 @@ const OrderSummary = ({
   addOns = [],
   totalDiscount,
   totalCoupon,
-  finalTotal,
   feePercent,
   feeAmount,
   totalAmountWithFee,
@@ -80,14 +79,7 @@ const OrderSummary = ({
           <div className="text-right text-primary">-{formatMoney(totalCoupon)} {t("general.unitBaht")}</div>
         </Col>
       </Row>
-      <Row className="text-sm text-gray-700 mt-1">
-        <Col span={16}>
-          <div>{t("back.reg.payment.total")}</div>
-        </Col>
-        <Col span={8}>
-          <div className="text-right ">{formatMoney(finalTotal)}  {t("general.unitBaht")}</div>
-        </Col>
-      </Row>
+      {/* Only one "total" line: the lines above plus the fee add up to the amount charged. */}
       {feePercent > 0 && (
         <Row>
           <Col span={12}>

@@ -3,12 +3,17 @@ import React from "react";
 /**
  * Clickable "box" selector used for gender / blood type / shirt size, matching
  * the streamlined design. Works as an Ant Design Form.Item child (value/onChange).
+ *
+ * An option may carry `activeCls` to override the selected colours (the gender
+ * boxes go blue for male / pink for female). `id` is forwarded from Form.Item so
+ * `form.scrollToField` can find the control.
  */
-const BoxRadio = ({ value, onChange, options = [], columns = 4, size = "md" }) => {
+const BoxRadio = ({ id, value, onChange, options = [], columns = 4, size = "md" }) => {
   const padding = size === "sm" ? "py-2 px-2 text-sm" : "py-3 px-3";
 
   return (
     <div
+      id={id}
       className="grid gap-2"
       style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
     >
@@ -26,7 +31,7 @@ const BoxRadio = ({ value, onChange, options = [], columns = 4, size = "md" }) =
               opt.disabled
                 ? "border-gray-200 text-gray-300 cursor-not-allowed bg-gray-50"
                 : active
-                ? "border-[#006193] !border-2 bg-[#cce5ff] text-[#006193]"
+                ? opt.activeCls || "border-[#006193] !border-2 bg-[#cce5ff] text-[#006193]"
                 : "border-[#bfc7d2] text-[#3f4850] hover:border-[#006193] hover:text-[#006193]",
             ].join(" ")}
           >

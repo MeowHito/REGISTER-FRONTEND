@@ -1,26 +1,15 @@
 import { useTranslation } from "react-i18next";
 
 /**
- * Returns a `bi(key, opts)` helper that renders a translation key in BOTH Thai
- * and English at once ("ไทย / English"), regardless of the active language.
+ * Returns a `bi(key, opts)` helper for the registration pages.
  *
- * The registration form mixes Thai+English labels by design, so validation
- * messages / buttons / placeholders should stay bilingual too. This reads both
- * locale bundles directly via i18next's `getFixedT`, so we don't have to bake
- * the dual-language string into every translation key.
+ * It used to render every key in Thai AND English at once ("ไทย / English").
+ * The pages now follow the site language like everywhere else, so this is a
+ * thin alias of `t` kept so the call sites didn't all have to be renamed.
  */
 const useBilingual = () => {
-  const { i18n } = useTranslation();
-  const tTH = i18n.getFixedT("th");
-  const tEN = i18n.getFixedT("en");
-
-  return (key, opts) => {
-    const th = tTH(key, opts);
-    const en = tEN(key, opts);
-    if (!th) return en;
-    if (!en || th === en) return th;
-    return `${th} / ${en}`;
-  };
+  const { t } = useTranslation();
+  return (key, opts) => t(key, opts);
 };
 
 export default useBilingual;

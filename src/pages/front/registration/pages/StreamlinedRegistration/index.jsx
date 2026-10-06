@@ -1,23 +1,24 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Result, Spin, message, Input } from "antd";
 import {
   ArrowRightOutlined, CheckCircleOutlined, ShoppingCartOutlined,
-  EnvironmentOutlined, CarOutlined, DownOutlined, UpOutlined, LockOutlined,
+  EnvironmentOutlined, CarOutlined, DownOutlined, UpOutlined, LockOutlined, HomeOutlined, EditOutlined,
 } from "@ant-design/icons";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import dayjs from "dayjs";
 
 import CommonForm from "components/commonForm";
 import FrontLayout from "components/frontLayout";
+import ProvinceSelector from "components/provinceSelector";
 import useMe from "hooks/useMe";
 import useCountryStateHook from "hooks/useCountryStateHook";
 import masterService from "services/master.services";
 import backOfficeServices from "services/backoffice.services";
 import generalService from "services/general.services";
 import { SET_ORDER, CLEAR_ORDER, SET_PROPS } from "store/reducers/contextSlice";
-import { handleQueryStatus } from "utils";
+import { handleQueryStatus, scrollPageToTop } from "utils";
 
 import ApplicantForm from "./ApplicantForm";
 import ShirtPicker from "./ShirtPicker";
@@ -30,7 +31,6 @@ import {
   sellableAddOns, buildAddOnOrder, addOnsTotal, firstMissingAddOnNote,
 } from "./utils";
 import { primaryBtn, phaseBadgeCls, inputCls, fieldItemCls } from "./theme";
-import useBilingual from "./useBilingual";
 import { resolveFieldConfig } from "./fieldConfig";
 import { onUploadFile } from "hooks/onUploadFile";
 import { getPublicUrl } from "utils/fileUtils";
@@ -38,6 +38,8 @@ import { DEFAULT_PHONE_COUNTRY_CODE } from "constants/phoneCountryCodes";
 
 const QUESTIONNAIRE_PREFIX = "questionnaire";
 const fmt = (n) => (Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
+// Height of the sticky site header, so a scrolled-to section isn't hidden under it.
+const HEADER_OFFSET = 64;
 
 // Used when the master nationalities API is unavailable so the form stays usable.
 const FALLBACK_NATIONALITIES = [
@@ -54,19 +56,39 @@ const FALLBACK_NATIONALITIES = [
   { value: "OTH", label: "Other" },
 ];
 
+const SHIPPING_KEYS = ["shippingAddress", "shippingDistrict", "shippingAmphoe", "shippingProvince", "shippingZipcode"];
+
+/** The address a runner already saved on their profile: shipping address first, home address otherwise. */
+const savedAddressOf = (me) => {
+  if (!me) return null;
+  const pick = (a, d, am, p, z) =>
+    (a || d || am || p || z) ? { shippingAddress: a || "", shippingDistrict: d || "", shippingAmphoe: am || "", shippingProvince: p || "", shippingZipcode: z || "" } : null;
+  return (
+    pick(me.shippingAddress, me.shippingDistrict, me.shippingAmphoe, me.shippingProvince, me.shippingZipcode) ||
+    pick(me.address, me.district, me.amphoe, me.province, me.zipcode)
+  );
+};
+
+const formatAddress = (a, t) =>
+  [a.shippingAddress, a.shippingDistrict && `${t("back.reg.common.subdistrictPrefix")}${a.shippingDistrict}`,
+    a.shippingAmphoe && `${t("back.reg.common.districtPrefix")}${a.shippingAmphoe}`,
+    a.shippingProvince && `${t("back.reg.common.provincePrefix")}${a.shippingProvince}`, a.shippingZipcode]
+    .filter(Boolean).join(" ");
+
 /* ---------- accordion shell ---------- */
+// Flat, edge-to-edge sections (no card frame) so the form uses the whole phone width.
 const Section = ({ id, step, title, open, reached, onToggle, children }) => {
   const locked = !reached;
   return (
-    <div className="bg-white border border-[#bfc7d2] rounded-xl overflow-hidden mb-4 shadow-sm">
+    <div id={`section-${id}`} className="bg-white border-b border-[#e5e9eb] md:border md:border-[#bfc7d2] md:rounded-xl md:overflow-hidden md:mb-4 md:shadow-sm">
       <button type="button" disabled={locked} onClick={() => onToggle(id)}
         className="w-full flex justify-between items-center px-4 py-4 bg-[#f1f4f6] disabled:cursor-not-allowed">
-        <div className="flex items-center gap-3">
-          <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+        <div className="flex items-center gap-3 min-w-0">
+          <span className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-sm font-bold ${
             reached ? "bg-[#006193] text-white" : "bg-[#e0e3e5] text-[#3f4850]"}`}>{step}</span>
-          <span className={`font-bold ${reached ? "text-[#181c1e]" : "text-[#3f4850] opacity-60"}`}>{title}</span>
+          <span className={`font-bold truncate ${reached ? "text-[#181c1e]" : "text-[#3f4850] opacity-60"}`}>{title}</span>
         </div>
-        <span className="text-[#3f4850]">
+        <span className="text-[#3f4850] shrink-0">
           {locked ? <LockOutlined /> : open ? <UpOutlined /> : <DownOutlined />}
         </span>
       </button>
@@ -77,11 +99,11 @@ const Section = ({ id, step, title, open, reached, onToggle, children }) => {
 
 const StreamlinedRegistration = () => {
   const { t, i18n } = useTranslation();
-  const bi = useBilingual();
   const params = useParams();
   const eventKey = params.id || params.name;
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const order = useSelector((state) => state.context.order) || {};
   const [form] = CommonForm.useForm();
 
@@ -92,13 +114,16 @@ const StreamlinedRegistration = () => {
   const [nationalityOption, setNationalityOption] = useState([]);
   const [eventConditions, setEventConditions] = useState([]);
   const [deliveryMethod, setDeliveryMethod] = useState("pickup");
-  const [shippingAddress, setShippingAddress] = useState("");
+  // "saved" = the address on the runner's profile, "new" = the address form below.
+  const [addressMode, setAddressMode] = useState("saved");
   // Add-on picks keyed by add-on id: { qty } for per-order, { applicants: {idx: true} }
   // for per-applicant, plus an optional { note }.
   const [addOnSelections, setAddOnSelections] = useState({});
   // Drives how many applicant cards to render. Kept in React state (not Form.useWatch)
   // so the cards render reliably; the form itself only holds the editable field values.
   const [applicantList, setApplicantList] = useState([]);
+  // Coming back from the review page: restore everything the runner typed.
+  const resumeDraft = useRef(location.state?.resume && !order?.orderNo ? order?.draft : null);
 
   /* ---------- data ---------- */
   const { data: me, status: meStatus, isPending: isLoadingMe } = useMe({ retry: 0 });
@@ -113,11 +138,13 @@ const StreamlinedRegistration = () => {
   const availabilityMutation = generalService.useMutationGetEventTypesAvailability();
 
   useEffect(() => {
+    // Land at the top: the event page's register button sits at the bottom of a long page.
+    scrollPageToTop();
     if (order?.orderNo) {
       navigate("/registrationPayment", { replace: true });
       return;
     }
-    dispatch(CLEAR_ORDER());
+    if (!resumeDraft.current) dispatch(CLEAR_ORDER());
   }, []);
 
   useEffect(() => {
@@ -176,6 +203,34 @@ const StreamlinedRegistration = () => {
     [hasAddOns, hasQuestionStep]
   );
 
+  const savedAddress = useMemo(() => savedAddressOf(me), [me]);
+  const hasSavedAddress = !!savedAddress;
+  // Default to the profile address once the profile has loaded; the new-address form otherwise.
+  useEffect(() => {
+    setAddressMode(hasSavedAddress ? "saved" : "new");
+  }, [hasSavedAddress]);
+
+  // Restore the draft once the event is loaded (the ticket rows need it).
+  useEffect(() => {
+    const draft = resumeDraft.current;
+    if (!draft || !event) return;
+    resumeDraft.current = null;
+    const applicants = (draft.applicants || []).map((a) => ({
+      ...a,
+      birthDate: a?.birthDate ? dayjs(a.birthDate) : undefined,
+    }));
+    form.setFieldsValue({ applicants, shipping: draft.shipping || {} });
+    setApplicantList(applicants);
+    setTickets(draft.tickets || {});
+    setDeliveryMethod(draft.deliveryMethod || "pickup");
+    if (draft.addressMode) setAddressMode(draft.addressMode);
+    setAddOnSelections(draft.addOnSelections || {});
+    // Every step was completed once, so unlock them all (the question/add-on steps
+    // only appear after the applicants are set, so don't count sections here).
+    setMaxReached(99);
+    setOpenSection("tickets");
+  }, [event]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const shippingFee = event?.shippingFee;
   const subtotal = applicantList.reduce((s, a) => s + (Number(a?.price) || 0), 0);
   const liveTicketTotal = eventTypeRows.reduce((s, et) => s + (tickets[et.id] || 0) * et._ticketPrice, 0);
@@ -187,10 +242,20 @@ const StreamlinedRegistration = () => {
   const reachedIdx = (id) => SECTIONS.indexOf(id);
   const isReached = (id) => reachedIdx(id) <= maxReached;
   const goTo = (id) => setOpenSection((p) => (p === id ? null : id));
+
+  // The page scrolls inside <body> (overflow-y: auto in index.css), not the window, so
+  // window.scrollTo is a no-op here; scrollIntoView works whichever ancestor scrolls.
+  const scrollToEl = (el) => {
+    if (!el) return;
+    el.style.scrollMarginTop = `${HEADER_OFFSET}px`;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  // Open the next section and put its header at the top of the screen, so "Next"
+  // lands the runner on step N+1 instead of somewhere up the page.
   const advanceTo = (id) => {
     setMaxReached((m) => Math.max(m, reachedIdx(id)));
     setOpenSection(id);
-    setTimeout(() => globalThis.scrollTo({ top: 0, behavior: "smooth" }), 50);
+    setTimeout(() => scrollToEl(document.getElementById(`section-${id}`)), 60);
   };
 
   /* ---------- actions ---------- */
@@ -199,7 +264,7 @@ const StreamlinedRegistration = () => {
 
   const confirmTickets = () => {
     if (totalQty(tickets) < 1) {
-      message.warning(bi("required.eventType"));
+      message.warning(t("required.eventType"));
       return;
     }
     const prev = form.getFieldValue("applicants") || [];
@@ -223,6 +288,7 @@ const StreamlinedRegistration = () => {
           list.push({
             phoneCountryCode: DEFAULT_PHONE_COUNTRY_CODE,
             emergencyPhoneCountryCode: DEFAULT_PHONE_COUNTRY_CODE,
+            idType: "idCard",
             ...(arr[k] || {}),
             eventTypeId: et.id, eventTypeName: et.name, eventDate: event.eventDate, eventName: event.name,
             price: memberPrice, pricingId: p.pricingId, paymentName: p.paymentName, noShirt: false,
@@ -287,23 +353,24 @@ const StreamlinedRegistration = () => {
     });
   };
 
-  // After a failed validateFields: scroll to the first offending field and show
-  // its (bilingual) reason so the user knows exactly what to fix and where.
+  // After a failed validateFields: jump to the first field that is marked as
+  // erroneous and show its reason. The DOM lookup (rather than form.scrollToField)
+  // also works for custom controls such as the box selectors and the photo box.
   const handleValidateError = (errInfo) => {
     const fields = errInfo?.errorFields || [];
-    if (!fields.length) {
-      message.error(bi("validation.checkForm"));
-      return;
-    }
-    const first = fields[0];
-    form.scrollToField(first.name, { behavior: "smooth", block: "center" });
-    message.error(first.errors?.[0] || bi("validation.checkForm"));
+    message.error(fields[0]?.errors?.[0] || t("validation.checkForm"));
+    setTimeout(() => {
+      const el = document.querySelector(".ant-form-item-has-error");
+      if (el) scrollToEl(el);
+      else if (fields[0]) form.scrollToField(fields[0].name, { behavior: "smooth", block: "center" });
+    }, 50);
   };
 
   const confirmInfo = async () => {
     const current = form.getFieldValue("applicants") || [];
-    if (applicantList.some((_a, i) => !current[i]?.type)) {
-      message.warning(bi("back.reg.common.selectApplicant"));
+    const missingType = applicantList.findIndex((_a, i) => !current[i]?.type);
+    if (missingType >= 0) {
+      message.warning(t("back.reg.common.selectApplicant"));
       return;
     }
     try {
@@ -347,7 +414,7 @@ const StreamlinedRegistration = () => {
         const fileList = Array.isArray(raw) ? raw : [];
         if (!fileList.length) { delete answers[q.id]; continue; }
         const key = await onUploadFile({ prefix: QUESTIONNAIRE_PREFIX, isPublic: true, fileList });
-        if (!key) throw new Error(bi("validation.uploadFailed"));
+        if (!key) throw new Error(t("validation.uploadFailed"));
         const url = await getPublicUrl({ key, prefix: QUESTIONNAIRE_PREFIX, isPublic: true });
         answers[q.id] = { value: url || key };
       }
@@ -356,11 +423,30 @@ const StreamlinedRegistration = () => {
     return out;
   };
 
-  const confirmShipping = () => {
-    if (deliveryMethod === "post" && !shippingAddress.trim()) {
-      message.warning(bi("back.reg.payment.enterAddress"));
-      return;
+  // The address this order ships to, or null when postal delivery isn't chosen.
+  // Validates the new-address fields when the runner is typing one.
+  const resolveShipping = async () => {
+    if (deliveryMethod !== "post") return null;
+    if (addressMode === "saved" && savedAddress) return savedAddress;
+    try {
+      await form.validateFields(SHIPPING_KEYS.map((k) => ["shipping", k]));
+    } catch (errInfo) {
+      handleValidateError(errInfo);
+      return false;
     }
+    const v = form.getFieldValue("shipping") || {};
+    const out = {};
+    SHIPPING_KEYS.forEach((k) => { out[k] = String(v[k] || "").trim(); });
+    if (!out.shippingAddress) {
+      message.warning(t("front.reg.fillAddress"));
+      return false;
+    }
+    return out;
+  };
+
+  const confirmShipping = async () => {
+    const shipping = await resolveShipping();
+    if (shipping === false) return;
     if (hasAddOns) {
       advanceTo("addons");
       return;
@@ -373,10 +459,8 @@ const StreamlinedRegistration = () => {
 
   const [checkingOut, setCheckingOut] = useState(false);
   const checkout = async () => {
-    if (deliveryMethod === "post" && !shippingAddress.trim()) {
-      message.warning(bi("back.reg.payment.enterAddress"));
-      return;
-    }
+    const shipping = await resolveShipping();
+    if (shipping === false) return;
     const missingNote = firstMissingAddOnNote(addOns, addOnSelections);
     if (missingNote) {
       message.warning(`${missingNote.name}: ${missingNote.noteLabel}`);
@@ -392,13 +476,13 @@ const StreamlinedRegistration = () => {
       deliveryMethod,
       // flat shipping fee charged once for the single shipment
       shippingFee: deliveryMethod === "post" && i === 0 ? shippingFee : 0,
-      shippingAddress: deliveryMethod === "post" ? shippingAddress.trim() : undefined,
+      ...(shipping || {}),
     }));
     try {
       setCheckingOut(true);
       withDelivery = await uploadImageAnswers(withDelivery);
     } catch (e) {
-      message.error(e?.message || bi("validation.uploadFailed"));
+      message.error(e?.message || t("validation.uploadFailed"));
       return;
     } finally {
       setCheckingOut(false);
@@ -412,6 +496,15 @@ const StreamlinedRegistration = () => {
       eventConditions,
       eventId: event.id,
       eventData: event,
+      // What the form looked like, so "Back" on the review page can restore it.
+      draft: {
+        applicants: raw,
+        tickets,
+        deliveryMethod,
+        addressMode,
+        shipping: form.getFieldValue("shipping") || {},
+        addOnSelections,
+      },
     }));
     navigate("/registrationDetail");
   };
@@ -446,15 +539,22 @@ const StreamlinedRegistration = () => {
     );
   }
 
-  const stepLabels = ["Tickets", "ข้อมูล", "เสื้อ", ...(hasQuestionStep ? ["คำถาม"] : []), "จัดส่ง", ...(hasAddOns ? ["เสริม"] : [])];
+  const stepLabels = [
+    t("front.reg.stepTickets"), t("front.reg.stepInfo"), t("front.reg.stepShirt"),
+    ...(hasQuestionStep ? [t("front.reg.stepQuestions")] : []),
+    t("front.reg.stepShipping"),
+    ...(hasAddOns ? [t("front.reg.stepAddons")] : []),
+  ];
   const stepNo = (id) => SECTIONS.indexOf(id) + 1;
+  const nextLabel = (<>{t("front.reg.next")} <ArrowRightOutlined /></>);
+  const checkoutLabel = (<>{t("front.reg.checkout")} <ShoppingCartOutlined /></>);
 
   return (
     <FrontLayout fullWidth>
-      <div className="bg-[#f7fafc] min-h-screen">
-        <div className="max-w-screen-md mx-auto px-4 py-6 pb-28">
+      <div className="bg-[#f7fafc]">
+        <div className="max-w-screen-md mx-auto py-5 pb-24">
           {/* event header */}
-          <div className="mb-6 border-l-4 border-[#fe9400] pl-4">
+          <div className="mb-5 border-l-4 border-[#fe9400] pl-4">
             <h2 className="text-2xl font-bold text-[#181c1e] mb-1">{event?.name}</h2>
             <p className="text-sm font-bold text-[#3f4850] flex items-center gap-2">
               📅 {event?.eventDate ? dayjs(event.eventDate).format("D MMM YYYY") : ""}
@@ -463,7 +563,7 @@ const StreamlinedRegistration = () => {
           </div>
 
           {/* stepper */}
-          <div className="flex items-center justify-between mb-10 px-1">
+          <div className="flex items-center justify-between mb-6 px-1">
             {stepLabels.map((label, i) => (
               <div key={i} className="flex items-center flex-1 last:flex-none">
                 <div className="flex flex-col items-center gap-1">
@@ -476,22 +576,23 @@ const StreamlinedRegistration = () => {
             ))}
           </div>
 
-          <CommonForm form={form}>
+          {/* Sections bleed to the screen edge on phones (the layout adds 16px side padding). */}
+          <CommonForm form={form} className="-mx-4 md:mx-0">
             {/* SECTION 1 — tickets */}
             <Section id="tickets" step={1} open={openSection === "tickets"} reached
-              title="1. เลือกประเภทตั๋ว (Select Ticket)" onToggle={goTo}>
-              <div className="space-y-4">
+              title={`1. ${t("front.reg.secTickets")}`} onToggle={goTo}>
+              <div className="space-y-3">
                 {eventTypeRows.map((et) => {
                   const qty = tickets[et.id] || 0;
                   return (
                     <div key={et.id}
-                      className={`border p-4 rounded-lg flex justify-between items-center gap-3 transition-all ${
+                      className={`border px-3 py-3 rounded-lg flex justify-between items-center gap-3 transition-all ${
                         et._closed ? "border-[#bfc7d2] bg-[#f1f4f6] opacity-80"
                           : qty > 0 ? "border-[#006193] border-2" : "border-[#bfc7d2]"}`}>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-[#181c1e] mb-1">{et.name}</h3>
+                        <h3 className="font-bold text-[#181c1e] truncate" title={et.name}>{et.name}</h3>
                         {et._closed ? (
-                          <p className="text-sm font-bold text-[#ba1a1a]">ปิดรับสมัครแล้ว / Closed</p>
+                          <p className="text-sm font-bold text-[#ba1a1a]">{t("front.reg.closed")}</p>
                         ) : (
                           <>
                             <div className="flex items-center gap-2 flex-wrap">
@@ -499,59 +600,61 @@ const StreamlinedRegistration = () => {
                                 <span className={phaseBadgeCls}>{et._paymentName}</span>
                               ) : null}
                               {et.isTeam ? (
-                                <span className={phaseBadgeCls}>👥 ทีมละ {et._teamSize} คน / Team of {et._teamSize}</span>
+                                <span className={phaseBadgeCls}>👥 {t("front.reg.teamOf", { n: et._teamSize })}</span>
                               ) : null}
-                              <span className="text-[#006193] font-bold text-lg">
-                                {Number(et._ticketPrice).toLocaleString()} THB{et.isTeam ? " / ทีม" : ""}
+                              <span className="text-[#006193] font-bold">
+                                {Number(et._ticketPrice).toLocaleString()} THB{et.isTeam ? ` ${t("front.reg.perTeam")}` : ""}
                               </span>
                             </div>
                             {et.isTeam && et.teamPricing !== "PER_TEAM" ? (
-                              <p className="text-xs text-[#3f4850] mt-1">{Number(et._price).toLocaleString()} THB × {et._teamSize} คน</p>
+                              <p className="text-xs text-[#3f4850] mt-1">
+                                {t("front.reg.perPersonTimes", { price: Number(et._price).toLocaleString(), n: et._teamSize })}
+                              </p>
                             ) : null}
                             {!et._available && <p className="text-xs text-[#ba1a1a] mt-1">{t("front.eventDetail.quotaFull")}</p>}
                           </>
                         )}
                       </div>
                       {et._closed ? null : (
-                        <div className="flex items-center gap-3 bg-[#ebeef0] rounded-full p-1 border border-[#bfc7d2] shrink-0">
+                        <div className="flex items-center gap-1.5 bg-[#ebeef0] rounded-full p-0.5 border border-[#bfc7d2] shrink-0">
                           <button type="button" onClick={() => setQty(et.id, -1)} disabled={qty === 0}
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-[#006193] hover:bg-[#e0e3e5] disabled:text-[#bfc7d2] text-xl font-bold">−</button>
-                          <span className="w-5 text-center font-bold">{qty}</span>
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-[#006193] hover:bg-[#e0e3e5] disabled:text-[#bfc7d2] text-lg font-bold">−</button>
+                          <span className="w-5 text-center font-bold text-sm">{qty}</span>
                           <button type="button" onClick={() => setQty(et.id, 1)} disabled={!et._available}
-                            className="w-10 h-10 rounded-full flex items-center justify-center bg-[#006193] text-white shadow hover:opacity-90 disabled:bg-[#bfc7d2] text-xl font-bold">+</button>
+                            className="w-8 h-8 rounded-full flex items-center justify-center bg-[#006193] text-white shadow hover:opacity-90 disabled:bg-[#bfc7d2] text-lg font-bold">+</button>
                         </div>
                       )}
                     </div>
                   );
                 })}
-                <button type="button" className={primaryBtn} onClick={confirmTickets}>
-                  Next <ArrowRightOutlined />
-                </button>
+                <button type="button" className={primaryBtn} onClick={confirmTickets}>{nextLabel}</button>
               </div>
             </Section>
 
             {/* SECTION 2 — athlete info */}
             <Section id="info" step={2} open={openSection === "info"} reached={isReached("info")}
-              title="2. ข้อมูลผู้สมัคร (Athlete Information)" onToggle={goTo}>
+              title={`2. ${t("front.reg.secInfo")}`} onToggle={goTo}>
               <div className="space-y-5">
                 {applicantGroups.map((g) => (
                   <div key={g.teamGroup ? `team-${g.teamGroup}` : `solo-${g.items[0].i}`}
                     className={g.teamGroup ? "rounded-2xl border-2 border-[#006193] p-3 space-y-4 bg-[#f7fafc]" : "space-y-5"}>
                     {g.teamGroup ? (
                       <div className="rounded-xl bg-white border border-[#bfc7d2] px-4 py-3">
-                        <div className="font-bold text-[#006193] mb-2">👥 ทีมที่ {g.teamGroup} (Team {g.teamGroup}) · {g.eventTypeName}</div>
+                        <div className="font-bold text-[#006193] mb-2">👥 {t("front.reg.teamNo", { n: g.teamGroup })} · {g.eventTypeName}</div>
                         <label className="block text-sm font-bold text-[#3f4850] mb-1">
-                          ชื่อทีม / Team Name <span className="text-[#ba1a1a]">*</span>
+                          {t("front.reg.teamName")} <span className="text-[#ba1a1a]">*</span>
                         </label>
                         <CommonForm.Item name={["applicants", g.items[0].i, "teamClub"]} className={fieldItemCls}
-                          rules={[{ required: true, message: bi("required.teamClub") }]}>
-                          <Input className={inputCls} placeholder="กรอกชื่อทีม / Team name" allowClear />
+                          rules={[{ required: true, message: t("required.teamClub") }]}>
+                          <Input className={inputCls} placeholder={t("front.reg.enterTeamName")} allowClear />
                         </CommonForm.Item>
                       </div>
                     ) : null}
                     {g.items.map(({ a, i }) => (
                       <ApplicantForm key={i} index={i} me={me} event={event}
-                        ticketLabel={a?.teamGroup ? `${a.eventTypeName} · สมาชิกคนที่ ${a.teamIndex}/${a.teamSize}` : a?.eventTypeName}
+                        ticketLabel={a?.teamGroup
+                          ? `${a.eventTypeName} · ${t("front.reg.memberNo", { i: a.teamIndex, n: a.teamSize })}`
+                          : a?.eventTypeName}
                         form={form} provinceOption={provinceOption} isLoadingProvince={isLoadingProvince}
                         nationalityOption={nationalityOption} isLoadingNationality={isLoadingNationality}
                         fieldConfig={fieldConfig} isTeamMember={!!a?.teamGroup}
@@ -559,22 +662,20 @@ const StreamlinedRegistration = () => {
                     ))}
                   </div>
                 ))}
-                <button type="button" className={primaryBtn} onClick={confirmInfo}>
-                  Next <ArrowRightOutlined />
-                </button>
+                <button type="button" className={primaryBtn} onClick={confirmInfo}>{nextLabel}</button>
               </div>
             </Section>
 
             {/* SECTION 3 — shirt */}
             <Section id="shirt" step={3} open={openSection === "shirt"} reached={isReached("shirt")}
-              title="3. เลือกแบบเสื้อ (Shirt)" onToggle={goTo}>
+              title={`3. ${t("front.reg.secShirt")}`} onToggle={goTo}>
               <div className="space-y-5">
                 {applicantList.map((a, i) => (
                   <ShirtPicker key={i} index={i} ticketLabel={a?.eventTypeName} event={event} form={form}
                     eventTypeId={a?.eventTypeId} />
                 ))}
                 <button type="button" className={primaryBtn} onClick={confirmShirt}>
-                  Complete Selection <CheckCircleOutlined />
+                  {t("front.reg.completeSelection")} <CheckCircleOutlined />
                 </button>
               </div>
             </Section>
@@ -582,33 +683,31 @@ const StreamlinedRegistration = () => {
             {/* SECTION — extra questions / sponsor questionnaires (only when the event has any) */}
             {hasQuestionStep ? (
               <Section id="questions" step={stepNo("questions")} open={openSection === "questions"} reached={isReached("questions")}
-                title={`${stepNo("questions")}. คำถามเพิ่มเติม (Questions)`} onToggle={goTo}>
+                title={`${stepNo("questions")}. ${t("front.reg.secQuestions")}`} onToggle={goTo}>
                 <div className="space-y-5">
                   {applicantList.map((a, i) => (
                     <QuestionnaireStep key={i} index={i} ticketLabel={a?.eventTypeName} event={event}
                       eventTypeId={a?.eventTypeId} lang={i18n.language} />
                   ))}
-                  <button type="button" className={primaryBtn} onClick={confirmQuestions}>
-                    Next <ArrowRightOutlined />
-                  </button>
+                  <button type="button" className={primaryBtn} onClick={confirmQuestions}>{nextLabel}</button>
                 </div>
               </Section>
             ) : null}
 
             {/* SECTION — shipping */}
             <Section id="shipping" step={stepNo("shipping")} open={openSection === "shipping"} reached={isReached("shipping")}
-              title={`${stepNo("shipping")}. เลือกประเภทการจัดส่ง (Shipping)`} onToggle={goTo}>
+              title={`${stepNo("shipping")}. ${t("front.reg.secShipping")}`} onToggle={goTo}>
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-bold text-[#3f4850] mb-3">ประเภทการจัดส่ง (Shipping Method)</label>
+                  <label className="block text-sm font-bold text-[#3f4850] mb-3">{t("front.reg.shippingMethod")}</label>
                   <div className="grid grid-cols-1 gap-3">
                     <button type="button" onClick={() => setDeliveryMethod("pickup")}
                       className={`flex items-center gap-4 p-4 border-2 rounded-xl text-left transition-all ${
                         deliveryMethod === "pickup" ? "border-[#006193] bg-[#cce5ff]" : "border-[#bfc7d2] bg-white hover:border-[#006193]"}`}>
                       <EnvironmentOutlined className="text-2xl text-[#006193]" />
                       <div className="flex-1">
-                        <div className="font-bold text-[#006193]">รับด้วยตัวเอง (Self-Pickup)</div>
-                        <div className="text-xs text-[#006193]/70">รับที่หน้างาน - ฟรี</div>
+                        <div className="font-bold text-[#006193]">{t("front.reg.pickup")}</div>
+                        <div className="text-xs text-[#006193]/70">{t("front.reg.pickupHint")}</div>
                       </div>
                       {deliveryMethod === "pickup" && <CheckCircleOutlined className="text-[#006193]" />}
                     </button>
@@ -619,9 +718,9 @@ const StreamlinedRegistration = () => {
                           deliveryMethod === "post" ? "border-[#006193] bg-[#cce5ff]" : "border-[#bfc7d2] bg-white hover:border-[#006193]"}`}>
                         <CarOutlined className="text-2xl text-[#006193]" />
                         <div className="flex-1">
-                          <div className="font-bold text-[#181c1e]">จัดส่งทางไปรษณีย์ (Postal Delivery)</div>
+                          <div className="font-bold text-[#181c1e]">{t("front.reg.post")}</div>
                           <div className="text-xs text-[#3f4850]">
-                            {shippingFee === 0 ? t("back.reg.payment.free") : `ค่าจัดส่ง ${Number(shippingFee).toLocaleString()} THB`}
+                            {shippingFee === 0 ? t("back.reg.payment.free") : t("front.reg.shippingFee", { fee: Number(shippingFee).toLocaleString() })}
                           </div>
                         </div>
                         {deliveryMethod === "post" && <CheckCircleOutlined className="text-[#006193]" />}
@@ -631,23 +730,59 @@ const StreamlinedRegistration = () => {
                 </div>
 
                 {deliveryMethod === "post" && (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <label className="block text-sm font-bold text-[#3f4850]">
-                      ที่อยู่สำหรับจัดส่ง / Shipping Address <span className="text-[#ba1a1a]">*</span>
+                      {t("front.reg.shippingAddress")} <span className="text-[#ba1a1a]">*</span>
                     </label>
-                    <Input.TextArea rows={4} value={shippingAddress}
-                      onChange={(e) => setShippingAddress(e.target.value)}
-                      className="!rounded-lg !border-[#bfc7d2] !text-base"
-                      placeholder="กรอกที่อยู่สำหรับจัดส่งเอกสารและเสื้อ" />
+
+                    {/* saved address vs. a new one */}
+                    {savedAddress ? (
+                      <div className="grid grid-cols-2 gap-3">
+                        <button type="button" onClick={() => setAddressMode("saved")}
+                          className={`flex flex-col items-center justify-center gap-1 py-3 border-2 rounded-xl text-sm font-bold transition-all ${
+                            addressMode === "saved" ? "border-[#006193] bg-[#cce5ff] text-[#006193]" : "border-[#bfc7d2] bg-white text-[#3f4850]"}`}>
+                          <HomeOutlined className="text-xl" />{t("front.reg.useSavedAddress")}
+                        </button>
+                        <button type="button" onClick={() => setAddressMode("new")}
+                          className={`flex flex-col items-center justify-center gap-1 py-3 border-2 rounded-xl text-sm font-bold transition-all ${
+                            addressMode === "new" ? "border-[#006193] bg-[#cce5ff] text-[#006193]" : "border-[#bfc7d2] bg-white text-[#3f4850]"}`}>
+                          <EditOutlined className="text-xl" />{t("front.reg.newAddress")}
+                        </button>
+                      </div>
+                    ) : null}
+
+                    {addressMode === "saved" && savedAddress ? (
+                      <div className="rounded-xl border border-[#bfc7d2] bg-[#f1f4f6] px-4 py-3">
+                        <div className="text-[11px] font-bold text-[#3f4850] mb-1">{t("front.reg.savedAddressHint")}</div>
+                        <div className="text-sm text-[#181c1e] leading-relaxed">{formatAddress(savedAddress, t)}</div>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <CommonForm.Item name={["shipping", "shippingAddress"]} className={fieldItemCls}
+                          rules={[{ required: true, message: t("back.reg.payment.enterAddress") }]}>
+                          <Input className={inputCls} placeholder={t("front.reg.enterAddressLine")} allowClear />
+                        </CommonForm.Item>
+                        <ProvinceSelector
+                          form={form}
+                          basePath={["shipping"]}
+                          required
+                          compact
+                          fieldNames={{ zipcode: "shippingZipcode", province: "shippingProvince", amphoe: "shippingAmphoe", district: "shippingDistrict" }}
+                          valueMode={{ province: "nameTh", amphoe: "nameTh", district: "nameTh" }}
+                          labels={{
+                            zipcode: t("back.reg.payment.zipcode"),
+                            province: t("back.reg.payment.province"),
+                            amphoe: t("back.reg.payment.amphoe"),
+                            district: t("back.reg.payment.district"),
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 
                 <button type="button" className={primaryBtn} onClick={confirmShipping}>
-                  {hasAddOns ? (
-                    <>Next <ArrowRightOutlined /></>
-                  ) : (
-                    <>Checkout <ShoppingCartOutlined /></>
-                  )}
+                  {hasAddOns ? nextLabel : checkoutLabel}
                 </button>
               </div>
             </Section>
@@ -655,7 +790,7 @@ const StreamlinedRegistration = () => {
             {/* SECTION 5 — optional packages the organizer sells (hotel, photos…) */}
             {hasAddOns ? (
               <Section id="addons" step={stepNo("addons")} open={openSection === "addons"} reached={isReached("addons")}
-                title={`${stepNo("addons")}. แพ็กเกจเสริม (Add-ons)`} onToggle={goTo}>
+                title={`${stepNo("addons")}. ${t("front.reg.secAddons")}`} onToggle={goTo}>
                 <div className="space-y-5">
                   <AddOnPicker
                     addOns={addOns}
@@ -667,15 +802,13 @@ const StreamlinedRegistration = () => {
 
                   {totalAddOns > 0 ? (
                     <div className="flex justify-between items-center px-4 py-3 rounded-lg bg-[#f1f4f6] border border-[#bfc7d2]">
-                      <span className="font-bold text-[#3f4850]">{bi("back.reg.addOn.total")}</span>
+                      <span className="font-bold text-[#3f4850]">{t("back.reg.addOn.total")}</span>
                       <span className="font-bold text-[#006193]">{fmt(totalAddOns)} THB</span>
                     </div>
                   ) : null}
 
-                  <button type="button" className={primaryBtn} onClick={checkout}>
-                    Checkout <ShoppingCartOutlined />
-                  </button>
-                  <p className="text-xs text-center text-[#3f4850]">{bi("back.reg.addOn.skipHint")}</p>
+                  <button type="button" className={primaryBtn} onClick={checkout}>{checkoutLabel}</button>
+                  <p className="text-xs text-center text-[#3f4850]">{t("back.reg.addOn.skipHint")}</p>
                 </div>
               </Section>
             ) : null}
@@ -683,16 +816,16 @@ const StreamlinedRegistration = () => {
         </div>
       </div>
 
-      {/* sticky total bar */}
+      {/* sticky total bar — compact so it doesn't eat the phone screen */}
       <div className="fixed bottom-0 left-0 w-full bg-white border-t border-[#bfc7d2] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-50">
-        <div className="max-w-screen-md mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className="text-xs text-[#3f4850]">Total Payment</span>
-            <span className="text-2xl font-bold text-[#006193]">{fmt(grandTotal)} THB</span>
+        <div className="max-w-screen-md mx-auto px-4 py-2 flex items-center justify-between gap-3">
+          <div className="flex flex-col leading-tight">
+            <span className="text-[11px] text-[#3f4850]">{t("front.reg.totalPayment")}</span>
+            <span className="text-lg font-bold text-[#006193]">{fmt(grandTotal)} THB</span>
           </div>
           <button type="button" onClick={primaryAction} disabled={checkingOut}
-            className="bg-[#fe9400] text-[#633700] font-bold px-7 h-12 rounded-full flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform disabled:opacity-60">
-            {openSection === lastSection ? "Checkout" : "ถัดไป"}
+            className="bg-[#fe9400] text-[#633700] font-bold px-6 h-10 rounded-full flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform disabled:opacity-60">
+            {openSection === lastSection ? t("front.reg.checkout") : t("front.reg.next")}
             {openSection === lastSection ? <ShoppingCartOutlined /> : <ArrowRightOutlined />}
           </button>
         </div>
