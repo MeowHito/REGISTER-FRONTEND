@@ -38,7 +38,7 @@ const EventListCard = ({ event, internal, isAdmin, onToggleMajor, majorLoading }
   );
 
   const body = (
-    <div className="flex flex-row items-center gap-3 sm:gap-4">
+    <div className="flex flex-row items-center gap-2.5 sm:gap-4">
       <div className="w-[76px] sm:w-28 bg-blue-50/80 border border-blue-100 rounded-xl p-2.5 sm:p-3 text-center shrink-0 flex flex-col justify-center items-center self-start sm:self-center">
         <span className="text-2xl sm:text-3xl font-extrabold text-blue-600 leading-none">{date.format("DD")}</span>
         <span className="text-[11px] sm:text-xs font-semibold text-blue-800 mt-1">{date.locale(lang).format("MMM YYYY")}</span>
@@ -75,31 +75,25 @@ const EventListCard = ({ event, internal, isAdmin, onToggleMajor, majorLoading }
             </span>
           </p>
         )}
-        {!internal && event.source && (
-          <p className="text-[11px] text-slate-400 m-0">
-            {t("back.eventCalendarList.sourceCredit")}: {event.source}
-          </p>
-        )}
       </div>
 
       <div className="hidden sm:block shrink-0">{cta}</div>
+      <RightOutlined className="sm:hidden shrink-0 text-slate-300 group-hover:text-blue-500 text-xs" />
     </div>
   );
 
   const cardCls =
-    "group block bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm hover:shadow-md hover:border-blue-200 transition";
+    "group block bg-white rounded-2xl p-3 sm:p-5 border border-slate-200/90 shadow-sm hover:shadow-md hover:border-blue-200 transition";
 
   return (
     <div className="relative">
       {internal ? (
         <Link to={`/eventDetail/${event.link || event.id}`} className={cardCls}>
           {body}
-          <div className="sm:hidden mt-3 pt-3 border-t border-slate-100 flex justify-end">{cta}</div>
         </Link>
       ) : (
         <a href={event.link || event.sourceUrl} target="_blank" rel="noopener noreferrer" className={cardCls}>
           {body}
-          <div className="sm:hidden mt-3 pt-3 border-t border-slate-100 flex justify-end">{cta}</div>
         </a>
       )}
       {isAdmin && !internal && (
