@@ -40,8 +40,9 @@ const MonthCalendar = ({
   const weekEnd = selectedDate.endOf("isoWeek");
   const today = dayjs();
 
+  // Phone/tablet: bleeds edge to edge with no card chrome; desktop: a card in the sidebar.
   return (
-    <div className="bg-white rounded-2xl p-4 md:p-5 border border-slate-200/90 shadow-sm">
+    <div className="bg-white p-4 md:p-5 -mx-4 md:-mx-8 lg:mx-0 rounded-none lg:rounded-2xl border-0 lg:border lg:border-slate-200/90 shadow-none lg:shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2 min-w-0">
           <h1 className="font-bold text-slate-900 text-base m-0 truncate">{listTitle}</h1>
