@@ -6,9 +6,20 @@ import { SYS_ISO_DATE_FORMAT } from "constants/helper";
 
 /**
  * Month grid for /eventCalendar. Picking a day selects its whole week (Sun–Sat); `eventDateSet`
- * holds the YYYY-MM-DD days that get a dot.
+ * holds the YYYY-MM-DD days that get a dot. The card header is the feed title ("รายการวิ่ง 11 – 17 …"
+ * + count) and the footer carries the month chip, back-to-today and the week/month toggle.
  */
-const MonthCalendar = ({ viewMonth, onViewMonthChange, selectedDate, onSelectDate, eventDateSet, monthMode }) => {
+const MonthCalendar = ({
+  viewMonth,
+  onViewMonthChange,
+  selectedDate,
+  onSelectDate,
+  eventDateSet,
+  monthMode,
+  onMonthModeChange,
+  listTitle,
+  totalCount,
+}) => {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
 
@@ -32,18 +43,11 @@ const MonthCalendar = ({ viewMonth, onViewMonthChange, selectedDate, onSelectDat
   return (
     <div className="bg-white rounded-2xl p-4 md:p-5 border border-slate-200/90 shadow-sm">
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2 min-w-0 flex-wrap">
-          <span className="font-bold text-slate-900 text-base truncate">{t("front.event.calendarTitle")}</span>
-          <span className="px-3 py-1 text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-100 rounded-lg whitespace-nowrap">
-            {viewMonth.locale(lang).format("MMM YYYY")}
+        <div className="flex items-center gap-2 min-w-0">
+          <h1 className="font-bold text-slate-900 text-base m-0 truncate">{listTitle}</h1>
+          <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap">
+            {t("front.event.countBadge", { count: totalCount ?? 0 })}
           </span>
-          <button
-            type="button"
-            onClick={() => onSelectDate(dayjs())}
-            className="text-xs font-medium text-blue-600 hover:underline bg-transparent border-0 cursor-pointer p-0 whitespace-nowrap"
-          >
-            {t("front.event.backToToday")}
-          </button>
         </div>
         <div className="flex items-center gap-1.5">
           <button
@@ -111,6 +115,40 @@ const MonthCalendar = ({ viewMonth, onViewMonthChange, selectedDate, onSelectDat
         })}
       </div>
 
+      <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="px-3 py-1 text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-100 rounded-lg whitespace-nowrap">
+            {viewMonth.locale(lang).format("MMM YYYY")}
+          </span>
+          <button
+            type="button"
+            onClick={() => onSelectDate(dayjs())}
+            className="text-xs font-medium text-blue-600 hover:underline bg-transparent border-0 cursor-pointer p-0 whitespace-nowrap"
+          >
+            {t("front.event.backToToday")}
+          </button>
+        </div>
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg text-xs">
+          <button
+            type="button"
+            onClick={() => onMonthModeChange?.(false)}
+            className={`px-2.5 py-1 rounded border-0 cursor-pointer ${
+              !monthMode ? "bg-white text-blue-600 font-semibold shadow-sm" : "bg-transparent text-slate-600 hover:text-slate-900 font-medium"
+            }`}
+          >
+            {t("front.event.viewWeek")}
+          </button>
+          <button
+            type="button"
+            onClick={() => onMonthModeChange?.(true)}
+            className={`px-2.5 py-1 rounded border-0 cursor-pointer ${
+              monthMode ? "bg-white text-blue-600 font-semibold shadow-sm" : "bg-transparent text-slate-600 hover:text-slate-900 font-medium"
+            }`}
+          >
+            {t("front.event.viewMonth")}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

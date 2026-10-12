@@ -364,14 +364,13 @@ const EventCalendar = () => {
         </section>
 
         {/* Submit-your-race CTA: one slim strip right under the filters */}
-        <div className="rounded-xl bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-800 text-white px-4 py-2.5 sm:px-5 shadow-sm mb-5 md:mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-          <div className="min-w-0 leading-snug flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <span className="text-[11px] text-blue-200">{t("front.event.ctaEyebrow")}</span>
-            <span className="text-sm font-bold text-white">{t("front.event.ctaTitle")}</span>
-            <span className="hidden md:inline text-xs text-blue-100">{t("front.event.ctaText")}</span>
+        <div className="rounded-xl bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-800 text-white px-4 py-3 sm:px-5 shadow-sm mb-5 md:mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="min-w-0 leading-snug">
+            <p className="text-[11px] uppercase tracking-wide text-blue-200 m-0">{t("front.event.ctaEyebrow")}</p>
+            <p className="text-base font-bold text-white m-0">{t("front.event.ctaTitle")}</p>
+            <p className="text-xs text-blue-100 m-0 mt-0.5">{t("front.event.ctaText")}</p>
           </div>
           <Button
-            size="small"
             icon={<PlusOutlined />}
             onClick={handleOpenForm}
             loading={isSubmitting}
@@ -391,6 +390,12 @@ const EventCalendar = () => {
               onSelectDate={selectDate}
               eventDateSet={eventDateSet}
               monthMode={monthMode}
+              onMonthModeChange={(mode) => {
+                setMonthMode(mode);
+                resetPage();
+              }}
+              listTitle={listTitle}
+              totalCount={totalCount}
             />
             <div className="hidden lg:block bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm">
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
@@ -431,45 +436,7 @@ const EventCalendar = () => {
               unsetLoading={!!majorLoadingId && majorEvents.some((e) => e.eventId === majorLoadingId)}
             />
 
-            <div
-              ref={listTopRef}
-              className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 scroll-mt-24"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <h1 className="text-base sm:text-lg font-bold text-slate-800 m-0 truncate">{listTitle}</h1>
-                <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap">
-                  {t("front.event.countBadge", { count: totalCount })}
-                </span>
-              </div>
-              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg text-xs self-start sm:self-auto">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMonthMode(false);
-                    resetPage();
-                  }}
-                  className={`px-2.5 py-1 rounded border-0 cursor-pointer ${
-                    !monthMode ? "bg-white text-blue-600 font-semibold shadow-sm" : "bg-transparent text-slate-600 hover:text-slate-900 font-medium"
-                  }`}
-                >
-                  {t("front.event.viewWeek")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMonthMode(true);
-                    resetPage();
-                  }}
-                  className={`px-2.5 py-1 rounded border-0 cursor-pointer ${
-                    monthMode ? "bg-white text-blue-600 font-semibold shadow-sm" : "bg-transparent text-slate-600 hover:text-slate-900 font-medium"
-                  }`}
-                >
-                  {t("front.event.viewMonth")}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-3.5">
+            <div ref={listTopRef} className="space-y-3.5 scroll-mt-24">
               {isLoading ? (
                 [...Array(3)].map((_, idx) => (
                   <div key={idx} className="bg-white rounded-2xl p-5 border border-slate-200/90">
