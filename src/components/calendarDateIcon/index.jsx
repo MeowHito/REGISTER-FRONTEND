@@ -17,7 +17,7 @@ const CalendarDateIcon = ({ size = 32, lang = "th", className = "" }) => {
       aria-hidden="true"
       focusable="false"
     >
-      <rect x="1" y="1" width="30" height="30" rx="7" fill="#ffffff" stroke="#d1d5db" strokeWidth="1" />
+      <rect x="1" y="1" width="30" height="30" rx="7" fill="#f3f4f6" />
       <path d="M1 8 a7 7 0 0 1 7 -7 h16 a7 7 0 0 1 7 7 v3 H1 z" fill="#ef4444" />
       <text
         x="16"

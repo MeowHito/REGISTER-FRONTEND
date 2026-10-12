@@ -149,9 +149,7 @@ export default function Menu() {
             <Link
               to="/eventCalendar"
               aria-label={t("front.reg.calendar")}
-              className={`-ml-4 w-9 h-9 flex items-center justify-center rounded-xl transition-all active:scale-95 ${
-                isActive("/eventCalendar") ? "bg-brand-fixed ring-2 ring-brand/40" : "hover:bg-gray-100"
-              }`}
+              className="-ml-4 w-9 h-9 flex items-center justify-center transition-all active:scale-95"
             >
               <CalendarDateIcon size={32} lang={currentLanguage} className="drop-shadow-sm" />
             </Link>

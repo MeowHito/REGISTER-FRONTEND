@@ -14,6 +14,7 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import isBetween from "dayjs/plugin/isBetween";
 import weekday from "dayjs/plugin/weekday";
+import isoWeek from "dayjs/plugin/isoWeek";
 import localeData from "dayjs/plugin/localeData";
 import buddhistEra from "dayjs/plugin/buddhistEra";
 import "dayjs/locale/th";
@@ -32,6 +33,7 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(isBetween);
 dayjs.extend(weekday);
+dayjs.extend(isoWeek);
 dayjs.extend(localeData);
 dayjs.extend(buddhistEra);
 

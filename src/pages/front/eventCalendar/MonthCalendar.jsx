@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { SYS_ISO_DATE_FORMAT } from "constants/helper";
 
 /**
- * Month grid for /eventCalendar. Picking a day selects its whole week (Sun–Sat); `eventDateSet`
+ * Month grid for /eventCalendar. Weeks run Monday–Sunday (dayjs isoWeek). Picking a day selects its whole week; `eventDateSet`
  * holds the YYYY-MM-DD days that get a dot. The card header is the feed title ("รายการวิ่ง 11 – 17 …"
  * + count) and the footer carries the month chip, back-to-today and the week/month toggle.
  */
@@ -24,20 +24,20 @@ const MonthCalendar = ({
   const lang = i18n.language;
 
   const weekDays = useMemo(
-    () => Array.from({ length: 7 }, (_, i) => dayjs().day(i).locale(lang).format("dd")),
+    () => Array.from({ length: 7 }, (_, i) => dayjs().isoWeekday(i + 1).locale(lang).format("dd")),
     [lang]
   );
 
   const days = useMemo(() => {
-    const first = viewMonth.startOf("month").startOf("week");
-    const last = viewMonth.endOf("month").endOf("week");
+    const first = viewMonth.startOf("month").startOf("isoWeek");
+    const last = viewMonth.endOf("month").endOf("isoWeek");
     const list = [];
     for (let d = first; !d.isAfter(last, "day"); d = d.add(1, "day")) list.push(d);
     return list;
   }, [viewMonth]);
 
-  const weekStart = selectedDate.startOf("week");
-  const weekEnd = selectedDate.endOf("week");
+  const weekStart = selectedDate.startOf("isoWeek");
+  const weekEnd = selectedDate.endOf("isoWeek");
   const today = dayjs();
 
   return (
@@ -73,7 +73,7 @@ const MonthCalendar = ({
         {weekDays.map((d, i) => (
           <span
             key={d}
-            className={i === 0 ? "text-rose-500 font-semibold" : i === 6 ? "text-blue-600 font-semibold" : ""}
+            className={i === 6 ? "text-rose-500 font-semibold" : i === 5 ? "text-blue-600 font-semibold" : ""}
           >
             {d}
           </span>

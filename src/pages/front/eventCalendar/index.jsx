@@ -62,7 +62,7 @@ const EventCalendar = () => {
 
   const range = monthMode
     ? [viewMonth.startOf("month"), viewMonth.endOf("month")]
-    : [selectedDate.startOf("week"), selectedDate.endOf("week")];
+    : [selectedDate.startOf("isoWeek"), selectedDate.endOf("isoWeek")];
   const dateFilter = {
     searchField: "eventDate",
     searchText: `${range[0].toISOString()},${range[1].toISOString()}`,
