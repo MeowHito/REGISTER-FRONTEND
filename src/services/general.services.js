@@ -409,6 +409,12 @@ const generalService = {
       refetchOnReconnect: false,
     });
   },
+
+  /** Counts one open of a calendar entry's link; fire-and-forget, never blocks navigation. */
+  trackEventCalendarView(eventId) {
+    if (!eventId) return;
+    createRequest.post(`${PUBLIC_API}/eventCalendar/${eventId}/view`).catch(() => {});
+  },
 };
 
 export default generalService;

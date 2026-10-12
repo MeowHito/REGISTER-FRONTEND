@@ -2,10 +2,11 @@ import { logo_black } from "assets";
 import { useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import LanguageSelector from "components/languageSelector";
+import CalendarDateIcon from "components/calendarDateIcon";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "react-responsive";
 import { Avatar, Dropdown } from "antd";
-import { CalendarOutlined, DashboardOutlined, DownOutlined, HistoryOutlined, LoginOutlined, LogoutOutlined, MenuOutlined, SolutionOutlined, TeamOutlined, UserOutlined } from "@ant-design/icons";
+import { DashboardOutlined, DownOutlined, HistoryOutlined, LoginOutlined, LogoutOutlined, MenuOutlined, SolutionOutlined, TeamOutlined, UserOutlined } from "@ant-design/icons";
 import useMe, { useLogout } from "hooks/useMe";
 import { isFullWidthPath } from "utils";
 import { usePublicImageUrl } from "utils/fileUtils";
@@ -148,11 +149,11 @@ export default function Menu() {
             <Link
               to="/eventCalendar"
               aria-label={t("front.reg.calendar")}
-              className={`-ml-4 w-9 h-9 flex items-center justify-center rounded-full transition-all active:scale-95 ${
-                isActive("/eventCalendar") ? "bg-brand-fixed text-brand" : "text-inkx-variant hover:bg-gray-100"
+              className={`-ml-4 w-9 h-9 flex items-center justify-center rounded-xl transition-all active:scale-95 ${
+                isActive("/eventCalendar") ? "bg-brand-fixed ring-2 ring-brand/40" : "hover:bg-gray-100"
               }`}
             >
-              <CalendarOutlined style={{ fontSize: 19 }} />
+              <CalendarDateIcon size={32} lang={currentLanguage} className="drop-shadow-sm" />
             </Link>
           )}
 

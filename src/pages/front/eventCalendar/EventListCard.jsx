@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button, Tooltip } from "antd";
-import { EnvironmentFilled, RightOutlined, StarFilled, StarOutlined } from "@ant-design/icons";
+import { EnvironmentFilled, EyeOutlined, RightOutlined, StarFilled, StarOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import { TypeIcon } from "components/eventCard/typeIcons";
@@ -16,9 +16,10 @@ const STATUS_STYLE = {
 /**
  * One race row on /eventCalendar. `event` is either an ACTION event (internal: link to
  * /eventDetail) or an approved calendar entry (external: opens its own link in a new tab).
- * Admins get a star to mark a calendar entry as Major.
+ * Admins get a star to mark a calendar entry as Major and see how often its link was opened;
+ * `onView` is fired on every open so that tally keeps counting.
  */
-const EventListCard = ({ event, internal, isAdmin, onToggleMajor, majorLoading }) => {
+const EventListCard = ({ event, internal, isAdmin, onToggleMajor, majorLoading, onView }) => {
   const { t, i18n } = useTranslation();
   if (!event) return null;
 
@@ -92,9 +93,22 @@ const EventListCard = ({ event, internal, isAdmin, onToggleMajor, majorLoading }
           {body}
         </Link>
       ) : (
-        <a href={event.link || event.sourceUrl} target="_blank" rel="noopener noreferrer" className={cardCls}>
+        <a
+          href={event.link || event.sourceUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cardCls}
+          onClick={() => onView?.(event)}
+          onAuxClick={(e) => e.button === 1 && onView?.(event)}
+        >
           {body}
         </a>
+      )}
+      {isAdmin && !internal && (
+        <span className="absolute top-2 right-11 inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold text-slate-600 bg-slate-100 border border-slate-200 rounded-md pointer-events-none">
+          <EyeOutlined />
+          {t("front.event.views", { count: event.viewCount ?? 0 })}
+        </span>
       )}
       {isAdmin && !internal && (
         <Tooltip title={event.isMajor ? t("back.eventCalendarList.unsetMajor") : t("back.eventCalendarList.setMajor")}>

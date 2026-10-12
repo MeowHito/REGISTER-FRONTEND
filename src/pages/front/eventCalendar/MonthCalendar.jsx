@@ -32,11 +32,18 @@ const MonthCalendar = ({ viewMonth, onViewMonthChange, selectedDate, onSelectDat
   return (
     <div className="bg-white rounded-2xl p-4 md:p-5 border border-slate-200/90 shadow-sm">
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0 flex-wrap">
           <span className="font-bold text-slate-900 text-base truncate">{t("front.event.calendarTitle")}</span>
-          <span className="px-2 py-0.5 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-100 rounded-full whitespace-nowrap">
+          <span className="px-3 py-1 text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-100 rounded-lg whitespace-nowrap">
             {viewMonth.locale(lang).format("MMM YYYY")}
           </span>
+          <button
+            type="button"
+            onClick={() => onSelectDate(dayjs())}
+            className="text-xs font-medium text-blue-600 hover:underline bg-transparent border-0 cursor-pointer p-0 whitespace-nowrap"
+          >
+            {t("front.event.backToToday")}
+          </button>
         </div>
         <div className="flex items-center gap-1.5">
           <button
@@ -104,19 +111,6 @@ const MonthCalendar = ({ viewMonth, onViewMonthChange, selectedDate, onSelectDat
         })}
       </div>
 
-      <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between text-xs">
-        <span className="text-slate-500 flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-blue-600 inline-block" />
-          {t("front.event.hasEvent")}
-        </span>
-        <button
-          type="button"
-          onClick={() => onSelectDate(dayjs())}
-          className="font-medium text-blue-600 hover:underline bg-transparent border-0 cursor-pointer p-0"
-        >
-          {t("front.event.backToToday")}
-        </button>
-      </div>
     </div>
   );
 };

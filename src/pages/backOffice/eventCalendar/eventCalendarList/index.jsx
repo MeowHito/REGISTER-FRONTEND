@@ -376,6 +376,20 @@ const EventCalendarList = () => {
       key: "eventDate",
       render: (date) => (date ? dayjs(date).format(SYS_DATE_FORMAT) : null),
     },
+    // Opens of the entry's link from /eventCalendar (card + Major banner); public visitors never see it.
+    isAdmin && {
+      title: t("back.eventCalendarList.views"),
+      dataIndex: "viewCount",
+      key: "viewCount",
+      align: "center",
+      sorter: true,
+      render: (count) => (
+        <span className="inline-flex items-center gap-1 text-[#1d1d1f]">
+          <EyeOutlined className="text-[#6e6e73]" />
+          {(count ?? 0).toLocaleString()}
+        </span>
+      ),
+    },
     {
       title: t("back.eventCalendarList.source"),
       dataIndex: "source",

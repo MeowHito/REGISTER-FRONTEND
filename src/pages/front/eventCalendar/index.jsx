@@ -210,6 +210,16 @@ const EventCalendar = () => {
     setMajor({ ids: [event.eventId], isMajor: !event.isMajor });
   };
 
+  // ----- view counter (admin-only stat): fired whenever a calendar entry's link is opened
+  const [viewBumps, setViewBumps] = useState({});
+  const recordView = (event) => {
+    if (!event?.eventId) return;
+    generalService.trackEventCalendarView(event.eventId);
+    setViewBumps((prev) => ({ ...prev, [event.eventId]: (prev[event.eventId] ?? 0) + 1 }));
+  };
+  const withViews = (event) =>
+    viewBumps[event.eventId] ? { ...event, viewCount: (event.viewCount ?? 0) + viewBumps[event.eventId] } : event;
+
   // ----- filter handlers
   const resetPage = () => setPage(1);
   const selectDate = (d) => {
@@ -237,17 +247,16 @@ const EventCalendar = () => {
     ? t("front.event.monthTitle", { month: viewMonth.locale(lang).format("MMMM YYYY") })
     : t("front.event.weekTitle", { range: weekLabel() });
 
-  const selectCls = "w-full [&_.ant-select-selector]:!rounded-xl [&_.ant-select-selector]:!bg-slate-50";
+  const selectCls = "w-full [&_.ant-select-selector]:!rounded-lg [&_.ant-select-selector]:!bg-slate-50";
 
   return (
     <FrontLayout title={"event"} fullWidth>
       <div className="max-w-7xl mx-auto pt-4 md:pt-8">
-        {/* Search & filters */}
-        <section className="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-slate-200/90 mb-5 md:mb-6">
-          <div className="grid grid-cols-2 md:grid-cols-12 gap-3">
-            <div className="col-span-2 md:col-span-4">
+        {/* Search & filters (kept compact: one row on desktop, two on phones) */}
+        <section className="bg-white rounded-2xl p-3 md:p-4 shadow-sm border border-slate-200/90 mb-3 md:mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-12 gap-2">
+            <div className="col-span-2 md:col-span-5">
               <Input
-                size="large"
                 allowClear
                 prefix={<SearchOutlined className="text-slate-400 mr-1" />}
                 placeholder={t("front.event.searchPlaceholder")}
@@ -260,12 +269,11 @@ const EventCalendar = () => {
                   }
                 }}
                 onPressEnter={handleSearch}
-                className="!rounded-xl !bg-slate-50"
+                className="!rounded-lg !bg-slate-50"
               />
             </div>
-            <div className="col-span-1 md:col-span-3">
+            <div className="col-span-1 md:col-span-2">
               <Select
-                size="large"
                 allowClear
                 showSearch
                 prefix={<EnvironmentOutlined className="text-slate-400" />}
@@ -282,7 +290,6 @@ const EventCalendar = () => {
             </div>
             <div className="col-span-1 md:col-span-2">
               <Select
-                size="large"
                 allowClear
                 prefix={<ThunderboltOutlined className="text-slate-400" />}
                 placeholder={t("front.event.allTypes")}
@@ -299,13 +306,12 @@ const EventCalendar = () => {
               <DatePicker
                 key={lang}
                 picker="month"
-                size="large"
                 prefix={<CalendarOutlined className="text-slate-400" />}
                 suffixIcon={null}
                 placeholder={t("front.event.selectMonth")}
                 locale={isThai ? thTH : enUS}
                 format={(v) => v.locale(lang).format("MMMM YYYY")}
-                className="w-full !rounded-xl !bg-slate-50"
+                className="w-full !rounded-lg !bg-slate-50"
                 value={monthMode ? viewMonth : null}
                 onChange={(date) => {
                   if (date) {
@@ -319,41 +325,29 @@ const EventCalendar = () => {
               />
             </div>
             <div className="col-span-1 md:col-span-1">
-              <Button type="primary" size="large" block className="!rounded-xl !shadow-sm" onClick={handleSearch}>
+              <Button type="primary" block className="!rounded-lg !shadow-sm" onClick={handleSearch}>
                 {t("general.search")}
               </Button>
             </div>
           </div>
 
-          <div className="mt-4 pt-3.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2 text-slate-600 min-w-0">
-              <span className="relative flex h-2.5 w-2.5 shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
-              </span>
-              <span className="font-medium text-slate-700">
-                {isAdmin && syncRunning ? syncRunningLabel : t("front.event.autoUpdate")}
-              </span>
-              <span className="font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200/60 whitespace-nowrap">
-                {t("front.event.itemCount", { count: totalCount })}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 ml-auto">
-              {isAdmin && importStatus?.enabled !== false && (
-                <Tooltip title={syncTooltip}>
-                  <Button
-                    size="small"
-                    className="!shadow-none !rounded-lg"
-                    icon={<CloudDownloadOutlined />}
-                    onClick={() => setSyncModalOpen(true)}
-                    loading={isStartingSync || syncRunning}
-                    disabled={syncRunning}
-                  >
-                    {t("back.eventCalendarList.syncNow")}
-                  </Button>
-                </Tooltip>
-              )}
-              {isAdmin && syncRunning && (
+          {/* Admin only: pull from the external calendar site (same job as the back-office button). */}
+          {isAdmin && importStatus?.enabled !== false && (
+            <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-end gap-2">
+              {syncRunning && <span className="text-xs text-blue-700 font-medium mr-auto">{syncRunningLabel}</span>}
+              <Tooltip title={syncTooltip}>
+                <Button
+                  size="small"
+                  className="!shadow-none !rounded-lg"
+                  icon={<CloudDownloadOutlined />}
+                  onClick={() => setSyncModalOpen(true)}
+                  loading={isStartingSync || syncRunning}
+                  disabled={syncRunning}
+                >
+                  {t("back.eventCalendarList.syncNow")}
+                </Button>
+              </Tooltip>
+              {syncRunning && (
                 <Button
                   size="small"
                   danger
@@ -365,19 +359,27 @@ const EventCalendar = () => {
                   {importStatus?.stopping ? t("back.eventCalendarList.syncStopping") : t("back.eventCalendarList.syncStop")}
                 </Button>
               )}
-              <Button
-                size="small"
-                type="primary"
-                className="!shadow-sm !rounded-lg font-semibold"
-                icon={<PlusOutlined />}
-                onClick={handleOpenForm}
-                loading={isSubmitting}
-              >
-                {t("back.eventCalendarList.submission")}
-              </Button>
             </div>
-          </div>
+          )}
         </section>
+
+        {/* Submit-your-race CTA: one slim strip right under the filters */}
+        <div className="rounded-xl bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-800 text-white px-4 py-2.5 sm:px-5 shadow-sm mb-5 md:mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+          <div className="min-w-0 leading-snug flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="text-[11px] text-blue-200">{t("front.event.ctaEyebrow")}</span>
+            <span className="text-sm font-bold text-white">{t("front.event.ctaTitle")}</span>
+            <span className="hidden md:inline text-xs text-blue-100">{t("front.event.ctaText")}</span>
+          </div>
+          <Button
+            size="small"
+            icon={<PlusOutlined />}
+            onClick={handleOpenForm}
+            loading={isSubmitting}
+            className="!rounded-lg !font-semibold !text-blue-700 !border-0 !shadow-sm shrink-0 self-start sm:self-auto"
+          >
+            {t("front.event.ctaButton")}
+          </Button>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start">
           {/* Calendar sidebar */}
@@ -422,8 +424,9 @@ const EventCalendar = () => {
           {/* Feed */}
           <section className="lg:col-span-8 space-y-4 md:space-y-5 min-w-0">
             <MajorBanner
-              events={majorEvents}
+              events={majorEvents.map(withViews)}
               isAdmin={isAdmin}
+              onView={recordView}
               onUnsetMajor={toggleMajor}
               unsetLoading={!!majorLoadingId && majorEvents.some((e) => e.eventId === majorLoadingId)}
             />
@@ -485,8 +488,9 @@ const EventCalendar = () => {
                   {externalEvents.map((event) => (
                     <EventListCard
                       key={`calendar-${event.eventId}`}
-                      event={event}
+                      event={withViews(event)}
                       isAdmin={isAdmin}
+                      onView={recordView}
                       onToggleMajor={toggleMajor}
                       majorLoading={majorLoadingId === event.eventId}
                     />
@@ -510,24 +514,6 @@ const EventCalendar = () => {
               </div>
             )}
 
-            {/* Submit-your-race CTA */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-800 text-white p-5 sm:p-7 shadow-md">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-xs text-blue-100 m-0 mb-1">{t("front.event.ctaEyebrow")}</p>
-                  <h3 className="text-lg sm:text-xl font-bold m-0 text-white">{t("front.event.ctaTitle")}</h3>
-                  <p className="text-sm text-blue-100 m-0 mt-1">{t("front.event.ctaText")}</p>
-                </div>
-                <Button
-                  size="large"
-                  icon={<PlusOutlined />}
-                  onClick={handleOpenForm}
-                  className="!rounded-xl !font-bold !text-blue-700 !border-0 !shadow-md shrink-0 self-start md:self-auto"
-                >
-                  {t("front.event.ctaButton")}
-                </Button>
-              </div>
-            </div>
           </section>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "antd";
-import { ArrowRightOutlined, CalendarFilled, EnvironmentFilled, LeftOutlined, RightOutlined } from "@ant-design/icons";
+import { ArrowRightOutlined, CalendarFilled, EnvironmentFilled, EyeOutlined, LeftOutlined, RightOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import { SYS_DISPLAY_DATE_FORMAT } from "constants/helper";
@@ -9,7 +9,7 @@ import { SYS_DISPLAY_DATE_FORMAT } from "constants/helper";
  * Dark/gold banner for admin-picked Major races, nearest first. Several Majors can be flipped
  * through with the arrows / dots; nothing renders when there is none.
  */
-const MajorBanner = ({ events = [], isAdmin, onUnsetMajor, unsetLoading }) => {
+const MajorBanner = ({ events = [], isAdmin, onUnsetMajor, unsetLoading, onView }) => {
   const { t, i18n } = useTranslation();
   const [index, setIndex] = useState(0);
   const count = events.length;
@@ -61,6 +61,8 @@ const MajorBanner = ({ events = [], isAdmin, onUnsetMajor, unsetLoading }) => {
               href={event.link || event.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => onView?.(event)}
+              onAuxClick={(e) => e.button === 1 && onView?.(event)}
               className="inline-flex items-center justify-center gap-2 px-5 py-2.5 !bg-amber-400 hover:!bg-amber-300 !text-slate-950 font-bold text-sm rounded-xl transition shadow-md hover:shadow-lg"
             >
               {t("front.event.viewDetail")}
@@ -68,15 +70,21 @@ const MajorBanner = ({ events = [], isAdmin, onUnsetMajor, unsetLoading }) => {
             </a>
           )}
           {isAdmin && (
-            <Button
-              size="small"
-              ghost
-              loading={unsetLoading}
-              onClick={() => onUnsetMajor?.(event)}
-              className="!border-white/30 !text-slate-300 hover:!text-white"
-            >
-              {t("back.eventCalendarList.unsetMajor")}
-            </Button>
+            <div className="flex items-center justify-end gap-2">
+              <span className="inline-flex items-center gap-1 text-xs text-slate-300">
+                <EyeOutlined />
+                {t("front.event.views", { count: event.viewCount ?? 0 })}
+              </span>
+              <Button
+                size="small"
+                ghost
+                loading={unsetLoading}
+                onClick={() => onUnsetMajor?.(event)}
+                className="!border-white/30 !text-slate-300 hover:!text-white"
+              >
+                {t("back.eventCalendarList.unsetMajor")}
+              </Button>
+            </div>
           )}
         </div>
       </div>
