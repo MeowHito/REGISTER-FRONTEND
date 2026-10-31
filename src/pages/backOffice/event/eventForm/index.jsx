@@ -31,6 +31,7 @@ import EventAddOns from '../eventAddOns';
 import QuestionSections from '../questionSections';
 import FieldConfig from '../fieldConfig';
 import useMe from 'hooks/useMe';
+import { PdpaConsentText } from 'components/pdpaConsent';
 
 // Each section's own colour: its tab in the nav and a faint tint on its card.
 // `text` is a darker shade of `color` so the tab label stays readable on the tint.
@@ -57,6 +58,7 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
     const link = CommonForm.useWatch("link", form);
     const eventName = CommonForm.useWatch("name", form);
     const testMode = CommonForm.useWatch("testMode", form);
+    const pdpaConsentEnabled = CommonForm.useWatch("pdpaConsentEnabled", form);
     const primaryColor = CommonForm.useWatch("eventPrimaryColor", form);
     const secondaryColor = CommonForm.useWatch("eventSecondaryColor", form);
     const fontColor = CommonForm.useWatch("eventFontColor", form);
@@ -304,6 +306,7 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                     ...eventData,
                     showChecklist: eventData?.showChecklist ?? false,
                     testMode: eventData?.testMode ?? false,
+                    pdpaConsentEnabled: eventData?.pdpaConsentEnabled ?? false,
                     eventDate: dayjs(eventData.eventDate),
                     description: await convertStorageToHtml(eventData.description, prefix, getPublicUrl),
                     startRegistrationDate: eventData.startRegistrationDate ? dayjs(eventData.startRegistrationDate) : null,
@@ -367,6 +370,7 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                     eventTypeTitle: t("front.eventDetail.eventType"),
                     showChecklist: false,
                     testMode: false,
+                    pdpaConsentEnabled: false,
                     eventConditions: [
                         { id: uuidv4(), description: "ข้าพเจ้าได้ตรวจสอบข้อมูลความถูกต้องของการสมัครเรียบร้อย" },
                         { id: uuidv4(), description: "ข้าพเจ้ายอมรับเงื่อนไขการสมัครของผู้จัดงาน" },
@@ -764,6 +768,23 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                             <div className="border-t border-[#e5e5ea] my-6" />
                             <Title>{t("back.event.form.conditions")}</Title>
                             <EventConditions form={form} />
+                            <div className="border-t border-[#e5e5ea] my-6" />
+                            <div className="flex items-center justify-between gap-4">
+                                <div>
+                                    <p className="m-0 text-sm font-semibold text-[#1d1d1f]">{t("back.event.form.pdpaConsent")}</p>
+                                    <p className="m-0 mt-0.5 text-xs text-[#6e6e73]">{t("back.event.form.pdpaConsentHint")}</p>
+                                </div>
+                                <CommonForm.Item name="pdpaConsentEnabled" valuePropName="checked" className="!mb-0">
+                                    <Switch disabled={!isEditable} />
+                                </CommonForm.Item>
+                            </div>
+                            {pdpaConsentEnabled && (
+                                <div className="mt-4 rounded-xl border border-[#e5e5ea] bg-[#fbfbfd] px-4 py-3">
+                                    <p className="m-0 mb-2 text-xs font-semibold text-[#6e6e73]">{t("back.event.form.pdpaConsentPreview")}</p>
+                                    <p className="m-0 mb-2 text-sm font-semibold text-[#1d1d1f]">{t("pdpa.title")}</p>
+                                    <PdpaConsentText eventName={eventName} className="!text-[13px]" />
+                                </div>
+                            )}
                         </SectionCard>
 
                         <SectionCard {...tone("ef-shirts")} title={t("back.event.form.section.shirts")} description={t("back.event.form.section.shirtsDesc")}>

@@ -11,6 +11,7 @@ import dayjs from "dayjs";
 
 import CommonForm from "components/commonForm";
 import FrontLayout from "components/frontLayout";
+import PdpaConsentModal from "components/pdpaConsent";
 import ProvinceSelector from "components/provinceSelector";
 import useMe from "hooks/useMe";
 import useCountryStateHook from "hooks/useCountryStateHook";
@@ -124,6 +125,8 @@ const StreamlinedRegistration = () => {
   const [applicantList, setApplicantList] = useState([]);
   // Coming back from the review page: restore everything the runner typed.
   const resumeDraft = useRef(location.state?.resume && !order?.orderNo ? order?.draft : null);
+  // PDPA disclosure answer (null = not asked yet); only events with the switch on ask for it.
+  const [pdpaConsent, setPdpaConsent] = useState(resumeDraft.current?.pdpaConsent ?? null);
 
   /* ---------- data ---------- */
   const { data: me, status: meStatus, isPending: isLoadingMe } = useMe({ retry: 0 });
@@ -496,6 +499,7 @@ const StreamlinedRegistration = () => {
       eventConditions,
       eventId: event.id,
       eventData: event,
+      pdpaConsent: event?.pdpaConsentEnabled ? pdpaConsent === true : null,
       // What the form looked like, so "Back" on the review page can restore it.
       draft: {
         applicants: raw,
@@ -504,6 +508,7 @@ const StreamlinedRegistration = () => {
         addressMode,
         shipping: form.getFieldValue("shipping") || {},
         addOnSelections,
+        pdpaConsent,
       },
     }));
     navigate("/registrationDetail");
@@ -561,6 +566,25 @@ const StreamlinedRegistration = () => {
               {event?.location ? ` • ${event.location}` : ""}
             </p>
           </div>
+
+          {event?.pdpaConsentEnabled && pdpaConsent !== null && (
+            <div className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-[#3f4850]">
+              <span>{t("pdpa.statusLabel")}</span>
+              <span className={`font-bold ${pdpaConsent ? "text-[#1a9c3e]" : "text-[#6e6e73]"}`}>
+                {pdpaConsent ? t("pdpa.accepted") : t("pdpa.declined")}
+              </span>
+              <button type="button" onClick={() => setPdpaConsent(null)}
+                className="text-[#006193] underline bg-transparent border-0 p-0 cursor-pointer">
+                {t("pdpa.change")}
+              </button>
+            </div>
+          )}
+          <PdpaConsentModal
+            open={!!event?.pdpaConsentEnabled && pdpaConsent === null}
+            eventName={event?.name}
+            onAccept={() => setPdpaConsent(true)}
+            onDecline={() => setPdpaConsent(false)}
+          />
 
           {/* stepper */}
           <div className="flex items-center justify-between mb-6 px-1">

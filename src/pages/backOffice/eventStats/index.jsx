@@ -8,6 +8,7 @@ import useActiveEvent from 'hooks/useActiveEvent';
 import useCountryStateHook from 'hooks/useCountryStateHook';
 import { BarList, DistanceChips, DistanceList, Empty, Kpi, Legend, MiniSegmented, Panel, SplitBar } from './parts';
 import { SERIES, STATUS_COLOR, barChart, baseChart, distanceColor, fmtBaht, fmtNumber, pct } from './chartTheme';
+import QuestionStats from './questionStats';
 
 // Categorical order for shirt types past the first two (same validated order as SERIES).
 const SHIRT_COLORS = [...SERIES, "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"];
@@ -60,6 +61,8 @@ export default function EventStats() {
   const fetching = fetchingOverview || fetchingRegistration;
 
   const [timelineMode, setTimelineMode] = useState("cumulative");
+  // "overview" = the one-screen dashboard, "questions" = charts of the registration questions.
+  const [view, setView] = useState("overview");
 
   // Always the full list of the event's distances (the API keeps these unfiltered), each with its colour.
   const distances = useMemo(() => (
@@ -213,9 +216,7 @@ export default function EventStats() {
 
   const chartBox = "h-[200px] xl:h-full";
 
-  return (
-    <div className={`flex flex-col xl:h-[calc(100vh-4rem)] xl:min-h-[680px] transition-opacity ${fetching ? "opacity-70" : ""}`}>
-      {!activeEvent && (
+  const eventPicker = !activeEvent && (
         <div className="bo-card flex flex-wrap items-center gap-3 px-4 py-2">
           <span className="text-[13px] text-[#6e6e73]">{t("back.dashboard.event")}</span>
           <Select
@@ -228,7 +229,37 @@ export default function EventStats() {
           />
           <span className="text-[12px] text-[#a1a1a6]">{t("back.stats.starHint")}</span>
         </div>
-      )}
+  );
+  const viewSwitch = (
+    <div className="bo-card flex flex-wrap items-center justify-between gap-3 px-4 py-2">
+      <span className="text-[13px] font-semibold text-[#1d1d1f]">
+        {view === "questions" ? t("back.stats.questions.title") : t("back.stats.overview")}
+      </span>
+      <MiniSegmented
+        value={view}
+        onChange={setView}
+        options={[
+          { value: "overview", label: t("back.stats.overview") },
+          { value: "questions", label: t("back.stats.questions.title") },
+        ]}
+      />
+    </div>
+  );
+
+  if (view === "questions") {
+    return (
+      <div className="flex flex-col">
+        {eventPicker}
+        {viewSwitch}
+        <QuestionStats eventId={eventId} distances={distances} distance={distance} onDistance={setDistance} />
+      </div>
+    );
+  }
+
+  return (
+    <div className={`flex flex-col xl:h-[calc(100vh-4rem)] xl:min-h-[680px] transition-opacity ${fetching ? "opacity-70" : ""}`}>
+      {eventPicker}
+      {viewSwitch}
 
       {/* Headline numbers */}
       <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7">

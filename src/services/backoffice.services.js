@@ -529,6 +529,23 @@ const backOfficeServices = {
     });
   },
 
+  // Answers to the event's registration questions, counted for the stats charts.
+  useQueryGetQuestionStats({ eventId, eventTypeId, enabled = true }) {
+    return useQuery({
+      queryKey: ["getQuestionStats", eventId, eventTypeId ?? null],
+      queryFn: async () => {
+        const res = await createRequest.get(`api/dashboard/questions/${eventId}`, {
+          params: eventTypeId ? { eventTypeId } : undefined,
+        });
+        return res.data.data;
+      },
+      enabled: !!eventId && enabled,
+      placeholderData: (previous) => previous,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    });
+  },
+
   useQueryGetNotiEventCalendar() {
     return useQuery({
       queryKey: ["getNotiEventCalendar"],

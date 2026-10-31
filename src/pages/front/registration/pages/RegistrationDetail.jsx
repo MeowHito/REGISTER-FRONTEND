@@ -195,6 +195,7 @@ const RegistrationDetail = () => {
 				addOnTotal: totalAddOnPrice,
 				totalPrice: finalTotalPrice,
 				eventId: order.eventId,
+				pdpaConsent: order.pdpaConsent ?? null,
 				qty: orderDetails.length,
 				discountShirt: totalDiscount,
 				orderDetails,

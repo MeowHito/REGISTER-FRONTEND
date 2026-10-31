@@ -1,4 +1,16 @@
 {
+  "pdpa": {
+    "title": "Consent to disclose personal data under the Personal Data Protection Act B.E. 2562 (2019)",
+    "body": "I, a participant registering for {{event}} (the “Customer” or “User”), consent to the event organizer (the “Organizer”) collecting, using or disclosing my personal data held by the Organizer — my name, contact details and the questionnaire answers I give when registering — to the event’s sponsors and partners, for communication, offers of products, services and benefits, and marketing analysis.\n\nI understand that this consent is voluntary. If I do not consent, I can still register for and take part in the event as normal.\n\nI may withdraw this consent at any time by notifying the Organizer. Withdrawal does not affect any collection, use or disclosure carried out before it.",
+    "thisEvent": "this event",
+    "accept": "Accept",
+    "decline": "Decline",
+    "optionalNote": "Consent is optional and does not affect your registration.",
+    "statusLabel": "Personal data disclosure (PDPA):",
+    "accepted": "Consented",
+    "declined": "Declined",
+    "change": "Change"
+  },
   "front": {
     "banner": {
       "first": {
@@ -465,6 +477,9 @@
         "showChecklist": "Show checklist button",
         "testMode": "Test mode (no payment)",
         "testModeHint": "Registrations complete without payment — for testing only. Turn off before opening real registration.",
+        "pdpaConsent": "Ask for PDPA data-disclosure consent",
+        "pdpaConsentHint": "Shows a consent prompt before registration. Runners who decline can still register but are left out of the questionnaire files shared with sponsors.",
+        "pdpaConsentPreview": "What runners will see",
         "addOns": "Add-ons",
         "addOnsHelp": "Optional packages a registrant can buy after filling in their details — accommodation, a photo package, a shuttle seat. Leave the quota blank for unlimited.",
         "addAddOn": "Add an add-on",
@@ -2609,6 +2624,33 @@
       "manageEvents": "Manage events"
     },
     "stats": {
+      "overview": "Overview",
+      "questions": {
+        "title": "Survey results",
+        "filter": "Distance",
+        "participants": "Paid participants",
+        "paidOnly": "Only participants who have paid",
+        "count": "Questions",
+        "pdpa": "Data-disclosure consent (PDPA)",
+        "pdpaNotAsked": "Not asked",
+        "pdpaOff": "Not turned on for this event",
+        "empty": "This event has no questions yet. Add them in Edit event > Questions.",
+        "allDistancesAsked": "All distances",
+        "answered": "{{answered}}/{{asked}} answered ({{percent}}%)",
+        "noAnswers": "No answers yet",
+        "other": "Other",
+        "otherAnswers": "Typed answers",
+        "people": "People",
+        "average": "Average score",
+        "showAll": "Show all {{count}} answers",
+        "type": {
+          "SINGLE": "Single choice",
+          "MULTIPLE": "Multiple choice",
+          "TEXT": "Text",
+          "RATING": "Rating",
+          "IMAGE": "Image"
+        }
+      },
       "noData": "No data yet",
       "registered": "Registered",
       "paid": "Paid",
