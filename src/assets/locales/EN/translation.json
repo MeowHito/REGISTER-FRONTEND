@@ -1548,10 +1548,10 @@
       "syncDone": "Import finished",
       "syncLast": "Last import",
       "syncNever": "Never imported",
-      "syncSummary": "new {{created}} · updated {{updated}} · failed {{failed}}",
+      "syncSummary": "new {{created}} · updated {{updated}} · removed {{removed}} · failed {{failed}}",
       "syncPending": "{{count}} awaiting approval",
       "syncError": "The last run reported an error",
-      "syncDaily": "Runs automatically every night at 03:00 from {{source}}. Imported events wait for admin approval before they appear on the calendar."
+      "syncDaily": "Runs automatically every night at 03:00 from {{source}}. Imported events appear on the calendar right away, and events the source drops are removed."
     },
     "report": {
       "revenue": "Revenue Summary",

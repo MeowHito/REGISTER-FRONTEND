@@ -125,7 +125,7 @@ const EventCalendarList = () => {
     });
   }, [other.fetchStatus]);
 
-  // External import (joggingandrunning.com): poll while a run is in progress, then reload the list.
+  // External import (patrunning.com): poll while a run is in progress, then reload the list.
   const { data: importStatus, refetch: refetchImportStatus } =
     backOfficeServices.useQueryEventCalendarImportStatus({
       enabled: isAdmin,
@@ -522,6 +522,7 @@ const EventCalendarList = () => {
               {t("back.eventCalendarList.syncSummary", {
                 created: lastRun.created ?? 0,
                 updated: lastRun.updated ?? 0,
+                removed: lastRun.removed ?? 0,
                 failed: lastRun.failed ?? 0,
               })}
             </span>

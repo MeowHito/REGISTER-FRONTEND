@@ -183,7 +183,7 @@ const EventCalendar = () => {
     : lastRun?.finishedAt
       ? `${t("back.eventCalendarList.syncLast")} ${dayjs(lastRun.finishedAt).format("DD/MM/YYYY HH:mm")} · ${t(
           "back.eventCalendarList.syncSummary",
-          { created: lastRun.created ?? 0, updated: lastRun.updated ?? 0, failed: lastRun.failed ?? 0 }
+          { created: lastRun.created ?? 0, updated: lastRun.updated ?? 0, removed: lastRun.removed ?? 0, failed: lastRun.failed ?? 0 }
         )}${importStatus?.pendingCount > 0 ? ` · ${t("back.eventCalendarList.syncPending", { count: importStatus.pendingCount })}` : ""}`
       : t("back.eventCalendarList.syncNever");
 
