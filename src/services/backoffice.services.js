@@ -1705,6 +1705,18 @@ const backOfficeServices = {
       refetchOnReconnect: false,
     });
   },
+  // Which gateway serves the payment page ("MPAY" or "LEGACY") and the methods/banks it offers.
+  useQueryPaymentOptions() {
+    return useQuery({
+      queryKey: ["paymentOptions"],
+      queryFn: async () => {
+        const res = await createRequest.get(`public-api/payment/options`);
+        return res.data?.data;
+      },
+      staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+    });
+  },
   useUpdateOrder(onSuccess, onError) {
     return useMutation({
       mutationFn: async (data) => {

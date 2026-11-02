@@ -28,7 +28,7 @@ const ageLower = (ag) => {
 };
 const lowerKeys = (obj) => Object.fromEntries(Object.entries(obj || {}).map(([k, v]) => [String(k).toLowerCase(), v]));
 
-const METHOD_LABELS = { creditcard: "Credit Card", qrcode: "QR Code", ewallet: "eWallet", alipay: "Alipay", wechatpay: "WeChat Pay" };
+const METHOD_LABELS = { creditcard: "Credit Card", qrcode: "QR Code", ewallet: "eWallet", alipay: "Alipay", wechatpay: "WeChat Pay", mobilebanking: "Mobile Banking", linepay: "LINE Pay", shopeepay: "ShopeePay", paotang: "Paotang" };
 const normalizeMethod = (m) => String(m ?? "").toLowerCase().replace(/[^a-z0-9]/g, "") || "unknown";
 const normalizeStatus = (s) => {
   const k = String(s ?? "").toLowerCase().trim();

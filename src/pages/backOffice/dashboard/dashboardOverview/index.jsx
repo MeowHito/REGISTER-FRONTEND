@@ -207,6 +207,10 @@ const DashboardOverview = ({ eventId }) => {
       ewallet: "eWallet",
       alipay: "Alipay",
       wechatpay: "WeChat Pay",
+      mobilebanking: "Mobile Banking",
+      linepay: "LINE Pay",
+      shopeepay: "ShopeePay",
+      paotang: "Paotang",
     };
     return dict[canon] || canon || t("back.dashboard.unknown");
   };

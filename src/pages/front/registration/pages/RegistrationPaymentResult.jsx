@@ -60,16 +60,21 @@ const RegistrationPaymentResult = () => {
     const needs2c2pVerify = !isDirectSuccess;
 
     const orderDetail = backOfficeServices.useQuerygetHistoryDetail({ orderId: invoiceNo });
+    const { data: paymentOptions, isLoading: isLoadingPaymentOptions } = backOfficeServices.useQueryPaymentOptions();
 
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(needs2c2pVerify);
     const [pollCount, setPollCount] = useState(0);
 
-    const orderResolved = !orderDetail.isLoading;
+    const orderResolved = !orderDetail.isLoading && !isLoadingPaymentOptions;
     const paymentMethod = orderDetail?.data?.paymentMethod || order?.paymentType || null;
+    // mPAY serves every method (QR included) once it is switched on; the backend falls back to
+    // "not found" for an order that never went through it.
+    const isMPayOrder = paymentMethod !== "test"
+        && (order?.paymentProvider === "MPAY" || paymentOptions?.provider === "MPAY");
     // SCB orders are settled by webhook and test-mode orders never touch a
     // gateway, so neither should be verified against 2C2P.
-    const isScbOrder = SCB_PAYMENT_METHODS.has(paymentMethod) || paymentMethod === "test";
+    const isScbOrder = !isMPayOrder && (SCB_PAYMENT_METHODS.has(paymentMethod) || paymentMethod === "test");
 
     const inquire = async ({ silent = false } = {}) => {
         if (!invoiceNo) {
@@ -85,10 +90,9 @@ const RegistrationPaymentResult = () => {
         if (!silent) setLoading(true);
         try {
             const resolved2c2pType = paymentMethod === 'ewallet' ? 'LINE_TRUEMONEY' : 'CREDIT_CARD';
-            const res = await verifyPaymentMutation.mutateAsync({
-                paymentType: resolved2c2pType,
-                invoiceNo,
-            });
+            const res = await verifyPaymentMutation.mutateAsync(isMPayOrder
+                ? { paymentType: 'MPAY', orderNo: invoiceNo }
+                : { paymentType: resolved2c2pType, invoiceNo });
             setResult(res);
         } catch (e) {
             setResult((prev) => prev || {
@@ -129,7 +133,7 @@ const RegistrationPaymentResult = () => {
         }
 
         inquire();
-    }, [invoiceNo, needs2c2pVerify, orderResolved, isScbOrder]);
+    }, [invoiceNo, needs2c2pVerify, orderResolved, isScbOrder, isMPayOrder]);
 
     const dbStatus = String(orderDetail?.data?.status || "").toUpperCase();
     const inqStatus = String(result?.status || "").toUpperCase();

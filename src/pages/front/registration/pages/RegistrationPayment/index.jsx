@@ -46,6 +46,7 @@ const RegistrationPayment = () => {
     const navigate = useNavigate();
 
     const [selectedPayment, setSelectedPayment] = useState(null);
+    const [selectedBank, setSelectedBank] = useState(null);
     const [applicants, setApplicants] = useState([]);
 
     const [totalShirtPrice, setTotalShirtPrice] = useState(0);
@@ -77,6 +78,7 @@ const RegistrationPayment = () => {
 
     const { mutateAsync: validateCoupon } = backOfficeServices.useMutationValidateCoupon({});
     const { mutateAsync: updateOrder } = backOfficeServices.useUpdateOrder();
+    const { data: paymentOptions, isLoading: isLoadingPaymentOptions } = backOfficeServices.useQueryPaymentOptions();
 
     const { data: orderDetail, refetch: refetchOrderDetail, isFetching: isFetchingOrderDetail } = backOfficeServices.useQuerygetHistoryDetail({ orderId: order?.orderNo });
     const { data: coupons, ...other } = backOfficeServices.useQueryGetCouponByEventIds({ eventIds });
@@ -87,10 +89,16 @@ const RegistrationPayment = () => {
     // Admin-flagged test event: the backend completes the order without payment.
     const isTestMode = orderDetail?.testMode === true;
     const isFreeOrder = totalAmountWithFee <= 0;
-    const hasSelectedPayment = !!selectedPayment;
+    // Mobile Banking also needs the bank before mPAY can send the runner to it.
+    const hasSelectedPayment = !!selectedPayment && (selectedPayment !== 'mobilebanking' || !!selectedBank);
     const canProceed = !isProceeding && !isFetchingOrderDetail && isPayable && (hasSelectedPayment || isFreeOrder || isTestMode);
     const needsMethod = isPayable && !isFreeOrder && !isTestMode && !hasSelectedPayment;
     const promptForMethod = () => {
+        if (selectedPayment === 'mobilebanking' && !selectedBank) {
+            message.warning(t("back.reg.payment.selectBankFirst"));
+            document.getElementById("payment-banks")?.scrollIntoView({ behavior: "smooth", block: "center" });
+            return;
+        }
         message.warning(t("front.reg.selectPaymentFirst"));
         document.getElementById("payment-methods")?.scrollIntoView({ behavior: "smooth", block: "start" });
     };
@@ -149,6 +157,7 @@ const RegistrationPayment = () => {
         const payload = {
             orderId: order.orderId,
             paymentMethod: selectedPayment || 'free',
+            bankCode: selectedPayment === 'mobilebanking' ? selectedBank : undefined,
             couponDiscount: Number((order.couponDiscount || 0).toFixed(2)),
             couponType: order.couponType,
             couponCode: order.couponCode,
@@ -194,8 +203,8 @@ const RegistrationPayment = () => {
                 return;
             }
 
-            if (totalAmountWithFee > 0 && !selectedPayment && !fresh.data?.testMode) {
-                message.error(t("front.reg.selectPaymentFirst"));
+            if (totalAmountWithFee > 0 && !hasSelectedPayment && !fresh.data?.testMode) {
+                message.error(t(selectedPayment === 'mobilebanking' ? "back.reg.payment.selectBankFirst" : "front.reg.selectPaymentFirst"));
                 return;
             }
 
@@ -222,6 +231,34 @@ const RegistrationPayment = () => {
             const paymentData = resData?.paymentData;
             if (!paymentData) {
                 message.error(resData?.message || t("back.reg.payment.cannotProceed"));
+                return;
+            }
+
+            // mPAY: QR is shown on our confirmation page and confirmed by webhook/enquiry; every
+            // other method is a hosted page (card form, bank, wallet) that returns to the result page.
+            if (paymentData.provider === 'MPAY') {
+                const mpayOrder = {
+                    ...order,
+                    totalPrice: finalTotal.toFixed(2),
+                    refNo: paymentData.refNo,
+                    paymentType: selectedPayment,
+                    paymentProvider: 'MPAY',
+                    totalAmountWithFee: totalAmountWithFee,
+                };
+                if (selectedPayment === 'qrcode') {
+                    dispatch(SET_ORDER({ ...mpayOrder, qrImage: paymentData.qrImage, qrExpireAt: paymentData.qrExpireAt }));
+                    navigate("/registrationPaymentConfirmation");
+                    return;
+                }
+                const isPhone = /Mobi|Android|iPhone|iPad/i.test(globalThis.navigator?.userAgent || "");
+                const target = (isPhone && paymentData.appPaymentUrl) || paymentData.webPaymentUrl;
+                if (!target) {
+                    message.error(t("back.reg.payment.cannotProceed"));
+                    return;
+                }
+                dispatch(SET_ORDER(mpayOrder));
+                message.loading(t("back.reg.payment.redirecting"), 5);
+                globalThis.location.href = target;
                 return;
             }
 
@@ -416,6 +453,7 @@ const RegistrationPayment = () => {
 
     const handlePaymentSelection = (type) => {
         setSelectedPayment(type);
+        if (type !== 'mobilebanking') setSelectedBank(null);
 
         const shirt = totalShirtPrice;
         const delivery = totalDeliveryFee;
@@ -490,6 +528,10 @@ const RegistrationPayment = () => {
                     <PaymentMethods
                         selectedPayment={selectedPayment}
                         handlePaymentSelection={handlePaymentSelection}
+                        options={paymentOptions}
+                        optionsLoading={isLoadingPaymentOptions}
+                        selectedBank={selectedBank}
+                        onSelectBank={setSelectedBank}
                     />
                 )}
 

@@ -8,7 +8,7 @@ export const fmtMoney = (v) => num(v).toLocaleString("th-TH", { minimumFractionD
 export const fmtInt = (v) => num(v).toLocaleString("th-TH");
 export const pct = (part, total) => (num(total) ? Math.round((num(part) / num(total)) * 100) : 0);
 
-const METHOD_LABELS = { creditcard: "Credit Card", qrcode: "QR Code", ewallet: "eWallet", alipay: "Alipay", wechatpay: "WeChat Pay", test: "Test mode", free: "Free" };
+const METHOD_LABELS = { creditcard: "Credit Card", qrcode: "QR Code", ewallet: "eWallet", alipay: "Alipay", wechatpay: "WeChat Pay", mobilebanking: "Mobile Banking", linepay: "LINE Pay", shopeepay: "ShopeePay", paotang: "Paotang", test: "Test mode", free: "Free" };
 export const methodLabel = (m) => {
   if (!m) return "–";
   const k = String(m).toLowerCase().replace(/[^a-z0-9]/g, "");

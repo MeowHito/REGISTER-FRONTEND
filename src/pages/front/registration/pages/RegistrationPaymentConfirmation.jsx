@@ -81,9 +81,16 @@ const PAYMENT_COUNTDOWN_SECONDS = Object.freeze({
     [PAYMENT_TYPE.WECHAT_PAY]: 2 * 60 * 60,
 });
 
-function getCountdownByType(type) {
+function getCountdownByType(type, expireAt) {
+    // mPAY says when its QR dies; count down to that instead of the fixed SCB window.
+    if (expireAt) {
+        const left = Math.floor((new Date(expireAt).getTime() - Date.now()) / 1000);
+        if (Number.isFinite(left)) return Math.max(0, left);
+    }
     return PAYMENT_COUNTDOWN_SECONDS[type] ?? PAYMENT_COUNTDOWN_SECONDS[PAYMENT_TYPE.QR_CODE];
 }
+
+const MPAY_POLL_MS = 5000;
 
 const formatTime = (seconds) => {
     const safeSeconds = Math.max(0, Number(seconds) || 0);
@@ -114,15 +121,19 @@ const RegistrationPaymentConfirmation = () => {
 
     const [paymentType, setPaymentType] = useState(null);
 
-    const [countdown, setCountdown] = useState(() => getCountdownByType(order?.paymentType));
+    const [countdown, setCountdown] = useState(() => getCountdownByType(order?.paymentType, order?.qrExpireAt));
     const [showUploadSection, setShowUploadSection] = useState(false);
     const [isSettled, setIsSettled] = useState(false);
     const [isSlipVerifying, setIsSlipVerifying] = useState(false);
 
     const qrWrapperRef = useRef(null);
 
-    const keyForWebhook =
-        paymentType === PAYMENT_TYPE.QR_CODE
+    // mPAY QR is confirmed by mPAY's webhook or our enquiry — no slip, no SCB webhook-log polling.
+    const isMPayQr = order?.paymentProvider === 'MPAY' && paymentType === PAYMENT_TYPE.QR_CODE;
+
+    const keyForWebhook = isMPayQr
+        ? null
+        : paymentType === PAYMENT_TYPE.QR_CODE
             ? (order?.orderNo ?? refNo)
             : (order?.outTradeNo || refNo);
     const applicationNo = order?.refNo || order?.orderNo || "—";
@@ -268,6 +279,37 @@ const RegistrationPaymentConfirmation = () => {
         message.error(t('back.reg.payment.qrNotFound'));
     };
 
+    const [isMPayChecking, setIsMPayChecking] = useState(false);
+    const mpayCheckInFlight = useRef(false);
+
+    const checkMPayStatus = async ({ silent = false } = {}) => {
+        if (mpayCheckInFlight.current || isSettled) return;
+        mpayCheckInFlight.current = true;
+        if (!silent) setIsMPayChecking(true);
+        try {
+            const res = await verifyPaymentMutation.mutateAsync({ paymentType: 'MPAY', orderNo: order?.orderNo });
+            if (res?.settled === true || res?.status === "SUCCESS" || res?.status === "REVIEW") {
+                setIsSettled(true);
+                if (res?.status !== "REVIEW") message.success(t("back.reg.common.updatePaymentStatusSuccess"));
+                navigate(`/registrationPaymentResult?invoiceNo=${encodeURIComponent(order?.orderNo || "")}`);
+                return;
+            }
+            if (!silent) message.warning(t("back.reg.payment.paymentNotFoundOrFailed"));
+        } catch (e) {
+            if (!silent) message.error(e?.message || t("back.reg.common.updatePaymentStatusFailed"));
+        } finally {
+            mpayCheckInFlight.current = false;
+            if (!silent) setIsMPayChecking(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!isMPayQr || isSettled || !order?.orderNo) return;
+        const id = setInterval(() => checkMPayStatus({ silent: true }), MPAY_POLL_MS);
+        return () => clearInterval(id);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isMPayQr, isSettled, order?.orderNo]);
+
     const handleAlipayWechatInquire = async () => {
         try {
             const resolvedType = paymentType === PAYMENT_TYPE.ALIPAY ? 'ALIPAY' : 'WECHAT_PAY';
@@ -300,7 +342,7 @@ const RegistrationPaymentConfirmation = () => {
                 }
                 if (order.qrImage) {
                     setPaymentType(order.paymentType);
-                    setCountdown(getCountdownByType(order.paymentType));
+                    setCountdown(getCountdownByType(order.paymentType, order.qrExpireAt));
                 }
             } else {
                 message.warning(t("back.reg.payment.noRegistrationData"));
@@ -314,9 +356,10 @@ const RegistrationPaymentConfirmation = () => {
     useEffect(() => {
         if (!paymentType) return;
 
-        const start = getCountdownByType(paymentType);
+        const start = getCountdownByType(paymentType, order?.qrExpireAt);
         setCountdown(start);
-        setShowUploadSection(false);
+        setShowUploadSection(start <= 0);
+        if (start <= 0) return;
 
         const timer = setInterval(() => {
             setCountdown(prev => {
@@ -330,7 +373,7 @@ const RegistrationPaymentConfirmation = () => {
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [paymentType]);
+    }, [paymentType]); // eslint-disable-line react-hooks/exhaustive-deps -- qrExpireAt is fixed per QR
 
     useEffect(() => {
         if (keyForWebhook) refetch();
@@ -480,6 +523,9 @@ const RegistrationPaymentConfirmation = () => {
                         )}
 
                         <p className="mt-2">{t("back.reg.payment.scanToPay")}</p>
+                        {isMPayQr && (
+                            <p className="mt-1 text-sm text-gray-500">{t("back.reg.payment.autoConfirmQr")}</p>
+                        )}
 
                         {(
                             paymentType === PAYMENT_TYPE.QR_CODE ||
@@ -513,7 +559,22 @@ const RegistrationPaymentConfirmation = () => {
                     </div>
                 ) : (
                     <>
-                        {paymentType === PAYMENT_TYPE.QR_CODE && (
+                        {isMPayQr && (
+                            <div className="text-center !space-y-3">
+                                {countdown <= 0 && (
+                                    <p className="text-base text-red-600">{t("back.reg.payment.qrExpiredRetry")}</p>
+                                )}
+                                <Button
+                                    icon={<ReloadOutlined />}
+                                    onClick={() => checkMPayStatus()}
+                                    loading={isMPayChecking}
+                                    disabled={isMPayChecking}
+                                >
+                                    {t("back.reg.payment.checkPaymentStatus")}
+                                </Button>
+                            </div>
+                        )}
+                        {paymentType === PAYMENT_TYPE.QR_CODE && !isMPayQr && (
                             <Spin
                                 spinning={isSlipVerifying}
                                 tip={t("back.reg.payment.verifyingSlip")}

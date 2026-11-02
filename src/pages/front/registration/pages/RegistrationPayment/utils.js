@@ -10,8 +10,8 @@ export const couponDiscountFor = (netPrice, percent) => Math.round(Number((netPr
 
 // Mirrors backend constant/PaymentFee.java.
 export const calculatePaymentFeePercent = (paymentType) => {
-  const qrChannels = ["qrcode"];
-  const creditChannels = ["creditcard", "ewallet", "alipay", "wechatpay"];
+  const qrChannels = ["qrcode", "mobilebanking"];
+  const creditChannels = ["creditcard", "ewallet", "alipay", "wechatpay", "linepay", "shopeepay", "paotang"];
   if (qrChannels.includes(paymentType)) return 3;
   if (creditChannels.includes(paymentType)) return 5;
   return 0;
