@@ -56,6 +56,13 @@ const RegistrationPaymentResult = () => {
         return qs.get("invoiceNo") ?? null;
     }, [payload, location.search]);
 
+    // Set by the backend when mPAY sends the runner back through its "fail/cancel" URL. Only
+    // changes the wording; the status itself still comes from the order and the enquiry.
+    const mpayReturnedFail = useMemo(
+        () => new URLSearchParams(location.search).get("mpay") === "fail",
+        [location.search]
+    );
+
     const isDirectSuccess = !payload && !invoiceNo;
     const needs2c2pVerify = !isDirectSuccess;
 
@@ -193,7 +200,9 @@ const RegistrationPaymentResult = () => {
                 applicants,
             })
         );
-    }, [orderData?.orderNo, dispatch, needs2c2pVerify]);
+        // Re-run on a status change too: the first data can be a cached PENDING copy, and a stale
+        // PENDING in the persisted order would send the next registration back to this order.
+    }, [orderData?.orderNo, orderData?.status, dispatch, needs2c2pVerify]);
 
     const successContent = (
         <Result
@@ -268,11 +277,22 @@ const RegistrationPaymentResult = () => {
 
                         {isPending && (
                             <Result
-                                status="info"
-                                icon={<HourglassOutlined style={{ color: "#5e81d8ff" }} />}
-                                title={t("back.reg.payment.processingPayment")}
+                                status={isMPayOrder && mpayReturnedFail ? "warning" : "info"}
+                                icon={isMPayOrder && mpayReturnedFail
+                                    ? <ExclamationCircleOutlined style={{ color: "#fa8c16" }} />
+                                    : <HourglassOutlined style={{ color: "#5e81d8ff" }} />}
+                                title={isMPayOrder && mpayReturnedFail
+                                    ? t("back.reg.payment.mpayNotPaid")
+                                    : t("back.reg.payment.processingPayment")}
                                 subTitle={
                                     <div style={{ whiteSpace: "pre-line" }}>
+                                        {isMPayOrder && (
+                                            <div>
+                                                {mpayReturnedFail
+                                                    ? t("back.reg.payment.mpayNotPaidDesc")
+                                                    : t("back.reg.payment.payAgainHint")}
+                                            </div>
+                                        )}
                                         <div style={{ marginTop: 8 }}>
                                             <Text type="secondary">
                                                 {t("back.reg.payment.orderNo")}: <strong>{invoiceNo}</strong>
@@ -282,6 +302,16 @@ const RegistrationPaymentResult = () => {
                                 }
                                 extra={
                                     <>
+                                        {isMPayOrder && (
+                                            <Button
+                                                type="primary"
+                                                size="large"
+                                                style={{ backgroundColor: "#FFB946", borderColor: "#FFB946" }}
+                                                onClick={() => navigate("/registrationPayment")}
+                                            >
+                                                {t("back.reg.payment.backToPayment")}
+                                            </Button>
+                                        )}
                                         <Button
                                             icon={<ReloadOutlined />}
                                             size="large"

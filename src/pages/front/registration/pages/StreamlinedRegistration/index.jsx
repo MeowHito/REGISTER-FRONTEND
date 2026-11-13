@@ -143,11 +143,14 @@ const StreamlinedRegistration = () => {
   useEffect(() => {
     // Land at the top: the event page's register button sits at the bottom of a long page.
     scrollPageToTop();
-    if (order?.orderNo) {
+    // An unpaid order resumes on the payment page; a finished one (paid, failed, …) is
+    // dropped so the runner can start a new registration from a direct link.
+    const status = String(order?.paymentStatus || "PENDING").toUpperCase();
+    if (order?.orderNo && status === "PENDING") {
       navigate("/registrationPayment", { replace: true });
       return;
     }
-    if (!resumeDraft.current) dispatch(CLEAR_ORDER());
+    if (order?.orderNo || !resumeDraft.current) dispatch(CLEAR_ORDER());
   }, []);
 
   useEffect(() => {
