@@ -11,4 +11,6 @@ export const bloodGroupOption = [
   { value: "O", label: "O" },
   { value: "O+", label: "O+" },
   { value: "O-", label: "O-" },
+  // Runner doesn't know their blood group — stored verbatim as "ไม่ระบุ".
+  { value: "ไม่ระบุ", label: "ไม่ระบุ" },
 ];
