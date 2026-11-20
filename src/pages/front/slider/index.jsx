@@ -7,6 +7,7 @@ import {
   ThunderboltFilled,
 } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
+import { useMediaQuery } from 'react-responsive'
 import { BANNER } from 'assets'
 import generalService from 'services/general.services'
 import useCountryStateHook from 'hooks/useCountryStateHook'
@@ -14,6 +15,7 @@ import { eventTypeOption } from 'constants/options/eventTypeOption'
 
 function Slider() {
   const { t } = useTranslation()
+  const isPhone = useMediaQuery({ query: '(max-width: 767px)' })
 
   const { data: sliders, isLoading: isLoadingSliders, isFetched: slidersFetched } =
     generalService.useQueryGetActiveSliders()
@@ -78,7 +80,7 @@ function Slider() {
   const showHeroSkeleton = isLoadingSliders && images.length === 0
 
   const Hero = (
-    <section className="relative overflow-hidden flex items-start md:items-center h-[230px] md:h-auto md:aspect-[16/5] bg-gray-100">
+    <section className="relative overflow-hidden flex items-start md:items-center h-[250px] md:h-auto md:aspect-[16/5] bg-gray-100">
       {/* Background images */}
       <div className="absolute inset-0">
         {showHeroSkeleton && (
@@ -99,15 +101,17 @@ function Slider() {
 
   const SearchBar = (
     // w-full: this sits in a flex column, where mx-auto alone shrinks it to its content, so the
-    // box changed width every time a filter was picked. Phones get a fixed, slightly narrow box.
-    <div className="w-full max-w-[344px] md:max-w-screen-xl mx-auto px-3 md:px-5 -mt-24 md:-mt-10 relative z-20">
-      <div className="mobile-home-search bg-white/75 backdrop-blur-md md:bg-white md:backdrop-blur-none border border-white/60 md:border-gray-200 rounded-2xl shadow-[0_18px_45px_rgba(15,23,42,0.18)] p-2 md:p-4 flex flex-col md:flex-row gap-2 md:gap-3 md:items-center">
+    // box changed width every time a filter was picked.
+    // Phones: two compact rows (province + type side by side, then the name) on frosted glass,
+    // sitting at the bottom of the banner so the picture still shows through and above it.
+    <div className="w-full max-w-[360px] md:max-w-screen-xl mx-auto px-3 md:px-5 -mt-[108px] md:-mt-10 relative z-20">
+      <div className="mobile-home-search bg-white/20 backdrop-blur-md md:bg-white md:backdrop-blur-none border border-white/40 md:border-gray-200 rounded-2xl shadow-[0_10px_30px_rgba(15,23,42,0.18)] p-1.5 md:p-4 grid grid-cols-2 gap-1.5 md:flex md:flex-row md:gap-3 md:items-center">
         <Select
-          placeholder={t('front.event.selectProvince')}
+          placeholder={isPhone ? t('front.home.filterProvince') : t('front.event.selectProvince')}
           allowClear
           showSearch
           size="large"
-          className="w-full md:flex-1"
+          className="w-full min-w-0 md:flex-1"
           suffixIcon={<EnvironmentOutlined />}
           value={provinceId}
           options={provinceOption}
@@ -119,16 +123,16 @@ function Slider() {
           }}
         />
         <Select
-          placeholder={t('front.event.selectEventType')}
+          placeholder={isPhone ? t('front.home.filterType') : t('front.event.selectEventType')}
           allowClear
           size="large"
-          className="w-full md:flex-1"
+          className="w-full min-w-0 md:flex-1"
           suffixIcon={<ThunderboltFilled />}
           value={eventType}
           options={eventTypeOption}
           onChange={setEventType}
         />
-        <div className="relative w-full md:flex-[2]">
+        <div className="col-span-2 relative w-full md:flex-[2]">
           <AutoComplete
             className="home-search-ac w-full"
             size="large"
@@ -143,7 +147,7 @@ function Slider() {
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); handleSearch(); }}
-            className="absolute right-1 top-1/2 -translate-y-1/2 z-10 h-[34px] md:h-8 px-3 bg-brand hover:bg-brand-dark text-white text-sm font-semibold rounded-lg md:rounded-md flex items-center gap-1.5 active:scale-95 transition-all shadow-sm"
+            className="absolute right-1 top-1/2 -translate-y-1/2 z-10 h-8 px-3 bg-brand hover:bg-brand-dark text-white text-sm font-semibold rounded-lg md:rounded-md flex items-center gap-1.5 active:scale-95 transition-all shadow-sm"
           >
             <SearchOutlined />
             {t('general.search')}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Result, Spin, message, Input } from "antd";
+import { Button, Result, Spin, Input } from "antd";
 import {
   ArrowRightOutlined, CheckCircleOutlined, ShoppingCartOutlined,
   EnvironmentOutlined, CarOutlined, DownOutlined, UpOutlined, LockOutlined, HomeOutlined, EditOutlined,
@@ -37,6 +37,7 @@ import { buildNationalityOptions } from "./nationality";
 import { onUploadFile } from "hooks/onUploadFile";
 import { getPublicUrl } from "utils/fileUtils";
 import { DEFAULT_PHONE_COUNTRY_CODE } from "constants/phoneCountryCodes";
+import { centerNotice } from "./notice";
 
 const QUESTIONNAIRE_PREFIX = "questionnaire";
 const fmt = (n) => (Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
@@ -287,7 +288,7 @@ const StreamlinedRegistration = () => {
 
   const confirmTickets = () => {
     if (totalQty(tickets) < 1) {
-      message.warning(t("required.eventType"));
+      centerNotice("warning", t("required.eventType"));
       return;
     }
     const prev = form.getFieldValue("applicants") || [];
@@ -381,7 +382,7 @@ const StreamlinedRegistration = () => {
   // also works for custom controls such as the box selectors and the photo box.
   const handleValidateError = (errInfo) => {
     const fields = errInfo?.errorFields || [];
-    message.error(fields[0]?.errors?.[0] || t("validation.checkForm"));
+    centerNotice("error", fields[0]?.errors?.[0] || t("validation.checkForm"));
     setTimeout(() => {
       const el = document.querySelector(".ant-form-item-has-error");
       if (el) scrollToEl(el);
@@ -393,7 +394,8 @@ const StreamlinedRegistration = () => {
     const current = form.getFieldValue("applicants") || [];
     const missingType = applicantList.findIndex((_a, i) => !current[i]?.type);
     if (missingType >= 0) {
-      message.warning(t("back.reg.common.selectApplicant"));
+      centerNotice("warning", t("front.reg.chooseWhoFor", { n: missingType + 1 }));
+      setTimeout(() => scrollToEl(document.getElementById(`applicant-${missingType}`)), 50);
       return;
     }
     try {
@@ -461,7 +463,7 @@ const StreamlinedRegistration = () => {
     const out = {};
     SHIPPING_KEYS.forEach((k) => { out[k] = String(v[k] || "").trim(); });
     if (!out.shippingAddress) {
-      message.warning(t("front.reg.fillAddress"));
+      centerNotice("warning", t("front.reg.fillAddress"));
       return false;
     }
     return out;
@@ -486,7 +488,7 @@ const StreamlinedRegistration = () => {
     if (shipping === false) return;
     const missingNote = firstMissingAddOnNote(addOns, addOnSelections);
     if (missingNote) {
-      message.warning(`${missingNote.name}: ${missingNote.noteLabel}`);
+      centerNotice("warning", `${missingNote.name}: ${missingNote.noteLabel}`);
       return;
     }
     const raw = form.getFieldValue("applicants") || [];
@@ -505,7 +507,7 @@ const StreamlinedRegistration = () => {
       setCheckingOut(true);
       withDelivery = await uploadImageAnswers(withDelivery);
     } catch (e) {
-      message.error(e?.message || t("validation.uploadFailed"));
+      centerNotice("error", e?.message || t("validation.uploadFailed"));
       return;
     } finally {
       setCheckingOut(false);

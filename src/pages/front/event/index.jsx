@@ -12,6 +12,7 @@ import thTH from 'antd/es/date-picker/locale/th_TH';
 import enUS from 'antd/es/date-picker/locale/en_US';
 import { eventTypeOption } from 'constants/options/eventTypeOption';
 import { handleQueryStatus } from 'utils';
+import { sortOpenFirst } from 'components/eventCard/utils';
 import useCountryStateHook from 'hooks/useCountryStateHook';
 import { useSearchParams } from 'react-router-dom';
 
@@ -167,8 +168,8 @@ function Event({ layout = "FrontLayout" }) {
               loader={<h5 className="text-center mt-16 opacity-50">Loading...</h5>}
             >
               <Row justify="left" gutter={[8, 24]}>
-                {items.map((data, index) => (
-                  <Col key={`event-${index}`} xs={12} md={8}>
+                {sortOpenFirst(items).map((data, index) => (
+                  <Col key={`event-${data.id || index}`} xs={12} md={8}>
                     <EventCard {...data} compact />
                   </Col>
                 ))}

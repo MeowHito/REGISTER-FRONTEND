@@ -14,6 +14,8 @@ const ImageUpload = ({
   filename,
   prefix,
   uploadText,
+  // Replaces the default "icon + text" inside the empty upload box.
+  uploadContent,
   hooks,
   options,
   alt,
@@ -93,12 +95,12 @@ const ImageUpload = ({
           maxCount={1}
           {...other}
         >
-          {isEditable && fileList.length === 0 && (
+          {isEditable && fileList.length === 0 && (uploadContent || (
             <div>
               <UploadOutlined size={20} className="mb-2" />
               <p>{uploadText ?? t("general.uploadImg")}</p>
             </div>
-          )}
+          ))}
         </Upload>
         {alt && <i className="text-xs text-gray-500 mb-2">{alt}</i>}
       </div>

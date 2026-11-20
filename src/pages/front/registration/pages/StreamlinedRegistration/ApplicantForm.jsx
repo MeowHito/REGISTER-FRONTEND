@@ -1,7 +1,7 @@
 import React from "react";
 import { Input, Select, Modal } from "antd";
 import {
-  UserOutlined, UsergroupAddOutlined, DeleteOutlined, ExclamationCircleOutlined,
+  UserOutlined, UsergroupAddOutlined, DeleteOutlined, ExclamationCircleOutlined, CameraOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
@@ -16,6 +16,7 @@ import { DEFAULT_PHONE_COUNTRY_CODE } from "constants/phoneCountryCodes";
 import { inputCls, selectCls, fieldItemCls, ticketBadgeCls } from "./theme";
 import { FIELD_CONFIG_DEFAULTS, isRequired, isShown } from "./fieldConfig";
 import { DEFAULT_NATIONALITY } from "./nationality";
+import { useAvatarUrl } from "hooks/useMeDisplay";
 
 const PERSONAL_KEYS = [
   "firstName", "lastName", "firstNameEn", "lastNameEn", "gender", "birthDate",
@@ -69,6 +70,8 @@ const ApplicantForm = ({
 }) => {
   const { t } = useTranslation();
   const prefix = "userData";
+  // The runner's own profile photo stands in for the person icon on "register for myself".
+  const myAvatarUrl = useAvatarUrl(me);
   const show = (key) => isShown(fieldConfig, key);
   const req = (key) => isRequired(fieldConfig, key);
   const requiredRule = (key, msgKey) => (req(key) ? [{ required: true, message: t(msgKey) }] : []);
@@ -143,19 +146,30 @@ const ApplicantForm = ({
   const photoBlock = show("pictureUrl") ? (
     <div>
       <Label required={req("pictureUrl")}>{t("front.reg.photo")}</Label>
-      <div className="flex flex-col items-center justify-center py-5 bg-[#f1f4f6] border-2 border-dashed border-[#bfc7d2] rounded-xl">
+      {/* A small round avatar instead of a big drop area. */}
+      <div className="reg-avatar-upload flex items-center gap-3">
         <ImageUpload
           key={`img-${index}`}
           label={null}
           prefix={prefix}
           filename={!Array.isArray(pictureUrl) ? pictureUrl : null}
+          listType="picture-circle"
           options={{
             fileList: Array.isArray(pictureUrl) ? pictureUrl : [],
             onChange: (newFileList) =>
               form.setFieldValue(["applicants", index, "pictureUrl"], newFileList),
           }}
-          uploadText={t("general.uploadImg")}
+          uploadContent={(
+            <span className="flex flex-col items-center gap-0.5 text-[#006193]">
+              <CameraOutlined className="text-xl" />
+              <span className="text-[13px] font-semibold leading-tight">{t("general.uploadImg")}</span>
+            </span>
+          )}
         />
+        <div className="min-w-0 text-[13px] leading-snug text-[#3f4850]">
+          <p className="font-semibold text-[#181c1e]">{t("front.reg.tapToUpload")}</p>
+          <p>{t("front.reg.photoHint")}</p>
+        </div>
       </div>
       {req("pictureUrl") && (
         <CommonForm.Item name={["applicants", index, "pictureUrl"]} className={fieldItemCls}
@@ -168,7 +182,7 @@ const ApplicantForm = ({
   ) : null;
 
   return (
-    <div className="rounded-xl border border-[#bfc7d2] bg-white overflow-hidden">
+    <div id={`applicant-${index}`} className="rounded-xl border border-[#bfc7d2] bg-white overflow-hidden">
       <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-[#e5e9eb] bg-[#f1f4f6]">
         <span className="font-bold text-[#181c1e]">
           {t("back.reg.common.applicantInfo")} #{index + 1}
@@ -202,7 +216,10 @@ const ApplicantForm = ({
           <Label>{t("front.reg.regType")}</Label>
           <div className="grid grid-cols-2 gap-3">
             <RegTypeButton active={type === "self"} onClick={chooseSelf}
-              icon={<UserOutlined />} title={t("front.reg.forSelf")} />
+              icon={myAvatarUrl
+                ? <img src={myAvatarUrl} alt="" className="block w-10 h-10 rounded-full object-cover ring-2 ring-white shadow" />
+                : <UserOutlined />}
+              title={t("front.reg.forSelf")} />
             <RegTypeButton active={type === "friend"} onClick={chooseFriend}
               icon={<UsergroupAddOutlined />} title={t("front.reg.forOther")} />
           </div>

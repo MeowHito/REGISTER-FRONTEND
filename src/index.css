@@ -61,14 +61,51 @@ code {
     monospace;
 }
 
+/* Registration page: the profile photo is a small circle, not a big drop area. */
+.reg-avatar-upload .ant-upload-wrapper.ant-upload-picture-circle-wrapper .ant-upload.ant-upload-select,
+.reg-avatar-upload .ant-upload-wrapper.ant-upload-picture-circle-wrapper .ant-upload-list-item-container {
+  width: 88px !important;
+  height: 88px !important;
+  margin: 0 !important;
+}
+.reg-avatar-upload .ant-upload-wrapper.ant-upload-picture-circle-wrapper .ant-upload.ant-upload-select {
+  background: #eef6fc;
+  border: 2px dashed #9cc3dc;
+}
+
+/* Registration page: centred, larger notices (see StreamlinedRegistration/notice.js). */
+.reg-center-notice .ant-message-notice-content {
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 14px 20px !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.28), 0 0 0 1px rgba(15, 23, 42, 0.06) !important;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #181c1e;
+  text-align: left;
+}
+.reg-center-notice .ant-message-custom-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.reg-center-notice .ant-message-custom-content > .anticon {
+  font-size: 22px !important;
+  margin: 0 !important;
+  padding-top: 1px;
+}
+
 /* Make room for the in-field search button on the event-name autocomplete */
 .home-search-ac .ant-select-selector {
   padding-right: 112px !important;
 }
 
 @media (max-width: 767px) {
+  /* Frosted search box on the home banner: light glass fields, dark text so it stays readable. */
   .mobile-home-search {
     row-gap: 6px !important;
+    -webkit-backdrop-filter: blur(12px);
   }
 
   .mobile-home-search .home-search-ac .ant-select-selector {
@@ -77,16 +114,16 @@ code {
 
   .mobile-home-search .ant-select,
   .mobile-home-search .ant-picker {
-    height: 42px !important;
+    height: 40px !important;
   }
 
   .mobile-home-search .ant-select-selector,
   .mobile-home-search .ant-picker {
-    min-height: 42px !important;
-    height: 42px !important;
+    min-height: 40px !important;
+    height: 40px !important;
     border: 0 !important;
     border-radius: 10px !important;
-    background: rgba(243, 244, 246, 0.8) !important;
+    background: rgba(255, 255, 255, 0.82) !important;
     box-shadow: none !important;
     display: flex;
     align-items: center;
@@ -94,7 +131,7 @@ code {
   }
 
   .mobile-home-search .ant-select-selector {
-    padding: 0 44px 0 16px !important;
+    padding: 0 34px 0 12px !important;
   }
 
   .mobile-home-search .ant-picker {
@@ -105,22 +142,22 @@ code {
   .mobile-home-search .ant-select-selection-item,
   .mobile-home-search .ant-picker-input > input,
   .mobile-home-search .ant-picker-input > input::placeholder {
-    color: #20242d !important;
+    color: #111827 !important;
     font-size: 16px !important;
-    font-weight: 400 !important;
+    font-weight: 500 !important;
   }
 
   .mobile-home-search .ant-select-arrow,
   .mobile-home-search .ant-picker-suffix {
-    color: #7a7d86 !important;
-    font-size: 18px !important;
+    color: #4b5563 !important;
+    font-size: 16px !important;
   }
 
   .mobile-home-search .ant-select-arrow {
     top: 50% !important;
-    inset-inline-end: 14px !important;
-    width: 18px !important;
-    height: 18px !important;
+    inset-inline-end: 11px !important;
+    width: 16px !important;
+    height: 16px !important;
     margin-top: 0 !important;
     display: flex !important;
     align-items: center !important;
@@ -130,8 +167,8 @@ code {
 
   .mobile-home-search .ant-select-arrow svg,
   .mobile-home-search .ant-picker-suffix svg {
-    width: 18px !important;
-    height: 18px !important;
+    width: 16px !important;
+    height: 16px !important;
   }
 
   .mobile-home-search .ant-picker-suffix {

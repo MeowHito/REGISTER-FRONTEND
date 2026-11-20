@@ -214,7 +214,9 @@
       "newsletterInvalid": "Please enter a valid email address.",
       "newsletterSuccess": "Thanks for subscribing!",
       "searchResults": "Search results",
-      "searchEventName": "Search event name..."
+      "searchEventName": "Search event name...",
+      "filterProvince": "Province",
+      "filterType": "Race type"
     },
     "slider": {},
     "summary": {},
@@ -302,7 +304,10 @@
       "review": "Review Information",
       "selectPaymentFirst": "Please select a payment method first",
       "calendar": "Calendar",
-      "menu": "Menu"
+      "menu": "Menu",
+      "chooseWhoFor": "Applicant #{{n}}: please choose “Register for myself” or “For someone else” first",
+      "photoHint": "A clear, front-facing photo (JPG or PNG)",
+      "tapToUpload": "Tap the circle to upload a photo"
     }
   },
   "back": {

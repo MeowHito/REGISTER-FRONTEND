@@ -6,6 +6,7 @@ import { EMPTY_DESCRIPTION } from 'constants/emptyDescription';
 import { useTranslation } from 'react-i18next';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { handleQueryStatus } from 'utils';
+import { sortOpenFirst } from 'components/eventCard/utils';
 
 const LIMIT = 12;
 
@@ -57,6 +58,9 @@ export default function EventResults({ provinceId = null, eventType = null, even
     });
   }, [other.fetchStatus]);
 
+  // Events still open for registration come first; closed ones follow.
+  const sortedItems = useMemo(() => sortOpenFirst(items), [items]);
+
   const hasFilter = !!(provinceId || eventType || eventName);
   const total = events?.totalElements ?? items.length;
   const hasMore = items.length < total;
@@ -89,7 +93,7 @@ export default function EventResults({ provinceId = null, eventType = null, even
             loader={<h5 className="text-center mt-10 opacity-50">Loading...</h5>}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-5">
-              {items.map((data, index) => (
+              {sortedItems.map((data, index) => (
                 <EventCard key={`event-${data.id || index}`} {...data} />
               ))}
             </div>
