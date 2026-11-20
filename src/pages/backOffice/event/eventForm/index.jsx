@@ -87,7 +87,7 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
         setFileList: setPictureFileList
     } = picturehooks
 
-    const { data: organizers, isFetching: isLoadingOrganizer, ...otherOrganizers } = backOfficeServices.useQueryGetOrganizerActive();
+    const { data: organizers, isFetching: isLoadingOrganizer, ...otherOrganizers } = backOfficeServices.useQueryGetOrganizerActive({ enabled: roleUser === "admin" });
 
     const { data: eventData, isFetching: isLoadingEvent } = backOfficeServices.useQueryGetEventById({ id: eventId });
 

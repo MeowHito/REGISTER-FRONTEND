@@ -16,7 +16,9 @@ const EventCard = ({
     name = "",
     eventDate = null,
     eventStatus = "",
-    type = ""
+    type = "",
+    // Two cards side by side on a phone (/event): smaller type so nothing spills out.
+    compact = false,
 }) => {
     const { t, i18n } = useTranslation();
     const { data: logoPreviewUrl, isFetching } = usePublicImageUrl({ key: logoUrl, prefix: "event", isPublic: true });
@@ -65,13 +67,13 @@ const EventCard = ({
                     )}
                 </div>
 
-                <div className="p-5 md:p-3 flex flex-col flex-1">
-                    <h3 className="text-[24px] md:text-base font-bold text-gray-900 leading-tight md:leading-snug line-clamp-2">
+                <div className={`${compact ? "p-3" : "p-5"} md:p-3 flex flex-col flex-1`}>
+                    <h3 className={`${compact ? "text-[15px] leading-snug" : "text-[24px] leading-tight"} md:text-base font-bold text-gray-900 md:leading-snug line-clamp-2 break-words`}>
                         {name}
                     </h3>
 
                     {(provinceLabel || type) && (
-                        <div className="flex items-center gap-2 mt-3">
+                        <div className={`flex items-center gap-2 ${compact ? "mt-2 flex-wrap" : "mt-3"}`}>
                             {provinceLabel && (
                                 <span className="inline-flex items-center gap-1 bg-[#e7e8ff] text-[#091842] text-[12px] md:text-[11px] font-bold px-3 py-1 rounded-lg">
                                     <PinIcon className="w-3.5 h-3.5 md:w-3 md:h-3 shrink-0" />
@@ -79,7 +81,7 @@ const EventCard = ({
                                 </span>
                             )}
                             {type && (
-                                <span className="inline-flex items-center gap-1 bg-[#fbe5da] text-[#c63d00] text-[12px] md:text-[11px] font-bold px-3 py-1 rounded-lg ml-auto">
+                                <span className={`inline-flex items-center gap-1 bg-[#fbe5da] text-[#c63d00] text-[12px] md:text-[11px] font-bold ${compact ? "px-2" : "px-3 ml-auto"} py-1 rounded-lg max-w-full`}>
                                     <TypeIcon type={type} className="w-3.5 h-3.5 md:w-3 md:h-3 shrink-0" />
                                     {type}
                                 </span>
@@ -87,9 +89,12 @@ const EventCard = ({
                         </div>
                     )}
 
-                    <div className="mt-5 md:mt-auto md:pt-3 flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 md:gap-2 text-[#4b4d59] text-[18px] md:text-sm">
-                            <CalendarOutlined className="text-brand text-[24px] md:text-base" />
+                    {/* Date stays on one line; the status drops below it when the card is narrow. */}
+                    <div className={`${compact ? "mt-3" : "mt-5"} md:mt-auto md:pt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2`}>
+                        <div className={`flex items-center ${compact ? "gap-1.5 text-[13px] leading-tight min-w-0" : "gap-2.5 text-[18px] whitespace-nowrap"} md:gap-2 text-[#1f2330] font-semibold md:text-sm md:whitespace-nowrap`}>
+                            <span className={`inline-flex items-center justify-center shrink-0 ${compact ? "w-7 h-7" : "w-9 h-9"} md:w-7 md:h-7 rounded-lg bg-brand text-white shadow-sm`}>
+                                <CalendarOutlined className={`${compact ? "text-sm" : "text-[18px]"} md:text-sm`} />
+                            </span>
                             {dayjs(eventDate).format(SYS_DISPLAY_DATE_FORMAT)}
                         </div>
                         {statusText && (

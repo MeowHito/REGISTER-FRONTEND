@@ -17,11 +17,12 @@ export const calculatePaymentFeePercent = (paymentType) => {
   return 0;
 };
 
+// Gregorian year, like every other date on the site (cards, event page, history).
 export const convertDateToThaiFormat = (inputDate) => {
   if (!inputDate) return "-";
   const date = new Date(inputDate);
   const months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
-  return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear() + 543} เวลา ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')} น.`;
+  return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()} เวลา ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')} น.`;
 };
 
 export const base64ToJson = (base64String) => {

@@ -1,7 +1,9 @@
 ﻿import React, { useEffect, useState } from "react";
 import { Table, Button, Row, Col, Tag, Tooltip, Modal, message } from "antd";
 import CommonForm from "components/commonForm";
-import { SearchOutlined, EyeOutlined } from "@ant-design/icons";
+import { SearchOutlined, EyeOutlined, RightOutlined, CalendarOutlined } from "@ant-design/icons";
+import { useMediaQuery } from "react-responsive";
+import { useSearchParams } from "react-router-dom";
 import backOfficeServices from "services/backoffice.services";
 import { handleQueryStatus } from "utils/index";
 import { SYS_DATE_FORMAT, SYS_DATE_FULL_TIME_FORMAT } from "constants/helper";
@@ -27,8 +29,12 @@ const HistoryList = () => {
   const [limitPage, setLimitPage] = useState(10);
   const [page, setPage] = useState(1);
   const [totalData, setTotalData] = useState(0);
-  const [mode, setMode] = useState("list");
-  const [paymentId, setPaymentId] = useState(null);
+  // /historyList?order=<uuid> (from the "view my registration" button) opens that order directly.
+  const [searchParams] = useSearchParams();
+  const [mode, setMode] = useState(searchParams.get("order") ? "detail" : "list");
+  const [paymentId, setPaymentId] = useState(searchParams.get("order"));
+  // Phones get one card per order instead of a table that has to be scrolled sideways.
+  const isPhone = useMediaQuery({ query: "(max-width: 767px)" });
 
   const { data: payments, refetch, isFetching, ...other } = backOfficeServices.useQueryGetAllPaymentHistory({
     params: filters,
@@ -72,6 +78,91 @@ const HistoryList = () => {
     setMode("detail")
   }
 
+  const confirmCancel = (record) => {
+    Modal.confirm({
+      title: t("back.history.historyList.cancel.confirmTitle"),
+      content: t("back.history.historyList.cancel.confirmContent", { orderNo: record.orderNo }),
+      okText: t("back.history.historyList.confirm.ok"),
+      okButtonProps: { danger: true },
+      cancelText: t("back.history.historyList.confirm.cancel"),
+      onOk: () =>
+        cancelOrderMutation.mutateAsync({ orderId: record.id, cancelledBy: "USER" }).then(
+          () => {
+            message.success(t("back.history.historyList.cancel.success", { orderNo: record.orderNo }));
+            refetch();
+          },
+          () => message.error(t("back.history.historyList.cancel.failed"))
+        ),
+    });
+  };
+
+  const statusTag = (status) => {
+    const normalized = status?.toUpperCase();
+    const { color } = statusColors[normalized] || { color: "blue" };
+    return (
+      <Tag color={color} className="!m-0 !font-semibold">
+        {t(`back.history.historyList.status.${normalized}`, { defaultValue: status })}
+      </Tag>
+    );
+  };
+
+  const money = (n) =>
+    `${Number(n || 0).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${t("general.unitBaht")}`;
+
+  const renderCard = (record) => {
+    const pending = record.status?.toUpperCase() === "PENDING";
+    return (
+      <div key={record.id} className="rounded-2xl border border-[#e5e5ea] bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <button
+          type="button"
+          onClick={() => handleViewDetail(record.id)}
+          className="w-full text-left cursor-pointer"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <p className="m-0 font-semibold text-[15px] leading-snug text-[#1d1d1f] break-words min-w-0">
+              {record.eventName || "-"}
+            </p>
+            {statusTag(record.status)}
+          </div>
+          <div className="mt-2 flex items-center gap-1.5 text-[13px] text-[#6e6e73]">
+            <CalendarOutlined />
+            {record.eventDate ? dayjs(record.eventDate).format(SYS_DATE_FORMAT) : "-"}
+          </div>
+          <div className="mt-3 flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <p className="m-0 text-[12px] text-[#6e6e73]">{t("back.history.historyList.columns.orderNo")}</p>
+              <p className="m-0 text-[13px] font-medium text-[#1d1d1f] tabular-nums break-all">{record.orderNo}</p>
+              <p className="m-0 mt-1 text-[12px] text-[#6e6e73]">
+                {t("back.history.historyList.columns.createdTime")}{" "}
+                {record.createdTime ? dayjs(record.createdTime).format(SYS_DATE_FULL_TIME_FORMAT) : "-"}
+              </p>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="m-0 text-[12px] text-[#6e6e73]">{t("back.history.historyList.columns.amount")}</p>
+              <p className="m-0 text-[17px] font-bold text-[#1d1d1f] tabular-nums">{money(record.amount)}</p>
+            </div>
+          </div>
+        </button>
+        <div className="mt-3 pt-3 border-t border-[#f0f0f2] flex gap-2">
+          {pending ? (
+            <>
+              <Button danger className="!h-10 flex-1" onClick={() => confirmCancel(record)}>
+                {t("back.history.historyList.action.cancel")}
+              </Button>
+              <Button type="primary" className="!h-10 flex-[2]" onClick={() => handleViewDetail(record.id)}>
+                {t("back.history.historyList.action.payNow")}
+              </Button>
+            </>
+          ) : (
+            <Button className="!h-10 w-full" onClick={() => handleViewDetail(record.id)}>
+              {t("back.history.historyList.action.view")} <RightOutlined className="text-[11px]" />
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const columns = [
     {
       title: t("back.history.historyList.columns.orderNo"),
@@ -99,19 +190,13 @@ const HistoryList = () => {
       title: t("back.history.historyList.columns.amount"),
       dataIndex: "amount",
       key: "amount",
+      render: (amount) => money(amount),
     },
     {
       title: t("back.history.historyList.columns.status"),
       dataIndex: "status",
       key: "status",
-      render: (status) => {
-        const normalized = status?.toUpperCase();
-        const { color } = statusColors[normalized] || { color: "blue" };
-        const label = t(`back.history.historyList.status.${normalized}`) || status;
-        return (
-          <Tag color={color} style={{ fontWeight: "bold" }}>{label}</Tag>
-        );
-      },
+      render: (status) => statusTag(status),
     },
     {
       title: t("back.history.historyList.columns.action"),
@@ -123,35 +208,7 @@ const HistoryList = () => {
             <Button icon={<EyeOutlined />} onClick={() => { handleViewDetail(record.id) }} size="small">{t("back.history.historyList.action.view")}</Button>
           </Tooltip>
           {record.status === "PENDING" && (
-            <Button
-              danger
-              size="small"
-              onClick={() => {
-                Modal.confirm({
-                  title: t("back.history.historyList.cancel.confirmTitle"),
-                  content: t("back.history.historyList.cancel.confirmContent", { orderNo: record.orderNo }),
-                  okText: t("back.history.historyList.confirm.ok"),
-                  cancelText: t("back.history.historyList.confirm.cancel"),
-                  onOk: () => {
-                    cancelOrderMutation.mutate(
-                      {
-                        orderId: record.id,
-                        cancelledBy: "USER",
-                      },
-                      {
-                        onSuccess: () => {
-                          message.success(t("back.history.historyList.cancel.success", { orderNo: record.orderNo }));
-                          refetch();
-                        },
-                        onError: () => {
-                          message.error(t("back.history.historyList.cancel.failed"));
-                        },
-                      }
-                    );
-                  },
-                });
-              }}
-            >
+            <Button danger size="small" onClick={() => confirmCancel(record)}>
               {t("back.history.historyList.action.cancel")}
             </Button>
           )}
@@ -173,7 +230,7 @@ const HistoryList = () => {
         autoComplete="off"
       >
         <Row gutter={[4, 4]}>
-          <Col className="gutter-row" xs={12} md={16}>
+          <Col className="gutter-row" xs={24} md={16}>
             <CommonForm.Item
               name="q"
             >
@@ -185,7 +242,7 @@ const HistoryList = () => {
               />
             </CommonForm.Item>
           </Col>
-          <Col className="gutter-row" xs={10} md={6}>
+          <Col className="gutter-row" xs={18} md={6}>
             <CommonForm.Item
               name="status"
             >
@@ -203,7 +260,7 @@ const HistoryList = () => {
               />
             </CommonForm.Item>
           </Col>
-          <Col className="gutter-row" xs={2}>
+          <Col className="gutter-row" xs={6} md={2}>
             <Button size="large" className="w-full" type="primary" htmlType="submit">
               <span className="xl:hidden"><SearchOutlined /></span>
               <span className="hidden xl:inline">{t("back.history.historyList.filters.search")}</span>
@@ -213,6 +270,22 @@ const HistoryList = () => {
       </CommonForm>
       </div>
 
+      {isPhone ? (
+        <div className="p-3 flex flex-col gap-3 bg-[#f5f5f7]">
+          {isFetching && data.length === 0 && (
+            <div className="py-10 text-center text-[#6e6e73]">{t("general.loading", { defaultValue: "กำลังโหลด..." })}</div>
+          )}
+          {!isFetching && data.length === 0 && (
+            <div className="py-10 text-center text-[#6e6e73]">{t("back.history.historyList.empty")}</div>
+          )}
+          {data.map(renderCard)}
+          {totalData > data.length && (
+            <Button className="!h-11" loading={isFetching} onClick={() => setLimitPage((n) => n + 10)}>
+              {t("back.history.historyList.loadMore")}
+            </Button>
+          )}
+        </div>
+      ) : (
       <Table
         rowKey="id"
         className="!w-full !text-nowrap bo-flush-table"
@@ -232,6 +305,7 @@ const HistoryList = () => {
         scroll={{ x: true }}
         loading={isFetching}
       />
+      )}
       </div>
     </>
     : <HistoryDetail paymentId={paymentId} setMode={setMode} />

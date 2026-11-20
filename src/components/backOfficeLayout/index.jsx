@@ -10,6 +10,7 @@ import Footer from "components/footer";
 import MenuItemBadge from "components/menuItemBadge";
 import AnnouncementBanner from "components/announcementBanner";
 import BackOfficeHeader from "components/backOfficeHeader";
+import Header from "components/header";
 import ActiveEventBar from "components/activeEventBar";
 import useMe from "hooks/useMe";
 import { PROFILE_LOADING } from "store/reducers/profileSlice";
@@ -136,6 +137,25 @@ export default function BackOfficeLayout() {
   }
 
   const narrow = isDesktop && collapsed;
+
+  // A runner only has "registration history" and "profile" here. Give them the public site's
+  // header instead of the Console shell, so the page doesn't look like a different website.
+  if (me?.role?.roleType === "guest") {
+    return (
+      <>
+        <Header />
+        <AnnouncementBanner />
+        <ConfigProvider theme={backOfficeTheme}>
+          <div className="bo-shell min-h-screen flex flex-col">
+            <main className="bo-flush flex-1 w-full max-w-[1200px] mx-auto flex flex-col">
+              <Outlet />
+            </main>
+            <Footer layout="compact" />
+          </div>
+        </ConfigProvider>
+      </>
+    );
+  }
 
   const sidebarBody = (
     <div className="flex flex-col h-full">

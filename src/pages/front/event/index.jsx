@@ -162,7 +162,6 @@ function Event({ layout = "FrontLayout" }) {
             <InfiniteScroll
               className='pb-5'
               style={{ overflowX: 'hidden' }}
-              scrollableTarget="scrollableDiv"
               dataLength={items.length}
               next={fetchMoreData}
               loader={<h5 className="text-center mt-16 opacity-50">Loading...</h5>}
@@ -170,7 +169,7 @@ function Event({ layout = "FrontLayout" }) {
               <Row justify="left" gutter={[8, 24]}>
                 {items.map((data, index) => (
                   <Col key={`event-${index}`} xs={12} md={8}>
-                    <EventCard {...data} />
+                    <EventCard {...data} compact />
                   </Col>
                 ))}
               </Row>

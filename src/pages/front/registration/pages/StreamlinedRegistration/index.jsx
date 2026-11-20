@@ -33,6 +33,7 @@ import {
 } from "./utils";
 import { primaryBtn, phaseBadgeCls, inputCls, fieldItemCls } from "./theme";
 import { resolveFieldConfig } from "./fieldConfig";
+import { buildNationalityOptions } from "./nationality";
 import { onUploadFile } from "hooks/onUploadFile";
 import { getPublicUrl } from "utils/fileUtils";
 import { DEFAULT_PHONE_COUNTRY_CODE } from "constants/phoneCountryCodes";
@@ -171,9 +172,9 @@ const StreamlinedRegistration = () => {
       otherNat,
       () => {
         const opts = (nationalities || []).map((n) => ({ value: n.alpha_3_code, label: n.nationality }));
-        setNationalityOption(opts.length ? opts : FALLBACK_NATIONALITIES);
+        setNationalityOption(buildNationalityOptions(opts.length ? opts : FALLBACK_NATIONALITIES));
       },
-      () => setNationalityOption(FALLBACK_NATIONALITIES) // master API unavailable → keep form usable
+      () => setNationalityOption(buildNationalityOptions(FALLBACK_NATIONALITIES)) // master API unavailable → keep form usable
     );
   }, [otherNat.fetchStatus]);
 
@@ -242,15 +243,27 @@ const StreamlinedRegistration = () => {
   const liveTicketTotal = eventTypeRows.reduce((s, et) => s + (tickets[et.id] || 0) * et._ticketPrice, 0);
   const totalShipping = deliveryMethod === "post" && shippingFee != null ? shippingFee : 0;
   const totalAddOns = addOnsTotal(addOns, addOnSelections);
-  const grandTotal = (applicantList.length ? subtotal : liveTicketTotal) + totalShipping + totalAddOns;
+  // The ticket counters can be changed again after step 1 was confirmed. Until "Next" rebuilds
+  // the applicant cards, the cards (and their prices) are stale: total from the counters and
+  // keep the later steps locked, or the bar shows money for tickets the runner just removed.
+  const ticketsDirty = useMemo(() => {
+    if (!applicantList.length) return false;
+    return eventTypeRows.some((et) => {
+      const members = et.isTeam ? et._teamSize : 1;
+      const confirmed = applicantList.filter((a) => a?.eventTypeId === et.id).length / members;
+      return confirmed !== (tickets[et.id] || 0);
+    });
+  }, [applicantList, eventTypeRows, tickets]);
+  const grandTotal = (applicantList.length && !ticketsDirty ? subtotal : liveTicketTotal) + totalShipping + totalAddOns;
 
   const lastSection = SECTIONS[SECTIONS.length - 1];
   const reachedIdx = (id) => SECTIONS.indexOf(id);
-  const isReached = (id) => reachedIdx(id) <= maxReached;
+  const isReached = (id) => (ticketsDirty ? id === "tickets" : reachedIdx(id) <= maxReached);
+  const shownReached = ticketsDirty ? 0 : maxReached; // for the step bar
   const goTo = (id) => setOpenSection((p) => (p === id ? null : id));
 
-  // The page scrolls inside <body> (overflow-y: auto in index.css), not the window, so
-  // window.scrollTo is a no-op here; scrollIntoView works whichever ancestor scrolls.
+  // scrollIntoView works whichever element scrolls (the document, since main.css stopped
+  // making <body> a scroll box), and scrollMarginTop keeps the header from covering it.
   const scrollToEl = (el) => {
     if (!el) return;
     el.style.scrollMarginTop = `${HEADER_OFFSET}px`;
@@ -518,7 +531,7 @@ const StreamlinedRegistration = () => {
   };
 
   const primaryAction = () => {
-    if (openSection === "tickets") return confirmTickets();
+    if (openSection === "tickets" || ticketsDirty) return confirmTickets();
     if (openSection === "info") return confirmInfo();
     if (openSection === "shirt") return confirmShirt();
     if (openSection === "questions") return confirmQuestions();
@@ -595,10 +608,10 @@ const StreamlinedRegistration = () => {
               <div key={i} className="flex items-center flex-1 last:flex-none">
                 <div className="flex flex-col items-center gap-1">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                    i <= maxReached ? "bg-[#006193] text-white" : "bg-[#e0e3e5] text-[#3f4850]"}`}>{i + 1}</div>
-                  <span className={`text-xs font-bold ${i <= maxReached ? "text-[#006193]" : "text-[#3f4850] opacity-60"}`}>{label}</span>
+                    i <= shownReached ? "bg-[#006193] text-white" : "bg-[#e0e3e5] text-[#3f4850]"}`}>{i + 1}</div>
+                  <span className={`text-xs font-bold ${i <= shownReached ? "text-[#006193]" : "text-[#3f4850] opacity-60"}`}>{label}</span>
                 </div>
-                {i < stepLabels.length - 1 && <div className={`flex-1 h-[2px] mx-2 -mt-5 ${i < maxReached ? "bg-[#006193]" : "bg-[#bfc7d2]"}`} />}
+                {i < stepLabels.length - 1 && <div className={`flex-1 h-[2px] mx-2 -mt-5 ${i < shownReached ? "bg-[#006193]" : "bg-[#bfc7d2]"}`} />}
               </div>
             ))}
           </div>

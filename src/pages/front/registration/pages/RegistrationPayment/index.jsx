@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Button, message } from 'antd';
 import FrontLayout from 'components/frontLayout';
+import { AlertError } from 'components/alert';
 import backOfficeServices from 'services/backoffice.services';
 import { handleQueryStatus, scrollPageToTop } from 'utils';
 import { useDispatch, useSelector } from 'react-redux';
@@ -177,6 +178,18 @@ const RegistrationPayment = () => {
         return res;
     };
 
+    // Payment problems stay on screen until the runner closes them (a 3-second toast is easy to
+    // miss on a phone) and always say whether money was taken and what to do next.
+    const showPayFailed = (code) => {
+        const closed = code === 'ORDER_OVERDUE' || code === 'ORDER_STATUS_NOT_PENDING';
+        AlertError({
+            title: t(closed ? "back.reg.payment.failClosedTitle" : "back.reg.payment.failTitle"),
+            text: t(closed ? "back.reg.payment.unavailable" : "back.reg.payment.failText"),
+            confirmButtonText: t(closed ? "back.reg.payment.goHistory" : "back.reg.payment.tryAgain"),
+            onOk: closed ? () => navigate("/historyList") : undefined,
+        });
+    };
+
     const handleNext = async () => {
         if (!order?.orderNo || !order?.applicants?.length) {
             message.warning(t("back.reg.payment.orderNotFound"));
@@ -192,14 +205,14 @@ const RegistrationPayment = () => {
                 fresh = await refetchOrderDetail();
             } catch (err) {
                 console.error("[RegistrationPayment] refetchOrderDetail failed:", err);
-                message.error(t("back.reg.payment.checkStatusFailed"));
+                showPayFailed();
                 return;
             }
             const { status: latestStatus, paymentDueDatetime: latestDue } = resolvePaymentState(fresh.data, order);
 
             const isPayableLatest = isPayablePayment(latestStatus, latestDue);
             if (!isPayableLatest) {
-                message.error(t("back.reg.payment.unavailable"));
+                showPayFailed('ORDER_STATUS_NOT_PENDING');
                 return;
             }
 
@@ -230,7 +243,7 @@ const RegistrationPayment = () => {
 
             const paymentData = resData?.paymentData;
             if (!paymentData) {
-                message.error(resData?.message || t("back.reg.payment.cannotProceed"));
+                showPayFailed(resData?.message);
                 return;
             }
 
@@ -253,7 +266,7 @@ const RegistrationPayment = () => {
                 const isPhone = /Mobi|Android|iPhone|iPad/i.test(globalThis.navigator?.userAgent || "");
                 const target = (isPhone && paymentData.appPaymentUrl) || paymentData.webPaymentUrl;
                 if (!target) {
-                    message.error(t("back.reg.payment.cannotProceed"));
+                    showPayFailed();
                     return;
                 }
                 dispatch(SET_ORDER(mpayOrder));
@@ -302,13 +315,13 @@ const RegistrationPayment = () => {
                     const params = `payload=${encodeURIComponent(paymentData.payload)}`;
                     navigate(`/registrationPaymentResult?${params}`);
                 } else {
-                    message.error("เกิดข้อผิดพลาดในการเชื่อมต่อระบบชำระเงิน");
+                    showPayFailed();
                 }
                 return;
             }
         } catch (err) {
             console.error("[RegistrationPayment] cannotProceed:", err);
-            message.error(t("back.reg.payment.cannotProceed"));
+            showPayFailed();
             return;
         } finally {
             setIsProceeding(false);
@@ -396,8 +409,9 @@ const RegistrationPayment = () => {
                 setCouponMsgType('warning');
             }
         } catch (error) {
-            const errorMessage = error?.response?.data?.message || error?.message || t("back.reg.payment.checkFailed");
-            setCouponMsg(errorMessage);
+            // Never show raw server/axios text ("Request failed with status code 404") to a runner.
+            console.error("[RegistrationPayment] validateCoupon failed:", error);
+            setCouponMsg(t("back.reg.payment.checkFailed"));
             setCouponMsgType('warning');
         }
         setIsApplying(false);

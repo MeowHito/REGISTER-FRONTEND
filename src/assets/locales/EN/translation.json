@@ -199,7 +199,9 @@
         "errorTitle": "Something went wrong",
         "errorDescription": "We couldn't load this event right now. Please try again.",
         "retry": "Try again"
-      }
+      },
+      "applyNow": "Register now",
+      "tapToZoom": "Tap to zoom"
     },
     "home": {
       "upcomingEvents": "Upcoming Events",
@@ -1172,27 +1174,28 @@
           "action": "Action"
         },
         "status": {
-          "PENDING": "Pending",
-          "SUCCESS": "Success",
-          "FAILED": "Failed",
-          "CANCEL": "Cancelled by User",
-          "CANCELLED": "Cancelled by User",
-          "REVIEW": "Under Review"
+          "PENDING": "Awaiting payment",
+          "SUCCESS": "Paid",
+          "FAILED": "Payment failed",
+          "CANCEL": "Cancelled",
+          "CANCELLED": "Cancelled",
+          "REVIEW": "Payment under review"
         },
         "action": {
           "view": "View",
           "viewTooltip": "View Details",
-          "cancel": "Cancel"
+          "cancel": "Cancel",
+          "payNow": "Pay now"
         },
         "cancel": {
-          "confirmTitle": "Are you sure?",
-          "confirmContent": "Do you want to cancel order {{orderNo}}?",
+          "confirmTitle": "Cancel this order?",
+          "confirmContent": "Order {{orderNo}} will be cancelled and can no longer be paid.",
           "success": "Order {{orderNo}} has been cancelled",
           "failed": "Unable to cancel the order"
         },
         "confirm": {
-          "ok": "Confirm",
-          "cancel": "Cancel"
+          "ok": "Cancel order",
+          "cancel": "Keep order"
         },
         "filters": {
           "orderOrEventLabel": "Order no. or event name",
@@ -1201,19 +1204,21 @@
           "endDate": "End Date",
           "status": "Status",
           "search": "Search"
-        }
+        },
+        "empty": "No registrations yet",
+        "loadMore": "Show more"
       },
       "historyDetail": {
         "title": "Order Details",
         "orderNo": "Order No.",
         "status": {
           "title": "Status",
-          "PENDING": "Pending",
-          "CANCEL": "Cancelled by user",
-          "CANCELLED": "Cancelled by user",
-          "FAILED": "Failed",
-          "SUCCESS": "Success",
-          "REVIEW": "Under Review"
+          "PENDING": "Awaiting payment",
+          "CANCEL": "Cancelled",
+          "CANCELLED": "Cancelled",
+          "FAILED": "Payment failed",
+          "SUCCESS": "Paid",
+          "REVIEW": "Payment under review"
         },
         "reviewReason": {
           "title": "Reason for Review",
@@ -2385,6 +2390,11 @@
         "alipayLink": "If the image is not displayed, click here",
         "checkStatusFailed": "Unable to check the latest payment status. Please try again.",
         "cannotProceed": "Unable to proceed. Please try again.",
+        "failTitle": "Payment did not go through",
+        "failText": "You have not been charged. Please try again or choose another payment method. If it still fails, contact the organizer.",
+        "failClosedTitle": "This order can no longer be paid",
+        "tryAgain": "Try again",
+        "goHistory": "Go to my registrations",
         "orderUnderReview": "Your order is under review",
         "orderUnderReviewDesc": "Your payment is being reviewed by our team. Please wait.",
         "orderNotFound": "Order information not found"
@@ -2441,6 +2451,7 @@
         "registrationSuccess": "Registration Successful",
         "registrationCompleted": "Your registration has been completed",
         "pleaseCheckEmail": "Please check your email",
+        "emailSentTo": "A confirmation email has been sent to",
         "checkSpamIfNoEmail": "If you did not receive an email, please check your",
         "or": "or",
         "backToHome": "Back to Home",
@@ -2469,7 +2480,8 @@
         "quotaUnavailable": "No available quota",
         "quotaFullWarning": "Quota Full",
         "quotaFullDescription": "Sorry, the quota for this event type is full.",
-        "pricingError": "An error occurred while fetching pricing information"
+        "pricingError": "An error occurred while fetching pricing information",
+        "viewMyRegistration": "View my registration"
       },
       "error": {
         "quotaExceededTitle": "Registration Failed",
@@ -2892,7 +2904,8 @@
     "logo": "Please upload logo image",
     "coverImg": "Please upload cover image",
     "addOnName": "Please enter the add-on name",
-    "addOnPrice": "Please enter the add-on price"
+    "addOnPrice": "Please enter the add-on price",
+    "name": "Please enter your name"
   },
   "validation": {
     "email": "Invalid email",

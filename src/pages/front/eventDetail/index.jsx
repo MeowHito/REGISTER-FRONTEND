@@ -1,9 +1,9 @@
 import { ArrowRightOutlined, CalendarOutlined, LeftOutlined, SearchOutlined } from '@ant-design/icons';
-import { Button, Spin } from 'antd';
+import { Button, Image, Spin } from 'antd';
 import { NOT_FOUND_IMG } from 'assets';
 import DisplayIfAvailable from 'components/displayIfAvailable';
 import FrontLayout from 'components/frontLayout';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import DOMPurify from 'dompurify';
 import { useNavigate, useParams } from 'react-router-dom';
 import generalService, { isEventNotFoundError } from 'services/general.services';
@@ -34,8 +34,6 @@ function EventDetail({ eventId, setView }) {
     const isOffline = other.fetchStatus === "paused";
     const showNotFound = !isFetching && (isError || !data);
     const isServerError = isOffline || (isError && !isEventNotFoundError(error));
-    const stickyRef = useRef(null);
-    const [isStuck, setIsStuck] = useState(false);
     const [countdownTime, setCountdownTime] = useState(null);
     const [isAfterEnd, setIsAfterEnd] = useState(null);
     const currentLanguage = i18n.language?.toLowerCase();
@@ -43,15 +41,6 @@ function EventDetail({ eventId, setView }) {
     const { data: me } = useMe({ retry: 0 });
     const roleType = me?.role?.roleType;
     const isGuestOrAnonymous = !roleType || roleType === 'guest';
-
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => setIsStuck(!entry.isIntersecting),
-            { threshold: [1] }
-        );
-        if (!isFetching && stickyRef.current) observer.observe(stickyRef.current);
-        return () => observer.disconnect();
-    }, [isFetching]);
 
     useEffect(() => {
         handleQueryStatus(other, () => {
@@ -178,11 +167,16 @@ function EventDetail({ eventId, setView }) {
                         ) : <div className="flex flex-col lg:flex-row max-w-screen-lg mx-auto">
                             <div className="w-full md:px-4 pb-5">
                                 <div className="w-full mb-4">
-                                    <img
+                                    {/* Tap the poster to open it full screen and pinch/zoom it — it's
+                                        where organizers put the race details. */}
+                                    <Image
+                                        rootClassName="!block w-full"
                                         className="w-full h-auto rounded object-contain"
+                                        width="100%"
                                         src={bannerUrl || NOT_FOUND_IMG}
+                                        fallback={NOT_FOUND_IMG}
                                         alt={data?.name || ""}
-                                        onError={(e) => { e.target.src = NOT_FOUND_IMG; }}
+                                        preview={bannerUrl ? { mask: t("front.eventDetail.tapToZoom") } : false}
                                     />
                                 </div>
                                 {shouldShowChecklist &&  !countdownTime && <Button icon={<SearchOutlined />} color='blue' variant="outlined" iconPosition={"start"} className={`!h-[44px] w-[157px] !rounded-full md:!hidden z-20`} onClick={() => navigate(`/participantSearch/${eventKey}`)}>
@@ -202,24 +196,9 @@ function EventDetail({ eventId, setView }) {
                                     ) :
                                         isAfterEnd ? <div className='-mt-11 md:!mt-0 w-full flex justify-end'>
                                             <ApplicationButton type="closed" /></div> :
-                                            <>
-                                                <div ref={stickyRef} className="absolute" />
-                                                <div className={`-mt-11 md:!mt-0 sticky w-full top-4 z-10 text-right ${isStuck ? 'animate-shake' : ''}`}>
-                                                    <div className='flex justify-end cursor-pointer'>
-                                                        <ApplicationButton
-                                                            type="opened"
-                                                            onClick={() => {
-                                                                if (!me) {
-                                                                    navigate('/login', { state: { from: `/registrationInfo/${eventKey}` } })
-                                                                    return
-                                                                }
-                                                                dispatch(CLEAR_ORDER())
-                                                                navigate(`/registrationInfo/${eventKey}`)
-                                                            }}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </>
+                                            // The floating "สมัครเลย" button at the bottom is the one way in;
+                                            // a second inline button here read like a status label.
+                                            <div className='h-[44px] -mt-11 md:!mt-0' />
                                 ) : <div className='h-[44px] -mt-11 md:!mt-0' />
                                 }
 
@@ -298,8 +277,8 @@ function EventDetail({ eventId, setView }) {
                                                                 <div>
                                                                     {data.startRegistrationDate && price.endDate ? (
                                                                         <>
-                                                                            {dayjs(price.startDate).format("D MMMM BBBB")} -{" "}
-                                                                            {dayjs(price.endDate).format("D MMMM BBBB")}
+                                                                            {dayjs(price.startDate).format("D MMMM YYYY")} -{" "}
+                                                                            {dayjs(price.endDate).format("D MMMM YYYY")}
                                                                         </>
                                                                     )
                                                                         : "-"}
@@ -320,8 +299,8 @@ function EventDetail({ eventId, setView }) {
                                                         <div>
                                                             {data.startRegistrationDate && data.endRegistrationDate ? (
                                                                 <>
-                                                                    {sortedPrices.length ? dayjs(sortedPrices[sortedPrices.length - 1].endDate).add(1, 'day').format("D MMMM BBBB") : dayjs(data.startRegistrationDate).format("D MMMM BBBB")} -{" "}
-                                                                    {dayjs(data.endRegistrationDate).format("D MMMM BBBB")}
+                                                                    {sortedPrices.length ? dayjs(sortedPrices[sortedPrices.length - 1].endDate).add(1, 'day').format("D MMMM YYYY") : dayjs(data.startRegistrationDate).format("D MMMM YYYY")} -{" "}
+                                                                    {dayjs(data.endRegistrationDate).format("D MMMM YYYY")}
                                                                 </>
                                                             )
                                                                 : "-"}
@@ -479,7 +458,7 @@ function EventDetail({ eventId, setView }) {
                         onClick={handleRegister}
                         className="pointer-events-auto w-full md:w-auto bg-gradient-to-r from-[#1d4ed8] to-[#2563eb] hover:from-[#1e40af] hover:to-[#1d4ed8] text-white font-bold text-[17px] tracking-wide px-8 h-[52px] rounded-full shadow-[0_8px_24px_rgba(37,99,235,0.35)] ring-4 ring-white/70 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                     >
-                        {t("general.openRegistration")}
+                        {t("front.eventDetail.applyNow")}
                         <ArrowRightOutlined className="text-base" />
                     </button>
                 </div>

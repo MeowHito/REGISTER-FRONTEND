@@ -227,7 +227,7 @@ const ApplicantDetail = ({ applicant: a }) => {
       <div>
         <SectionLabel>{t("back.history.historyDetail.section.pricing")}</SectionLabel>
         <div className="flex justify-end">
-          <div className="w-72 bg-gray-50 rounded-lg px-4 py-3">
+          <div className="w-full sm:w-72 bg-gray-50 rounded-lg px-4 py-3">
             <div className="flex justify-between py-1">
               <Text type="secondary">{t("back.history.historyDetail.breakdown.fee.registration")}</Text>
               <Text>{(a.price ?? 0).toLocaleString("th-TH")} {t("general.unitBaht")}</Text>
@@ -434,7 +434,17 @@ const HistoryDetail = ({ paymentId, setMode }) => {
   } = useUploadFileHook();
   const [helpSubmitting, setHelpSubmitting] = useState(false);
 
-  const onCancelOrder = () => {
+  const onCancelOrder = () =>
+    Modal.confirm({
+      title: t("back.history.historyList.cancel.confirmTitle"),
+      content: t("back.history.historyList.cancel.confirmContent", { orderNo: order?.orderNo }),
+      okText: t("back.history.historyList.confirm.ok"),
+      okButtonProps: { danger: true },
+      cancelText: t("back.history.historyList.confirm.cancel"),
+      onOk: doCancelOrder,
+    });
+
+  const doCancelOrder = () => {
     cancelOrderMutation.mutate(
       { orderId: paymentId, cancelledBy: "USER" },
       {
@@ -455,6 +465,7 @@ const HistoryDetail = ({ paymentId, setMode }) => {
   const label = t(`back.history.historyDetail.status.${normalized}`) || order?.status;
   const isPending = normalized === "PENDING";
   const isReview = normalized === "REVIEW";
+  const canPay = isPending && me?.id === order?.ownerUuid && !!paymentLink && !remainingTime?.expired;
 
   const totals = (order?.applicants || []).reduce(
     (acc, a) => {
@@ -488,11 +499,10 @@ const HistoryDetail = ({ paymentId, setMode }) => {
             <div className="flex justify-between items-start flex-wrap gap-4">
               <div>
                 <Title level={4} className="mb-1!">{t("back.history.historyDetail.title")}</Title>
-                <Space size="small">
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                   <Text type="secondary">{t("back.history.historyDetail.orderNo")}: <Text strong>{order.orderNo}</Text></Text>
-                  <Text type="secondary">|</Text>
                   <Text type="secondary">{t("back.history.historyDetail.date")}: {order.date}</Text>
-                </Space>
+                </div>
               </div>
               <Tag
                 color={color}
@@ -535,6 +545,14 @@ const HistoryDetail = ({ paymentId, setMode }) => {
                 </div>
               }
             />
+          )}
+          {/* Pay right away — the runner came here to pay, so don't make them scroll past every applicant. */}
+          {canPay && (
+            <Link to={paymentLink} className="block mb-4">
+              <Button type="primary" size="large" block className="!h-12 !font-semibold">
+                {t("back.history.historyDetail.actions.payNow")} →
+              </Button>
+            </Link>
           )}
 
           {/* Review Status Alert */}
@@ -610,7 +628,7 @@ const HistoryDetail = ({ paymentId, setMode }) => {
                     {/* Order Summary Card */}
                     <Card className="mb-4!">
                       <div className="flex justify-end">
-                        <div className="w-80 bg-gray-50 rounded-lg px-5 py-4">
+                        <div className="w-full sm:w-80 bg-gray-50 rounded-lg px-5 py-4">
                           <div className="flex justify-between py-1.5">
                             <Text type="secondary">{t("back.history.historyDetail.summary.count")}</Text>
                             <Text>{order.applicants.length} {t("general.unitPerson") || "คน"}</Text>
@@ -650,7 +668,7 @@ const HistoryDetail = ({ paymentId, setMode }) => {
 
                     {/* Action Bar */}
                     {isPending && me?.id === order.ownerUuid && (
-                      <div className="flex justify-end gap-3 mb-8">
+                      <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mb-8">
                         <Button
                           size="large"
                           danger
@@ -659,10 +677,12 @@ const HistoryDetail = ({ paymentId, setMode }) => {
                         >
                           {t("back.history.historyDetail.actions.cancel")}
                         </Button>
-                        <Link to={paymentLink}>
+                        <Link to={paymentLink} className="block">
                           <Button
                             type="primary"
                             size="large"
+                            block
+                            disabled={!canPay}
                             loading={cancelOrderMutation.isPending}
                           >
                             {t("back.history.historyDetail.payment")} →

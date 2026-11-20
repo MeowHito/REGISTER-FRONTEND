@@ -77,7 +77,7 @@ function ChangePassword() {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen overflow-hidden">
+    <div className="flex items-center justify-center min-h-dvh">
       <div className="w-full max-w-md p-4">
         <div className="sg-section">
           <div className="section-content section-padding">

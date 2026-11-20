@@ -1,5 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useDispatch } from "react-redux";
 import createRequest from "utils/request";
+import { CLEAR_ORDER } from "store/reducers/contextSlice";
 
 export async function fetchMe() {
   const res = await createRequest.get("/api/auth/me");
@@ -36,11 +38,15 @@ export default function useMe(options = {}) {
 
 export function useLogout({ onSuccess, onError } = {}) {
   const qc = useQueryClient();
+  const dispatch = useDispatch();
 
   return async function logout() {
     try {
       await createRequest.post("/logout");
       qc.removeQueries({ queryKey: ["me"], exact: true });
+      // The in-progress order is persisted in this browser; don't hand it to the next person
+      // who logs in on the same phone.
+      dispatch(CLEAR_ORDER());
       if (onSuccess) onSuccess();
     } catch (e) {
       if (onError) onError(e);

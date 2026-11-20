@@ -428,13 +428,15 @@ const backOfficeServices = {
     });
   },
 
-  useQueryGetOrganizerActive() {
+  // Admin-only endpoint: pass enabled=false for other roles so they don't hit a 403.
+  useQueryGetOrganizerActive({ enabled = true } = {}) {
     return useQuery({
       queryKey: ["getOrganizerActive"],
       queryFn: async () => {
         const res = await createRequest.get(`api/user/getOrganizerActive`);
         return res.data.data;
       },
+      enabled,
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
     });
@@ -456,14 +458,14 @@ const backOfficeServices = {
     );
   },
 
-  useQueryGetUserActiveByRoleType({ role }) {
+  useQueryGetUserActiveByRoleType({ role, enabled = true }) {
     return useQuery({
       queryKey: ["getUserActiveByRoleType", role],
       queryFn: async () => {
         const res = await createRequest.get(`api/user/getUserActiveByRoleType`, { params: { role } });
         return res.data.data;
       },
-      enabled: !!role,
+      enabled: !!role && enabled,
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
     });

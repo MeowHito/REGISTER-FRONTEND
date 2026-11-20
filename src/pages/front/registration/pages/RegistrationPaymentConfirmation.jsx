@@ -329,6 +329,15 @@ const RegistrationPaymentConfirmation = () => {
         }
     };
 
+    // The page can keep the scroll position of the payment page, which
+    // leaves the QR above the fold: bring it into view as soon as it is on screen.
+    const qrRef = useRef(null);
+    useEffect(() => {
+        if (!qrCode) return;
+        const id = setTimeout(() => qrRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+        return () => clearTimeout(id);
+    }, [qrCode]);
+
     useEffect(() => {
         try {
             if (order) {
@@ -463,7 +472,7 @@ const RegistrationPaymentConfirmation = () => {
                 )}
 
                 {qrCode ? (
-                    <div style={{ textAlign: "center" }}>
+                    <div ref={qrRef} style={{ textAlign: "center" }}>
                         {paymentType === PAYMENT_TYPE.QR_CODE && qrCode && (
                             <img
                                 src={`data:image/png;base64,${qrCode}`}

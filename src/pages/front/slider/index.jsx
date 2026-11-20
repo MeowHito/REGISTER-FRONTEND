@@ -98,8 +98,10 @@ function Slider() {
   )
 
   const SearchBar = (
-    <div className="max-w-screen-xl mx-auto px-3 md:px-5 -mt-24 md:-mt-10 relative z-20">
-      <div className="mobile-home-search bg-white border border-gray-200 rounded-2xl shadow-[0_18px_45px_rgba(15,23,42,0.18)] p-3 md:p-4 flex flex-col md:flex-row gap-2 md:gap-3 md:items-center">
+    // w-full: this sits in a flex column, where mx-auto alone shrinks it to its content, so the
+    // box changed width every time a filter was picked. Phones get a fixed, slightly narrow box.
+    <div className="w-full max-w-[344px] md:max-w-screen-xl mx-auto px-3 md:px-5 -mt-24 md:-mt-10 relative z-20">
+      <div className="mobile-home-search bg-white/75 backdrop-blur-md md:bg-white md:backdrop-blur-none border border-white/60 md:border-gray-200 rounded-2xl shadow-[0_18px_45px_rgba(15,23,42,0.18)] p-2 md:p-4 flex flex-col md:flex-row gap-2 md:gap-3 md:items-center">
         <Select
           placeholder={t('front.event.selectProvince')}
           allowClear
@@ -141,7 +143,7 @@ function Slider() {
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); handleSearch(); }}
-            className="absolute right-1.5 md:right-1 top-1/2 -translate-y-1/2 z-10 h-[46px] md:h-8 px-4 md:px-3 bg-brand hover:bg-brand-dark text-white text-base md:text-sm font-semibold rounded-lg md:rounded-md flex items-center gap-1.5 active:scale-95 transition-all shadow-sm"
+            className="absolute right-1 top-1/2 -translate-y-1/2 z-10 h-[34px] md:h-8 px-3 bg-brand hover:bg-brand-dark text-white text-sm font-semibold rounded-lg md:rounded-md flex items-center gap-1.5 active:scale-95 transition-all shadow-sm"
           >
             <SearchOutlined />
             {t('general.search')}

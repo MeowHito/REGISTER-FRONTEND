@@ -78,8 +78,8 @@ export const mergePermissions = (menuPerm, record, recordPermission) => {
   };
 };
 /**
- * Scroll the page back to the top. The public pages scroll inside <body> (overflow-y: auto),
- * so window.scrollTo alone does nothing there; cover both.
+ * Scroll the page back to the top. The document itself scrolls (see public/assets/css/main.css);
+ * body/documentElement are covered too in case a page ever makes one of them the scroller.
  */
 export function scrollPageToTop() {
   globalThis.scrollTo({ top: 0, behavior: "auto" });

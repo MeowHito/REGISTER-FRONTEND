@@ -14,6 +14,7 @@ import PhoneInput from "components/phoneInput";
 import { DEFAULT_PHONE_COUNTRY_CODE } from "constants/phoneCountryCodes";
 import { inputCls, selectCls, fieldItemCls, ticketBadgeCls } from "./theme";
 import { FIELD_CONFIG_DEFAULTS, isRequired, isShown } from "./fieldConfig";
+import { DEFAULT_NATIONALITY } from "./nationality";
 
 const PERSONAL_KEYS = [
   "firstName", "lastName", "firstNameEn", "lastNameEn", "gender", "birthDate",
@@ -110,7 +111,7 @@ const ApplicantForm = ({
       email: me?.email,
       phone: me?.phone,
       phoneCountryCode: me?.phoneCountryCode || DEFAULT_PHONE_COUNTRY_CODE,
-      nationality: me?.nationality,
+      nationality: me?.nationality || DEFAULT_NATIONALITY,
       idType: guessIdType(me?.idNo),
       idNo: me?.idNo,
       healthIssues: me?.healthIssues,
@@ -125,6 +126,7 @@ const ApplicantForm = ({
 
   const chooseFriend = () => setPersonal({
     type: "friend",
+    nationality: DEFAULT_NATIONALITY,
     idType: "idCard",
     phoneCountryCode: DEFAULT_PHONE_COUNTRY_CODE,
     emergencyPhoneCountryCode: DEFAULT_PHONE_COUNTRY_CODE,
@@ -343,7 +345,10 @@ const ApplicantForm = ({
               <CommonForm.Item name={["applicants", index, "nationality"]} className={fieldItemCls}
                 rules={requiredRule("nationality", "required.nationality")}>
                 <Select className={selectCls} placeholder={t("back.reg.form.selectNationality")} options={nationalityOption}
-                  disabled={isLoadingNationality} showSearch allowClear getPopupContainer={(n) => n.parentNode} />
+                  disabled={isLoadingNationality} showSearch allowClear getPopupContainer={(n) => n.parentNode}
+                  filterOption={(input, option) =>
+                    (option?.filterLabel || option?.label || "").toLowerCase().includes(input.trim().toLowerCase())
+                  } />
               </CommonForm.Item>
             </div>
             )}

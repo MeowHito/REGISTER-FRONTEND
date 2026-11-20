@@ -473,7 +473,6 @@ function ParticipantSearch() {
                         <InfiniteScroll
                             className='pb-5'
                             style={{ overflowX: 'hidden' }}
-                            scrollableTarget="scrollableDiv"
                             dataLength={items.length}
                             next={fetchMoreData}
                             hasMore={hasMore}

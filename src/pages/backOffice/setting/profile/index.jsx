@@ -64,7 +64,7 @@ function Profile() {
 
 
   const { data: roleData, isFetching: isLoadingUserAdmin, ...otherRole } =
-    backofficeServices.useQueryGetUserActiveByRoleType({ role: "admin" });
+    backofficeServices.useQueryGetUserActiveByRoleType({ role: "admin", enabled: roleUser === "admin" });
 
   const {
     data: nationalities,

@@ -62,7 +62,7 @@ function Login({ organizerMode = false }) {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen overflow-hidden">
+    <div className="flex items-center justify-center min-h-dvh">
       <div className="w-full max-w-md p-4">
         <div className="sg-section">
           <div className="section-content md:py-28 sm:py-2 xs:py-1">
@@ -95,11 +95,20 @@ function Login({ organizerMode = false }) {
                       {organizerMode ? t("front.menu.organizer") : t("back.login.login")}
                     </div>
                     <div className="ragister-form flex flex-col w-full text-left">
+                      {/* A real form so "Go"/Enter on the phone keyboard logs in. */}
+                      <form
+                        className="flex flex-col w-full"
+                        noValidate
+                        onSubmit={(e) => { e.preventDefault(); handleLogin(); }}
+                      >
                       <div className="form-group mb-3">
                         <FloatingLabel
                           label={t("general.email")}
                           value={email}
                           type="text"
+                          inputMode="email"
+                          autoComplete="username"
+                          autoCapitalize="none"
                           onChange={(e) => setEmail(e.target.value)}
                         />
                       </div>
@@ -108,6 +117,7 @@ function Login({ organizerMode = false }) {
                           label={t("general.password")}
                           value={password}
                           type="password"
+                          autoComplete="current-password"
                           onChange={(e) => setPassword(e.target.value)}
                         />
                         {error && (
@@ -118,11 +128,12 @@ function Login({ organizerMode = false }) {
                       </div>
                       <Button
                         className="btn btn-primary w-full !h-[40px] mb-8"
-                        onClick={handleLogin}
+                        htmlType="submit"
                         loading={isLoading}
                       >
                         <span>{t("back.login.login")}</span>
                       </Button>
+                      </form>
                       <div className="text-center mt-1 mb-6">
                         <p>{t("back.login.or")}</p>
                       </div>

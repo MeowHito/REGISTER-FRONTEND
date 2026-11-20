@@ -66,7 +66,9 @@ const RegistrationPaymentResult = () => {
     const isDirectSuccess = !payload && !invoiceNo;
     const needs2c2pVerify = !isDirectSuccess;
 
-    const orderDetail = backOfficeServices.useQuerygetHistoryDetail({ orderId: invoiceNo });
+    // Free and test-mode orders come straight here without an invoiceNo; look them up by the
+    // order kept in the store so the page can still show the order number and e-mail address.
+    const orderDetail = backOfficeServices.useQuerygetHistoryDetail({ orderId: invoiceNo || order?.orderNo || null });
     const { data: paymentOptions, isLoading: isLoadingPaymentOptions } = backOfficeServices.useQueryPaymentOptions();
 
     const [result, setResult] = useState(null);
@@ -168,6 +170,8 @@ const RegistrationPaymentResult = () => {
     }, [needs2c2pVerify, isPending, pollCount]);
 
     const orderData = orderDetail?.data;
+    const shownOrderNo = orderData?.orderNo || invoiceNo || order?.orderNo;
+    const myOrderLink = orderData?.uuid ? `/historyList?order=${orderData.uuid}` : "/historyList";
 
     useEffect(() => {
         if (!needs2c2pVerify) return;
@@ -212,7 +216,21 @@ const RegistrationPaymentResult = () => {
             subTitle={
                 <div>
                     <div>{t("back.reg.common.registrationCompleted")}</div>
-                    <div>{t("back.reg.common.pleaseCheckEmail")}</div>
+                    {shownOrderNo && (
+                        <div style={{ margin: "8px 0" }}>
+                            {t("back.reg.payment.orderNo")}: <strong style={{ color: "#1f1f1f" }}>{shownOrderNo}</strong>
+                        </div>
+                    )}
+                    {orderData?.confirmationEmail ? (
+                        <div style={{ marginTop: 4 }}>
+                            <div>{t("back.reg.common.emailSentTo")}</div>
+                            <strong style={{ overflowWrap: "anywhere", color: "#1f1f1f" }}>
+                                {orderData.confirmationEmail}
+                            </strong>
+                        </div>
+                    ) : (
+                        <div>{t("back.reg.common.pleaseCheckEmail")}</div>
+                    )}
                     <div>{t("back.reg.common.checkSpamIfNoEmail")}</div>
                     <div>
                         <span className="font-bold">{t("back.reg.common.spam")}</span>{" "}
@@ -223,14 +241,19 @@ const RegistrationPaymentResult = () => {
             }
             extra={
                 <>
-                    <Button
-                        type="primary"
-                        size="large"
-                        style={{ backgroundColor: "#FFB946", borderColor: "#FFB946" }}
-                        onClick={() => navigate("/")}
-                    >
-                        {t("back.reg.common.backToHome")}
-                    </Button>
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        <Button
+                            type="primary"
+                            size="large"
+                            style={{ backgroundColor: "#FFB946", borderColor: "#FFB946" }}
+                            onClick={() => navigate(myOrderLink)}
+                        >
+                            {t("back.reg.common.viewMyRegistration")}
+                        </Button>
+                        <Button size="large" onClick={() => navigate("/")}>
+                            {t("back.reg.common.backToHome")}
+                        </Button>
+                    </div>
 
                     <Divider />
 
@@ -249,7 +272,7 @@ const RegistrationPaymentResult = () => {
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
-                height: "100vh",
+                minHeight: "100dvh",
                 padding: 16,
             }}
         >

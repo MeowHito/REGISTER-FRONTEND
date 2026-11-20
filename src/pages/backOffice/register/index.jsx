@@ -14,7 +14,6 @@ import { HomeOutlined, SettingOutlined, UserOutlined } from "@ant-design/icons";
 import masterService from "services/master.services";
 import FloatingLabel from "components/floatingLabel";
 import { useQueryClient } from "@tanstack/react-query";
-import { errorToMessage } from "hooks/functions/errorToMessage";
 
 function Register({ organizerMode = false }) {
   const { t } = useTranslation();
@@ -24,7 +23,6 @@ function Register({ organizerMode = false }) {
   const [role, setRole] = useState(organizerMode ? "organizer" : "guest");
   const [fromSocialLogin, setFromSocialLogin] = useState(false);
   const [socialEmail, setSocialEmail] = useState("");
-  const [isAccepted, setIsAccepted] = useState(false);
 
   useEffect(() => {
     const storedData = sessionStorage.getItem("registerData");
@@ -79,7 +77,7 @@ function Register({ organizerMode = false }) {
       },
       (err) => {
         AlertError({
-          text: `REGISTER : ${errorToMessage(err?.response?.data?.message || err?.message)}`,
+          text: err?.response?.data?.message || t("back.register.failed"),
         });
       }
     );
@@ -114,7 +112,7 @@ function Register({ organizerMode = false }) {
       },
       (err) => {
         AlertError({
-          text: `REGISTER : ${errorToMessage(err?.response?.data?.message || err?.message)}`,
+          text: err?.response?.data?.message || t("back.register.failed"),
         });
       }
     );
@@ -162,7 +160,7 @@ function Register({ organizerMode = false }) {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen overflow-hidden">
+    <div className="flex items-center justify-center min-h-dvh">
       <div className="w-full max-w-md p-4">
         <div className="sg-section">
           <div className="section-content md:py-28 sm:py-2 xs:py-1">
@@ -214,6 +212,7 @@ function Register({ organizerMode = false }) {
                         name="register_form"
                         layout="vertical"
                         onFinish={onFinish}
+                        scrollToFirstError={{ behavior: "smooth", block: "center" }}
                         autoComplete="off"
                       >
                         <CommonForm.Item
@@ -308,12 +307,15 @@ function Register({ organizerMode = false }) {
                           valuePropName="checked"
                           initialValue={false}
                           rules={[
-                            { required: true, message: t("required.agreement") },
+                            // `required` lets an unticked box (false) through; check the value itself.
+                            {
+                              validator: (_, checked) =>
+                                checked ? Promise.resolve() : Promise.reject(new Error(t("required.agreement"))),
+                            },
                           ]}
                         >
                           <Checkbox
                             className="!flex !items-center justify-start font-semibold !mb-0"
-                            onChange={(e) => setIsAccepted(e.target.checked)}
                           >
                             {t("back.register.agree")}{" "}
                             <Link
@@ -342,7 +344,6 @@ function Register({ organizerMode = false }) {
                           <Button
                             className="!h-[40px] !mb-0 btn btn-primary w-full"
                             htmlType="submit"
-                            disabled={!isAccepted}
                             loading={isLoadingRegister || isLoadingSocialRegister}
                           >
                             <span>

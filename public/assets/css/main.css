@@ -52,10 +52,17 @@ body {
     font-family: var(--primary-font);
     -webkit-font-smoothing: antialiased;
     width: 100%;
-    height: 100%;
     margin: 0px;
     padding: 0px;
-    overflow-x: hidden; 
+}
+
+/* Let the document itself scroll. With height:100% + overflow on both html and body, <body>
+   became an inner scroll box: phone browsers then can't collapse their toolbar, and Chrome's
+   bar ends up covering the sticky header / bottom action bars. Body's overflow-x propagates to
+   the viewport (html keeps overflow visible), and clip doesn't create a scroll container. */
+body {
+    overflow-x: hidden;
+    overflow-x: clip;
 }
 
 h1,

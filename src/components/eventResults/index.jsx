@@ -83,7 +83,6 @@ export default function EventResults({ provinceId = null, eventType = null, even
         ) : items.length > 0 ? (
           <InfiniteScroll
             className="!overflow-visible"
-            scrollableTarget="scrollableDiv"
             dataLength={items.length}
             next={() => setPage((p) => p + 1)}
             hasMore={hasMore}
