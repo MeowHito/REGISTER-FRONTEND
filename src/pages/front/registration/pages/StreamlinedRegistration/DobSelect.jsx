@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Select } from "antd";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import { selectCls } from "./theme";
+import PhoneFriendlySelect from "./PhoneFriendlySelect";
 
 /**
  * Day / Month / Year selector that emits a dayjs value (always Gregorian/ค.ศ.),
@@ -71,16 +71,14 @@ const DobSelect = ({ id, value, onChange }) => {
 
   return (
     <div id={id} className="grid grid-cols-3 gap-2">
-      <Select className={cls} placeholder={t("front.reg.day")} value={day} options={dayOptions}
-        onChange={(v) => { setDay(v); commit(v, month, year); }}
-        getPopupContainer={(n) => n.parentNode} />
-      <Select className={cls} placeholder={t("front.reg.month")} value={month} options={monthOptions}
-        onChange={(v) => { setMonth(v); commit(day, v, year); }}
-        getPopupContainer={(n) => n.parentNode} />
-      <Select className={cls} showSearch placeholder={t("front.reg.year")}
+      {/* Phones get the native picker (wheel on iPhone), which scrolls far more smoothly. */}
+      <PhoneFriendlySelect className={cls} placeholder={t("front.reg.day")} value={day} options={dayOptions}
+        onChange={(v) => { setDay(v); commit(v, month, year); }} />
+      <PhoneFriendlySelect className={cls} placeholder={t("front.reg.month")} value={month} options={monthOptions}
+        onChange={(v) => { setMonth(v); commit(day, v, year); }} />
+      <PhoneFriendlySelect className={cls} showSearch placeholder={t("front.reg.year")}
         value={year} options={yearOptions} optionFilterProp="label"
-        onChange={(v) => { setYear(v); commit(day, month, v); }}
-        getPopupContainer={(n) => n.parentNode} />
+        onChange={(v) => { setYear(v); commit(day, month, v); }} />
     </div>
   );
 };

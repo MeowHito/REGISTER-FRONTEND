@@ -50,7 +50,7 @@ const OrderSummary = ({
             </Col>
           </Row>
           {addOns.map((a, i) => (
-            <Row key={i} className="text-xs text-gray-500">
+            <Row key={i} className="text-[13px] text-gray-500">
               <Col span={16}>
                 <div className="pl-3 truncate">• {a.name}{a.qty > 1 ? ` × ${a.qty}` : ""}</div>
               </Col>

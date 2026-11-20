@@ -846,3 +846,9 @@ h6 {
     font-size: 16px !important;
   }
 }
+
+/* Dropdown lists: let the finger scroll the list only (not the page behind it), with momentum. */
+.ant-select-dropdown .rc-virtual-list-holder {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}

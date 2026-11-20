@@ -4,13 +4,13 @@ import { useTranslation } from "react-i18next";
 import CommonForm from "components/commonForm";
 import FloatingLabel from "components/floatingLabel";
 import {
-  DEFAULT_PHONE_COUNTRY_CODE, fromSelectValue, phoneCountryOptions, phonePattern, toSelectValue,
+  DEFAULT_PHONE_COUNTRY_CODE, fromSelectValue, normalizePhone, phoneCountryOptions, phonePattern, toSelectValue,
 } from "constants/phoneCountryCodes";
 
 /**
  * A phone number with its dialling code, as two form fields: `<base>.<codeName>` (stored as
  * "+66") and `<base>.<numberName>`. The number rule follows the chosen code: Thai numbers stay
- * 0XXXXXXXXX, foreign ones are 6-15 digits.
+ * 0XXXXXXXXX (typing it without the 0 is fixed up as you type), foreign ones are 6-15 digits.
  *
  * `variant="plain"` renders the registration-page look (antd Input/Select + classes);
  * `variant="floating"` uses the back-office FloatingLabel inputs.
@@ -43,6 +43,9 @@ const PhoneInput = ({
     { pattern: phonePattern(codeValue), message: invalidMessage || t("validation.phone") },
   ];
 
+  // With +66 chosen, 991535426 and 0991535426 are both fine; the field keeps the 0 form.
+  const normalizeNumber = (v) => normalizePhone(v, form?.getFieldValue(codePath) || codeValue);
+
   const filterOption = (input, option) =>
     String(option?.filterLabel || "").toLowerCase().includes(input.toLowerCase());
 
@@ -71,7 +74,7 @@ const PhoneInput = ({
         </div>
         <div className="flex-1 min-w-0">
           <CommonForm.Item name={numberPath} className={itemClassName} rules={rules}
-            dependencies={[codePath]}>
+            dependencies={[codePath]} normalize={normalizeNumber}>
             <FloatingLabel size={size} label={label} required={required} readOnly={readOnly} maxLength={15} />
           </CommonForm.Item>
         </div>
@@ -100,7 +103,7 @@ const PhoneInput = ({
         />
       </CommonForm.Item>
       <CommonForm.Item name={numberPath} className={`${itemClassName} flex-1 min-w-0`} rules={rules}
-        dependencies={[codePath]}>
+        dependencies={[codePath]} normalize={normalizeNumber}>
         <Input className={inputClassName} placeholder={placeholder} allowClear readOnly={readOnly} maxLength={15}
           inputMode="tel" />
       </CommonForm.Item>

@@ -67,7 +67,7 @@ const Question = ({ field, index, lang, bi, t }) => {
         <CommonForm.Item name={base} className={fieldItemCls} rules={requiredRule}>
           <Rate allowClear={!field.required} className="!text-2xl" />
         </CommonForm.Item>
-        <p className="text-[11px] text-[#3f4850]">{bi("back.reg.form.ratingHint")}</p>
+        <p className="text-[13px] text-[#3f4850]">{bi("back.reg.form.ratingHint")}</p>
       </div>
     );
   }
@@ -78,7 +78,7 @@ const Question = ({ field, index, lang, bi, t }) => {
         <CommonForm.Item name={base} className={fieldItemCls} rules={requiredRule}
           valuePropName="fileList" getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}>
           <Upload customRequest={dummyRequest} listType="picture-card" maxCount={1} accept="image/png, image/jpeg, image/webp">
-            <div><UploadOutlined className="mb-1" /><p className="m-0 text-xs">{t("general.uploadImg")}</p></div>
+            <div><UploadOutlined className="mb-1" /><p className="m-0 text-[13px]">{t("general.uploadImg")}</p></div>
           </Upload>
         </CommonForm.Item>
       </div>
@@ -168,7 +168,7 @@ const QuestionnaireStep = ({ index, ticketLabel, event, eventTypeId, lang }) => 
                 <SectionLogo section={section} />
                 <div>
                   <div className="font-bold text-[#181c1e]">{lang === "en" ? section.titleEn || section.title : section.title}</div>
-                  {section.description ? <div className="text-xs text-[#3f4850]">{section.description}</div> : null}
+                  {section.description ? <div className="text-[13px] text-[#3f4850]">{section.description}</div> : null}
                 </div>
               </div>
             )}

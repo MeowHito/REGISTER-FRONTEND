@@ -80,7 +80,7 @@ const CategoryBlock = ({ index, category, styles, form, t }) => {
           </label>
           {sizes.length ? (
             <button type="button" onClick={() => setChartOpen(true)}
-              className="text-[#006193] text-xs font-bold flex items-center gap-1 hover:underline">
+              className="text-[#006193] text-[13px] font-bold flex items-center gap-1 hover:underline">
               📏 {t("front.reg.sizeChart")}
             </button>
           ) : null}
@@ -88,7 +88,7 @@ const CategoryBlock = ({ index, category, styles, form, t }) => {
         <CommonForm.Item name={sizePath} className="!mb-0" rules={[{ required: true, message: t("required.shirtSize") }]}>
           <BoxRadio columns={2} options={sizeOptions} onChange={handleSize} />
         </CommonForm.Item>
-        {!activeType && <p className="text-xs text-[#3f4850] mt-2">{t("back.reg.payment.selectShirtType")}</p>}
+        {!activeType && <p className="text-[13px] text-[#3f4850] mt-2">{t("back.reg.payment.selectShirtType")}</p>}
       </div>
 
       <Modal open={chartOpen} onCancel={() => setChartOpen(false)} footer={null}

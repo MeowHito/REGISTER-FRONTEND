@@ -38,7 +38,7 @@ const BoxRadio = ({ id, value, onChange, options = [], columns = 4, size = "md" 
             {opt.icon ? <span className="text-xl leading-none">{opt.icon}</span> : null}
             <span className="leading-tight text-center">{opt.label}</span>
             {opt.sub ? (
-              <span className="text-[11px] font-normal text-gray-400 leading-tight">
+              <span className="text-[13px] font-normal text-gray-400 leading-tight">
                 {opt.sub}
               </span>
             ) : null}

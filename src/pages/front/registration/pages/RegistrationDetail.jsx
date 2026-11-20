@@ -26,7 +26,7 @@ function addHoursToNow(hours) {
 // form (orange-accented section heading + label/value rows), responsive by default.
 const DetailSection = ({ title, children }) => (
 	<div className="space-y-1.5">
-		<h4 className="text-xs font-bold uppercase tracking-wide text-[#006193] border-l-2 border-[#fe9400] pl-2 mb-2">
+		<h4 className="text-[13px] font-bold uppercase tracking-wide text-[#006193] border-l-2 border-[#fe9400] pl-2 mb-2">
 			{title}
 		</h4>
 		{children}

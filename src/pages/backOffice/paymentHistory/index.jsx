@@ -5,7 +5,7 @@ import { SearchOutlined, EyeOutlined, RightOutlined, CalendarOutlined } from "@a
 import { useMediaQuery } from "react-responsive";
 import { useSearchParams } from "react-router-dom";
 import backOfficeServices from "services/backoffice.services";
-import { handleQueryStatus } from "utils/index";
+import { handleQueryStatus, scrollPageToTop } from "utils/index";
 import { SYS_DATE_FORMAT, SYS_DATE_FULL_TIME_FORMAT } from "constants/helper";
 import dayjs from "dayjs";
 import FloatingLabel from "components/floatingLabel";
@@ -76,6 +76,7 @@ const HistoryList = () => {
   const handleViewDetail = (paymentId) => {
     setPaymentId(paymentId)
     setMode("detail")
+    scrollPageToTop() // same URL, so ScrollToTop doesn't fire; open the detail at its top
   }
 
   const confirmCancel = (record) => {
@@ -124,21 +125,21 @@ const HistoryList = () => {
             </p>
             {statusTag(record.status)}
           </div>
-          <div className="mt-2 flex items-center gap-1.5 text-[13px] text-[#6e6e73]">
+          <div className="mt-2 flex items-center gap-1.5 text-[14px] text-[#6e6e73]">
             <CalendarOutlined />
             {record.eventDate ? dayjs(record.eventDate).format(SYS_DATE_FORMAT) : "-"}
           </div>
           <div className="mt-3 flex items-end justify-between gap-3">
             <div className="min-w-0">
-              <p className="m-0 text-[12px] text-[#6e6e73]">{t("back.history.historyList.columns.orderNo")}</p>
-              <p className="m-0 text-[13px] font-medium text-[#1d1d1f] tabular-nums break-all">{record.orderNo}</p>
-              <p className="m-0 mt-1 text-[12px] text-[#6e6e73]">
+              <p className="m-0 text-[13px] text-[#6e6e73]">{t("back.history.historyList.columns.orderNo")}</p>
+              <p className="m-0 text-[14px] font-medium text-[#1d1d1f] tabular-nums break-all">{record.orderNo}</p>
+              <p className="m-0 mt-1 text-[13px] text-[#6e6e73]">
                 {t("back.history.historyList.columns.createdTime")}{" "}
                 {record.createdTime ? dayjs(record.createdTime).format(SYS_DATE_FULL_TIME_FORMAT) : "-"}
               </p>
             </div>
             <div className="text-right shrink-0">
-              <p className="m-0 text-[12px] text-[#6e6e73]">{t("back.history.historyList.columns.amount")}</p>
+              <p className="m-0 text-[13px] text-[#6e6e73]">{t("back.history.historyList.columns.amount")}</p>
               <p className="m-0 text-[17px] font-bold text-[#1d1d1f] tabular-nums">{money(record.amount)}</p>
             </div>
           </div>

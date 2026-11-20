@@ -13,13 +13,13 @@ import { SYS_DATE_FORMAT } from "constants/helper";
 /* ─── Shared sub-components ─── */
 const DetailField = ({ label, children, span = 1 }) => (
     <div className={span === 2 ? "col-span-2" : ""}>
-        <span className="text-xs text-gray-400 block mb-0.5">{label}</span>
+        <span className="text-[13px] text-gray-400 block mb-0.5">{label}</span>
         <span className="text-sm font-medium text-gray-800">{children || "-"}</span>
     </div>
 );
 
 const SectionLabel = ({ children }) => (
-    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 pb-2 mb-3">
+    <div className="text-[13px] font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 pb-2 mb-3">
         {children}
     </div>
 );
@@ -214,7 +214,7 @@ const QrDetailCard = ({ detail: p, t, renderGender, renderDeliveryMethod }) => {
 
             {/* Remark */}
             {p.masked && (
-                <p className="text-center text-gray-400 text-xs mt-4!">
+                <p className="text-center text-gray-400 text-[13px] mt-4!">
                     {t("front.eventDetail.fullDetailRemark")}
                 </p>
             )}

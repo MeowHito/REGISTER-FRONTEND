@@ -127,6 +127,9 @@ function EventDetail({ eventId, setView }) {
     const eventKey = data?.link || name || data?.id;
     const shouldShowChecklist = Boolean(data?.showChecklist);
 
+    // Back to wherever the runner came from; a shared link opened cold has nothing to go back to.
+    const goBack = () => (globalThis.history.state?.idx > 0 ? navigate(-1) : navigate("/"));
+
     const handleRegister = () => {
         if (!me) {
             navigate('/login', { state: { from: `/registrationInfo/${eventKey}` } });
@@ -166,6 +169,17 @@ function EventDetail({ eventId, setView }) {
                             />
                         ) : <div className="flex flex-col lg:flex-row max-w-screen-lg mx-auto">
                             <div className="w-full md:px-4 pb-5">
+                                {/* Phones: a clear way back sits right under the header, above the poster. */}
+                                {!setView && (
+                                    <button
+                                        type="button"
+                                        onClick={goBack}
+                                        className="md:hidden -ml-1 mb-2 h-11 pr-3 flex items-center gap-1.5 text-[16px] font-semibold text-[#1d4ed8] active:opacity-60"
+                                    >
+                                        <LeftOutlined className="text-[14px]" />
+                                        {t("general.back")}
+                                    </button>
+                                )}
                                 <div className="w-full mb-4">
                                     {/* Tap the poster to open it full screen and pinch/zoom it — it's
                                         where organizers put the race details. */}
@@ -272,7 +286,7 @@ function EventDetail({ eventId, setView }) {
                                                             <div className={`font-semibold px-4 py-2 md:w-2/3 ${leftClass}`}>
                                                                 <div>
                                                                     {paymentTypeMap[price.paymentTypeId]}
-                                                                    {isPricingFull && !isExpired && <span className="ml-2 text-xs">({t("front.eventDetail.quotaFull")})</span>}
+                                                                    {isPricingFull && !isExpired && <span className="ml-2 text-[13px]">({t("front.eventDetail.quotaFull")})</span>}
                                                                 </div>
                                                                 <div>
                                                                     {data.startRegistrationDate && price.endDate ? (
@@ -294,7 +308,7 @@ function EventDetail({ eventId, setView }) {
                                                     <div className={`font-semibold bg-[var(--event-secondary-color)] px-4 py-2 md:w-2/3 ${leftClass}`}>
                                                         <div>
                                                             {t("front.eventDetail.normalPrice")}
-                                                            {isEventTypeFull && !isExpired && <span className="ml-2 text-xs">({t("front.eventDetail.quotaFull")})</span>}
+                                                            {isEventTypeFull && !isExpired && <span className="ml-2 text-[13px]">({t("front.eventDetail.quotaFull")})</span>}
                                                         </div>
                                                         <div>
                                                             {data.startRegistrationDate && data.endRegistrationDate ? (

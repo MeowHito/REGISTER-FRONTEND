@@ -26,7 +26,7 @@ const { Title, Text } = Typography;
 /** Reusable field cell: label on top, value below */
 const Field = ({ label, children, span = 1 }) => (
   <div className={span === 2 ? "col-span-2 sm:col-span-2" : ""}>
-    <Text type="secondary" className="text-xs! block mb-0.5">{label}</Text>
+    <Text type="secondary" className="text-[13px]! block mb-0.5">{label}</Text>
     <div className="text-sm">{children || "-"}</div>
   </div>
 );

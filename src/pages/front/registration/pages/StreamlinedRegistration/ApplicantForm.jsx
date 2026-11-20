@@ -10,6 +10,7 @@ import ImageUpload from "components/imageUpload";
 import { bloodGroupOption } from "constants/options/bloodGroupOption";
 import BoxRadio from "./BoxRadio";
 import DobSelect from "./DobSelect";
+import PhoneFriendlySelect from "./PhoneFriendlySelect";
 import PhoneInput from "components/phoneInput";
 import { DEFAULT_PHONE_COUNTRY_CODE } from "constants/phoneCountryCodes";
 import { inputCls, selectCls, fieldItemCls, ticketBadgeCls } from "./theme";
@@ -358,8 +359,8 @@ const ApplicantForm = ({
               <Label required={req("bloodType")}>{t("back.reg.form.bloodType")}</Label>
               <CommonForm.Item name={["applicants", index, "bloodType"]} className={fieldItemCls}
                 rules={requiredRule("bloodType", "required.bloodType")}>
-                <Select className={selectCls} placeholder={t("back.reg.form.selectBloodType")}
-                  options={bloodGroupOption} allowClear getPopupContainer={(n) => n.parentNode} />
+                <PhoneFriendlySelect placeholder={t("back.reg.form.selectBloodType")}
+                  options={bloodGroupOption} allowClear />
               </CommonForm.Item>
             </div>
             )}

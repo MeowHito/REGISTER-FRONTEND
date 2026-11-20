@@ -90,7 +90,7 @@ const AddOnCard = ({ addOn, selection, applicants, lang, onChange }) => {
               <span className="text-[#006193] font-bold text-lg">
                 {money(addOn.price)} {t("general.unitBaht")}
               </span>
-              <span className="text-xs text-[#3f4850]">
+              <span className="text-[13px] text-[#3f4850]">
                 {perApplicant ? bi("back.reg.addOn.perPerson") : bi("back.reg.addOn.perUnit")}
               </span>
             </div>
@@ -98,7 +98,7 @@ const AddOnCard = ({ addOn, selection, applicants, lang, onChange }) => {
             {soldOut ? (
               <p className="text-sm font-bold text-[#ba1a1a] mt-1">{bi("back.reg.addOn.soldOut")}</p>
             ) : remaining != null ? (
-              <p className="text-xs text-[#3f4850] mt-1">
+              <p className="text-[13px] text-[#3f4850] mt-1">
                 {bi("back.reg.addOn.remaining", { count: remaining })}
               </p>
             ) : null}
@@ -209,7 +209,7 @@ const AddOnPicker = ({ addOns, applicants, selections, onChange, lang }) => {
       {groups.map((group) => (
         <div key={group.key || "_"} className="space-y-3">
           {group.key ? (
-            <h4 className="text-xs font-bold uppercase tracking-wide text-[#006193] border-l-2 border-[#fe9400] pl-2">
+            <h4 className="text-[13px] font-bold uppercase tracking-wide text-[#006193] border-l-2 border-[#fe9400] pl-2">
               {group.key}
             </h4>
           ) : null}

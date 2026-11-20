@@ -84,6 +84,20 @@ export const fromSelectValue = (value) => (value ? String(value).split("|")[0] :
 export const phonePattern = (code) =>
   (code || DEFAULT_PHONE_COUNTRY_CODE) === DEFAULT_PHONE_COUNTRY_CODE ? /^0\d{9}$/ : /^\d{6,15}$/;
 
+/**
+ * Clean a typed number for the chosen dialling code: digits only, and for Thailand the stored
+ * 0XXXXXXXXX shape whether the runner typed 0991535426, 991535426 (the +66 is already chosen),
+ * 66991535426 or "099-153-5426".
+ */
+export const normalizePhone = (value, code) => {
+  if (value == null) return value;
+  const digits = String(value).replace(/\D/g, "");
+  if ((code || DEFAULT_PHONE_COUNTRY_CODE) !== DEFAULT_PHONE_COUNTRY_CODE) return digits;
+  if (digits.length === 9 && !digits.startsWith("0")) return `0${digits}`;
+  if (digits.length === 11 && digits.startsWith("66")) return `0${digits.slice(2)}`;
+  return digits;
+};
+
 /** "+66 0812345678" / "0812345678" for display; blank when there is no number. */
 export const formatPhone = (code, number) => {
   if (!number) return "";

@@ -266,7 +266,11 @@ const StreamlinedRegistration = () => {
   // making <body> a scroll box), and scrollMarginTop keeps the header from covering it.
   const scrollToEl = (el) => {
     if (!el) return;
-    el.style.scrollMarginTop = `${HEADER_OFFSET}px`;
+    // On phones the header slides away when the page scrolls down and comes back when it
+    // scrolls up (components/header), so only leave room for it when going up.
+    const goingDown = el.getBoundingClientRect().top > 0;
+    const phone = globalThis.matchMedia?.("(max-width: 767px)").matches;
+    el.style.scrollMarginTop = `${phone && goingDown ? 12 : HEADER_OFFSET}px`;
     el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
   // Open the next section and put its header at the top of the screen, so "Next"
@@ -609,7 +613,7 @@ const StreamlinedRegistration = () => {
                 <div className="flex flex-col items-center gap-1">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                     i <= shownReached ? "bg-[#006193] text-white" : "bg-[#e0e3e5] text-[#3f4850]"}`}>{i + 1}</div>
-                  <span className={`text-xs font-bold ${i <= shownReached ? "text-[#006193]" : "text-[#3f4850] opacity-60"}`}>{label}</span>
+                  <span className={`text-[13px] font-bold ${i <= shownReached ? "text-[#006193]" : "text-[#3f4850] opacity-60"}`}>{label}</span>
                 </div>
                 {i < stepLabels.length - 1 && <div className={`flex-1 h-[2px] mx-2 -mt-5 ${i < shownReached ? "bg-[#006193]" : "bg-[#bfc7d2]"}`} />}
               </div>
@@ -647,11 +651,11 @@ const StreamlinedRegistration = () => {
                               </span>
                             </div>
                             {et.isTeam && et.teamPricing !== "PER_TEAM" ? (
-                              <p className="text-xs text-[#3f4850] mt-1">
+                              <p className="text-[13px] text-[#3f4850] mt-1">
                                 {t("front.reg.perPersonTimes", { price: Number(et._price).toLocaleString(), n: et._teamSize })}
                               </p>
                             ) : null}
-                            {!et._available && <p className="text-xs text-[#ba1a1a] mt-1">{t("front.eventDetail.quotaFull")}</p>}
+                            {!et._available && <p className="text-[13px] text-[#ba1a1a] mt-1">{t("front.eventDetail.quotaFull")}</p>}
                           </>
                         )}
                       </div>
@@ -747,7 +751,7 @@ const StreamlinedRegistration = () => {
                       <EnvironmentOutlined className="text-2xl text-[#006193]" />
                       <div className="flex-1">
                         <div className="font-bold text-[#006193]">{t("front.reg.pickup")}</div>
-                        <div className="text-xs text-[#006193]/70">{t("front.reg.pickupHint")}</div>
+                        <div className="text-[13px] text-[#006193]/70">{t("front.reg.pickupHint")}</div>
                       </div>
                       {deliveryMethod === "pickup" && <CheckCircleOutlined className="text-[#006193]" />}
                     </button>
@@ -759,7 +763,7 @@ const StreamlinedRegistration = () => {
                         <CarOutlined className="text-2xl text-[#006193]" />
                         <div className="flex-1">
                           <div className="font-bold text-[#181c1e]">{t("front.reg.post")}</div>
-                          <div className="text-xs text-[#3f4850]">
+                          <div className="text-[13px] text-[#3f4850]">
                             {shippingFee === 0 ? t("back.reg.payment.free") : t("front.reg.shippingFee", { fee: Number(shippingFee).toLocaleString() })}
                           </div>
                         </div>
@@ -793,7 +797,7 @@ const StreamlinedRegistration = () => {
 
                     {addressMode === "saved" && savedAddress ? (
                       <div className="rounded-xl border border-[#bfc7d2] bg-[#f1f4f6] px-4 py-3">
-                        <div className="text-[11px] font-bold text-[#3f4850] mb-1">{t("front.reg.savedAddressHint")}</div>
+                        <div className="text-[13px] font-bold text-[#3f4850] mb-1">{t("front.reg.savedAddressHint")}</div>
                         <div className="text-sm text-[#181c1e] leading-relaxed">{formatAddress(savedAddress, t)}</div>
                       </div>
                     ) : (
@@ -848,7 +852,7 @@ const StreamlinedRegistration = () => {
                   ) : null}
 
                   <button type="button" className={primaryBtn} onClick={checkout}>{checkoutLabel}</button>
-                  <p className="text-xs text-center text-[#3f4850]">{t("back.reg.addOn.skipHint")}</p>
+                  <p className="text-[13px] text-center text-[#3f4850]">{t("back.reg.addOn.skipHint")}</p>
                 </div>
               </Section>
             ) : null}
@@ -860,7 +864,7 @@ const StreamlinedRegistration = () => {
       <div className="fixed bottom-0 left-0 w-full bg-white border-t border-[#bfc7d2] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-50">
         <div className="max-w-screen-md mx-auto px-4 py-2 flex items-center justify-between gap-3">
           <div className="flex flex-col leading-tight">
-            <span className="text-[11px] text-[#3f4850]">{t("front.reg.totalPayment")}</span>
+            <span className="text-[13px] text-[#3f4850]">{t("front.reg.totalPayment")}</span>
             <span className="text-lg font-bold text-[#006193]">{fmt(grandTotal)} THB</span>
           </div>
           <button type="button" onClick={primaryAction} disabled={checkingOut}
