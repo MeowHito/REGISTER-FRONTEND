@@ -102,6 +102,21 @@ const backOfficeServices = {
     });
   },
 
+  /** Personal details from the signed-in runner's latest "register for myself" entry (or null). */
+  useQueryGetMyLastSelfEntry({ enabled = true } = {}) {
+    return useQuery({
+      queryKey: ["myLastSelfEntry"],
+      queryFn: async () => {
+        const res = await createRequest.get("api/order/my-last-self");
+        return res.data?.data || null;
+      },
+      enabled,
+      retry: 0,
+      staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+    });
+  },
+
   useQueryGetParticipantById({ id }) {
     return useQuery({
       queryKey: ["getParticipantById", id],

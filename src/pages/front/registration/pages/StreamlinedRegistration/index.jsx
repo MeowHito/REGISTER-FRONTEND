@@ -1,3 +1,4 @@
+import Pill from "components/pill";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Result, Spin, Input } from "antd";
 import {
@@ -31,13 +32,14 @@ import {
   finalizeApplicants, totalQty, resolvePricing, ticketPrice,
   sellableAddOns, buildAddOnOrder, addOnsTotal, firstMissingAddOnNote,
 } from "./utils";
-import { primaryBtn, phaseBadgeCls, inputCls, fieldItemCls } from "./theme";
+import { primaryBtn, inputCls, fieldItemCls } from "./theme";
 import { resolveFieldConfig } from "./fieldConfig";
 import { buildNationalityOptions } from "./nationality";
 import { onUploadFile } from "hooks/onUploadFile";
 import { getPublicUrl } from "utils/fileUtils";
 import { DEFAULT_PHONE_COUNTRY_CODE } from "constants/phoneCountryCodes";
 import { centerNotice } from "./notice";
+import { saveDraft, loadDraft } from "./draftStore";
 
 const QUESTIONNAIRE_PREFIX = "questionnaire";
 const fmt = (n) => (Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
@@ -141,6 +143,8 @@ const StreamlinedRegistration = () => {
   const { data: event, isFetching: isLoadingEvent, ...otherEvent } =
     backOfficeServices.useQueryGetEventById({ id: eventKey, enabled: meReady });
   const availabilityMutation = generalService.useMutationGetEventTypesAvailability();
+  // Fills what the profile lacks when the runner registers themself (only a runner can register).
+  const { data: lastSelfEntry } = backOfficeServices.useQueryGetMyLastSelfEntry({ enabled: meReady && roleUser === "guest" });
 
   useEffect(() => {
     // Land at the top: the event page's register button sits at the bottom of a long page.
@@ -218,10 +222,16 @@ const StreamlinedRegistration = () => {
     setAddressMode(hasSavedAddress ? "saved" : "new");
   }, [hasSavedAddress]);
 
-  // Restore the draft once the event is loaded (the ticket rows need it).
+  // Restore the draft once the event is loaded (the ticket rows need it): the one the review
+  // page's Back hands over, or else what this browser saved before a reload / dropped connection.
+  const draftLoaded = useRef(false);
   useEffect(() => {
-    const draft = resumeDraft.current;
-    if (!draft || !event) return;
+    if (!event) return;
+    let draft = resumeDraft.current;
+    const fromStorage = !draft && !draftLoaded.current;
+    if (fromStorage) draft = loadDraft(event.id, me?.id);
+    draftLoaded.current = true;
+    if (!draft) return;
     resumeDraft.current = null;
     const applicants = (draft.applicants || []).map((a) => ({
       ...a,
@@ -233,11 +243,53 @@ const StreamlinedRegistration = () => {
     setDeliveryMethod(draft.deliveryMethod || "pickup");
     if (draft.addressMode) setAddressMode(draft.addressMode);
     setAddOnSelections(draft.addOnSelections || {});
+    if (fromStorage) {
+      // Pick up where they were.
+      setMaxReached(draft.maxReached ?? 0);
+      setOpenSection(draft.openSection || "tickets");
+      if (draft.pdpaConsent != null) setPdpaConsent(draft.pdpaConsent);
+      if (totalQty(draft.tickets) > 0) centerNotice("success", t("front.reg.draftRestored"));
+      return;
+    }
     // Every step was completed once, so unlock them all (the question/add-on steps
     // only appear after the applicants are set, so don't count sections here).
     setMaxReached(99);
     setOpenSection("tickets");
   }, [event]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Save what has been typed so far (debounced), and right away when the page is being left.
+  const persistDraft = useRef(() => {});
+  persistDraft.current = () => {
+    if (!event?.id || !me?.id || !draftLoaded.current || totalQty(tickets) < 1) return;
+    saveDraft(event.id, me.id, {
+      applicants: form.getFieldValue("applicants") || [],
+      tickets,
+      deliveryMethod,
+      addressMode,
+      shipping: form.getFieldValue("shipping") || {},
+      addOnSelections,
+      pdpaConsent,
+      openSection,
+      maxReached,
+    });
+  };
+  const saveTimer = useRef(null);
+  const scheduleDraftSave = () => {
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => persistDraft.current(), 400);
+  };
+  useEffect(scheduleDraftSave, [tickets, applicantList, deliveryMethod, addressMode, addOnSelections, pdpaConsent, openSection, maxReached]);
+  useEffect(() => {
+    const flush = () => persistDraft.current();
+    const onHide = () => { if (document.visibilityState === "hidden") flush(); };
+    globalThis.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      clearTimeout(saveTimer.current);
+      globalThis.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onHide);
+    };
+  }, []);
 
   const shippingFee = event?.shippingFee;
   const subtotal = applicantList.reduce((s, a) => s + (Number(a?.price) || 0), 0);
@@ -623,7 +675,7 @@ const StreamlinedRegistration = () => {
           </div>
 
           {/* Sections bleed to the screen edge on phones (the layout adds 16px side padding). */}
-          <CommonForm form={form} className="-mx-4 md:mx-0">
+          <CommonForm form={form} className="-mx-4 md:mx-0" onValuesChange={scheduleDraftSave}>
             {/* SECTION 1 — tickets */}
             <Section id="tickets" step={1} open={openSection === "tickets"} reached
               title={`1. ${t("front.reg.secTickets")}`} onToggle={goTo}>
@@ -643,10 +695,10 @@ const StreamlinedRegistration = () => {
                           <>
                             <div className="flex items-center gap-2 flex-wrap">
                               {et._special && et._paymentName ? (
-                                <span className={phaseBadgeCls}>{et._paymentName}</span>
+                                <Pill tone="brand">{et._paymentName}</Pill>
                               ) : null}
                               {et.isTeam ? (
-                                <span className={phaseBadgeCls}>👥 {t("front.reg.teamOf", { n: et._teamSize })}</span>
+                                <Pill tone="brand">👥 {t("front.reg.teamOf", { n: et._teamSize })}</Pill>
                               ) : null}
                               <span className="text-[#006193] font-bold">
                                 {Number(et._ticketPrice).toLocaleString()} THB{et.isTeam ? ` ${t("front.reg.perTeam")}` : ""}
@@ -697,7 +749,7 @@ const StreamlinedRegistration = () => {
                       </div>
                     ) : null}
                     {g.items.map(({ a, i }) => (
-                      <ApplicantForm key={i} index={i} me={me} event={event}
+                      <ApplicantForm key={i} index={i} me={me} lastSelfEntry={lastSelfEntry} event={event}
                         ticketLabel={a?.teamGroup
                           ? `${a.eventTypeName} · ${t("front.reg.memberNo", { i: a.teamIndex, n: a.teamSize })}`
                           : a?.eventTypeName}

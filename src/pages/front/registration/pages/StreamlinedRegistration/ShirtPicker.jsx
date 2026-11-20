@@ -1,3 +1,4 @@
+import Pill from "components/pill";
 import React, { useEffect, useState } from "react";
 import { Modal, Table, Input } from "antd";
 import { SkinOutlined } from "@ant-design/icons";
@@ -5,7 +6,6 @@ import { useTranslation } from "react-i18next";
 import CommonForm from "components/commonForm";
 import BoxRadio from "./BoxRadio";
 import { shirtCategoriesFor } from "./shirts";
-import { ticketBadgeCls } from "./theme";
 
 /**
  * One category block: style boxes + size boxes. The race shirt writes to the applicant's
@@ -120,8 +120,8 @@ const ShirtPicker = ({ index, ticketLabel, event, form, eventTypeId }) => {
   return (
     <div className="rounded-xl border border-[#bfc7d2] bg-white overflow-hidden">
       <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-[#e5e9eb] bg-[#f1f4f6]">
-        <span className="font-bold text-[#181c1e]">{t("back.reg.common.applicantInfo")} #{index + 1}</span>
-        {ticketLabel ? <span className={ticketBadgeCls}>{ticketLabel}</span> : null}
+        <span className="font-bold text-[#181c1e] shrink-0 whitespace-nowrap">{t("back.reg.common.applicantInfo")} #{index + 1}</span>
+        {ticketLabel ? <Pill tone="solid" title={ticketLabel} className="max-w-[60vw]">{ticketLabel}</Pill> : null}
       </div>
       <div className="p-4 space-y-6">
         {groups.map(({ category, styles }) => (

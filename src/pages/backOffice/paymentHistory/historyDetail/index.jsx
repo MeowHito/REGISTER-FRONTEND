@@ -6,6 +6,7 @@ import {
 } from "antd";
 import { QuestionCircleOutlined, PaperClipOutlined, LeftOutlined, UserOutlined } from "@ant-design/icons";
 import AddOnList from "components/addOnList";
+import Pill from "components/pill";
 import dayjs from "dayjs";
 import { Link, useNavigate } from "react-router-dom";
 import backOfficeServices from "services/backoffice.services";
@@ -62,14 +63,15 @@ const ApplicantDetail = ({ applicant: a }) => {
             />
           )}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 flex-1">
-            <Field label={t("back.history.historyDetail.field.nameTh")}>
-              {a.firstName} {a.lastName}
+            {/* Both spellings the runner typed, each on its own full-width row so long names fit. */}
+            <Field label={t("back.history.historyDetail.field.nameTh")} span={2}>
+              <span className="break-words">{[a.firstName, a.lastName].filter(Boolean).join(" ")}</span>
             </Field>
-            {(a.firstNameEn || a.lastNameEn) && (
-              <Field label={t("back.history.historyDetail.field.nameEn")}>
-                {a.firstNameEn} {a.lastNameEn}
-              </Field>
-            )}
+            <Field label={t("back.history.historyDetail.field.nameEn")} span={2}>
+              {(a.firstNameEn || a.lastNameEn)
+                ? <span className="break-words">{[a.firstNameEn, a.lastNameEn].filter(Boolean).join(" ")}</span>
+                : null}
+            </Field>
             {a.gender && (
               <Field label={t("back.history.historyDetail.field.gender")}>
                 {a.gender === "male" ? t("general.male") : a.gender === "female" ? t("general.female") : a.gender}
@@ -124,7 +126,7 @@ const ApplicantDetail = ({ applicant: a }) => {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3">
             {a.bloodType && (
               <Field label={t("back.history.historyDetail.field.bloodType")}>
-                <Tag className="m-0!">{a.bloodType}</Tag>
+                <Pill size="sm" tone="red">{a.bloodType}</Pill>
               </Field>
             )}
             {a.healthIssues && (
@@ -171,7 +173,7 @@ const ApplicantDetail = ({ applicant: a }) => {
                       const label = v.value || v.valueEn || "-";
                       return (
                         <span key={vi} className="flex items-center gap-1">
-                          <Tag className="m-0!">{label}</Tag>
+                          <Pill size="sm" tone="slate">{label}</Pill>
                           {v.freeTextValue && (
                             <Text className="text-gray-500! text-sm!">{v.freeTextValue}</Text>
                           )}
@@ -184,7 +186,7 @@ const ApplicantDetail = ({ applicant: a }) => {
                 const label = entry.value.value || entry.value.valueEn || "-";
                 answer = (
                   <span className="flex items-center gap-1">
-                    <Tag className="m-0!">{label}</Tag>
+                    <Pill size="sm" tone="slate">{label}</Pill>
                     {entry.value.freeTextValue && (
                       <Text className="text-gray-500! text-sm!">{entry.value.freeTextValue}</Text>
                     )}
@@ -211,11 +213,11 @@ const ApplicantDetail = ({ applicant: a }) => {
               : `${a.shirtTypeName} / ${a.shirtSizeName}`}
           </Field>
           <Field label={t("back.history.historyDetail.breakdown.field.delivery")}>
-            <Tag color={a.deliveryMethod === "post" ? "blue" : "green"} className="m-0!">
+            <Pill size="sm" tone={a.deliveryMethod === "post" ? "blue" : "green"}>
               {t(a.deliveryMethod === "post"
                 ? "back.history.historyDetail.breakdown.delivery.post"
                 : "back.history.historyDetail.breakdown.delivery.onsite")}
-            </Tag>
+            </Pill>
           </Field>
           {a.deliveryMethod === "post" && shippingAddr && (
             <Field label={t("back.history.historyDetail.field.shippingAddress")} span={2}>{shippingAddr}</Field>
@@ -262,33 +264,38 @@ const ApplicantCollapseHeader = ({ applicant: a, index }) => {
   const { t } = useTranslation();
   const subtotal = a.subtotal ?? 0;
   return (
-    <div className="flex items-center gap-3 w-full flex-wrap">
+    // The name gets the whole middle column and wraps by word; distance, BIB and price sit
+    // around it instead of squeezing it (on a phone it used to shrink to one letter per line).
+    <div className="flex items-start gap-3 w-full min-w-0">
       <Avatar
         src={a.pictureUrl ? `${a.prefixPath}${a.pictureUrl}` : undefined}
         icon={a.pictureUrl ? undefined : <UserOutlined />}
         size={40}
+        className="shrink-0"
       />
       <div className="flex-1 min-w-0">
-        <Text strong>
-          {t("back.history.historyDetail.applicantNo", { number: index + 1 })}: {a.firstName} {a.lastName}
-        </Text>
-        {a.isSelf === false && (
-          <Tag color="blue" className="ml-2">{t("back.history.historyDetail.friend")}</Tag>
+        <div className="text-[13px] text-gray-500 leading-snug">
+          {t("back.history.historyDetail.applicantNo", { number: index + 1 })}
+        </div>
+        <div className="text-[15px] font-semibold text-gray-900 leading-snug break-words">
+          {[a.firstName, a.lastName].filter(Boolean).join(" ")}
+        </div>
+        {(a.firstNameEn || a.lastNameEn) && (
+          <div className="text-[13px] text-gray-500 leading-snug break-words">
+            {[a.firstNameEn, a.lastNameEn].filter(Boolean).join(" ")}
+          </div>
         )}
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          <Pill size="sm" tone="blue" title={a.eventTypeName}>{a.eventTypeName}</Pill>
+          <Pill size="sm" tone="slate">BIB: {a.bibNo || "-"}</Pill>
+          {a.isSelf === false && <Pill size="sm" tone="orange">{t("back.history.historyDetail.friend")}</Pill>}
+        </div>
       </div>
-      <Text className="text-gray-500">BIB: {a.bibNo || "-"}</Text>
-      <Tag>{a.eventTypeName}</Tag>
-      <Text strong>{subtotal.toLocaleString("th-TH")} {t("general.unitBaht")}</Text>
+      <span className="shrink-0 text-[15px] font-semibold text-gray-900 whitespace-nowrap">
+        {subtotal.toLocaleString("th-TH")} {t("general.unitBaht")}
+      </span>
     </div>
   );
-};
-
-const statusColors = {
-  PENDING: { color: "#faad14", label: "รอดำเนินการ" },
-  CANCELLED: { color: "#ff4d4f", label: "ยกเลิกโดยผู้ใช้" },
-  FAILED: { color: "#ff4d4f", label: "ล้มเหลว" },
-  SUCCESS: { color: "#52c41a", label: "ดำเนินการสำเร็จ" },
-  REVIEW: { color: "#fa8c16", label: "รอตรวจสอบ" },
 };
 
 const helpStatusColor = (status) => {
@@ -461,7 +468,7 @@ const HistoryDetail = ({ paymentId, setMode }) => {
   };
 
   const normalized = order?.status?.toUpperCase();
-  const { color } = statusColors[normalized] || { color: "blue" };
+  const statusTone = { SUCCESS: "green", PENDING: "orange", REVIEW: "orange", CANCELLED: "red", FAILED: "red" }[normalized] || "blue";
   const label = t(`back.history.historyDetail.status.${normalized}`) || order?.status;
   const isPending = normalized === "PENDING";
   const isReview = normalized === "REVIEW";
@@ -497,19 +504,15 @@ const HistoryDetail = ({ paymentId, setMode }) => {
           {/* Page Header Card */}
           <Card className="mb-4!" styles={{ body: { padding: "16px 24px" } }}>
             <div className="flex justify-between items-start flex-wrap gap-4">
+              {/* Status sits under the title (it used to float between the title and the help button). */}
               <div>
                 <Title level={4} className="mb-1!">{t("back.history.historyDetail.title")}</Title>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                   <Text type="secondary">{t("back.history.historyDetail.orderNo")}: <Text strong>{order.orderNo}</Text></Text>
                   <Text type="secondary">{t("back.history.historyDetail.date")}: {order.date}</Text>
                 </div>
+                <div className="mt-2"><Pill size="lg" tone={statusTone} dot>{label}</Pill></div>
               </div>
-              <Tag
-                color={color}
-                className="text-sm! font-semibold! px-4! py-1! rounded-full! m-0!"
-              >
-                {label}
-              </Tag>
               {isUser && (
                 <Button
                   icon={<QuestionCircleOutlined />}
@@ -534,14 +537,14 @@ const HistoryDetail = ({ paymentId, setMode }) => {
                   <Text strong className="text-red-600! text-base!">
                     {dayjs(order.due).format(SYS_DATE_TIME_FORMAT)}
                   </Text>
-                  <Tag color="orange">
+                  <Pill size="sm" tone="orange">
                     {remainingTime?.expired
                       ? t("back.history.historyDetail.remain.expired")
                       : t("back.history.historyDetail.remain.time", {
                         hours: remainingTime.hours,
                         minutes: remainingTime.minutes,
                       })}
-                  </Tag>
+                  </Pill>
                 </div>
               }
             />
@@ -585,7 +588,7 @@ const HistoryDetail = ({ paymentId, setMode }) => {
                 <Text strong>{order.orderNo}</Text>
               </Field>
               <Field label={t("back.history.historyDetail.status.title")}>
-                <Tag color={color} className="rounded-full! font-semibold! m-0!">{label}</Tag>
+                <Pill size="sm" tone={statusTone} dot>{label}</Pill>
               </Field>
               <Field label={t("back.history.historyDetail.eventName")}>
                 <Link to={`${globalThis.location.protocol}//${globalThis.location.host}/eventDetail/${order.eventLink || order.eventId}`}>
@@ -600,6 +603,8 @@ const HistoryDetail = ({ paymentId, setMode }) => {
 
           {/* Tabs */}
           <Tabs
+            // Cards run edge to edge on a phone; the tab labels still need the 16px gutter.
+            className="[&_.ant-tabs-nav]:px-4 md:[&_.ant-tabs-nav]:px-0"
             defaultActiveKey="order"
             items={[
               {

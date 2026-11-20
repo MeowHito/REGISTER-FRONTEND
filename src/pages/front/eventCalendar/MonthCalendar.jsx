@@ -3,6 +3,7 @@ import { LeftOutlined, RightOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import { SYS_ISO_DATE_FORMAT } from "constants/helper";
+import Pill from "components/pill";
 
 /**
  * Month grid for /eventCalendar. Weeks run Monday–Sunday (dayjs isoWeek). Picking a day selects its whole week; `eventDateSet`
@@ -46,9 +47,9 @@ const MonthCalendar = ({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2 min-w-0">
           <h1 className="font-bold text-slate-900 text-base m-0 truncate">{listTitle}</h1>
-          <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap">
+          <Pill size="sm" tone="blue">
             {t("front.event.countBadge", { count: totalCount ?? 0 })}
-          </span>
+          </Pill>
         </div>
         <div className="flex items-center gap-1.5">
           <button
@@ -118,9 +119,9 @@ const MonthCalendar = ({
 
       <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="px-3 py-1 text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-100 rounded-lg whitespace-nowrap">
+          <Pill size="lg" tone="blue">
             {viewMonth.locale(lang).format("MMM YYYY")}
-          </span>
+          </Pill>
           <button
             type="button"
             onClick={() => onSelectDate(dayjs())}

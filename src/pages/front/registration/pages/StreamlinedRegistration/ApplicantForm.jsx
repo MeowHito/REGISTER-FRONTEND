@@ -1,7 +1,8 @@
+import Pill from "components/pill";
 import React from "react";
 import { Input, Select, Modal } from "antd";
 import {
-  UserOutlined, UsergroupAddOutlined, DeleteOutlined, ExclamationCircleOutlined, CameraOutlined,
+  UserOutlined, UsergroupAddOutlined, DeleteOutlined, ExclamationCircleOutlined, CameraOutlined, CheckCircleFilled,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
@@ -13,9 +14,10 @@ import DobSelect from "./DobSelect";
 import PhoneFriendlySelect from "./PhoneFriendlySelect";
 import PhoneInput from "components/phoneInput";
 import { DEFAULT_PHONE_COUNTRY_CODE } from "constants/phoneCountryCodes";
-import { inputCls, selectCls, fieldItemCls, ticketBadgeCls } from "./theme";
+import { inputCls, selectCls, fieldItemCls } from "./theme";
 import { FIELD_CONFIG_DEFAULTS, isRequired, isShown } from "./fieldConfig";
 import { DEFAULT_NATIONALITY } from "./nationality";
+import { findAgeGroup, raceAge } from "./utils";
 import { useAvatarUrl } from "hooks/useMeDisplay";
 
 const PERSONAL_KEYS = [
@@ -53,11 +55,45 @@ const RegTypeButton = ({ active, onClick, icon, title }) => (
   </button>
 );
 
+/** "Age 34 · in the 30–39 group", shown in a soft green box once the birth date is complete. */
+const AgeGroupNote = ({ eventType, birthDate, gender }) => {
+  const { t } = useTranslation();
+  const age = raceAge(birthDate);
+  if (age == null || Number.isNaN(age)) return null;
+  const groups = eventType?.ageGroups || [];
+  const group = findAgeGroup(eventType, birthDate, gender);
+  let groupText = null;
+  if (group) {
+    const { minAge, maxAge } = group;
+    groupText = minAge != null && maxAge != null
+      ? t("front.reg.groupRange", { min: minAge, max: maxAge })
+      : minAge != null ? t("front.reg.groupMin", { min: minAge }) : t("front.reg.groupMax", { max: maxAge });
+  }
+  return (
+    <div className="mt-2 flex items-start gap-2.5 rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-3.5 py-2.5 text-[#166534]">
+      <CheckCircleFilled className="mt-[3px] text-[#22c55e] text-base shrink-0" />
+      <div className="text-[14px] leading-snug">
+        <span className="font-bold">{t("front.reg.ageIs", { age })}</span>
+        {groups.length > 0 && (
+          <span className="block mt-0.5">
+            {group
+              ? t("front.reg.inAgeGroup", { group: groupText })
+              : gender ? t("front.reg.noAgeGroup") : t("front.reg.pickGenderForGroup")}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
 /** Athlete information card — asks "register for whom?" then reveals the form. */
 const ApplicantForm = ({
   index,
   ticketLabel,
   me,
+  // Personal details from the runner's previous "for myself" entry; fills what `me` lacks.
+  lastSelfEntry,
+  event,
   form,
   provinceOption,
   isLoadingProvince,
@@ -103,30 +139,42 @@ const ApplicantForm = ({
     form.setFieldValue(["applicants", index], { ...current, ...cleared, ...patch });
   };
 
-  const chooseSelf = () =>
+  // Profile first; whatever it lacks comes from the runner's last "for myself" registration.
+  const known = (k) => {
+    const v = me?.[k];
+    if (v != null && v !== "") return v;
+    const w = lastSelfEntry?.[k];
+    return w != null && w !== "" ? w : undefined;
+  };
+
+  const chooseSelf = () => {
+    const gender = known("gender");
+    const birthDate = known("birthDate");
+    const idNo = known("idNo");
     setPersonal({
       type: "self",
-      firstName: me?.firstName,
-      lastName: me?.lastName,
-      firstNameEn: me?.firstNameEn,
-      lastNameEn: me?.lastNameEn,
-      gender: me?.gender ? me.gender.toLowerCase() : undefined,
-      birthDate: me?.birthDate ? dayjs(me.birthDate) : undefined,
+      firstName: known("firstName"),
+      lastName: known("lastName"),
+      firstNameEn: known("firstNameEn"),
+      lastNameEn: known("lastNameEn"),
+      gender: gender ? String(gender).toLowerCase() : undefined,
+      birthDate: birthDate ? dayjs(birthDate) : undefined,
       email: me?.email,
-      phone: me?.phone,
-      phoneCountryCode: me?.phoneCountryCode || DEFAULT_PHONE_COUNTRY_CODE,
-      nationality: me?.nationality || DEFAULT_NATIONALITY,
-      idType: guessIdType(me?.idNo),
-      idNo: me?.idNo,
-      healthIssues: me?.healthIssues,
-      bloodType: me?.bloodType,
-      emergencyContact: me?.emergencyContact,
-      emergencyRelation: me?.emergencyRelation,
-      emergencyPhone: me?.emergencyPhone,
-      emergencyPhoneCountryCode: me?.emergencyPhoneCountryCode || DEFAULT_PHONE_COUNTRY_CODE,
+      phone: known("phone"),
+      phoneCountryCode: known("phoneCountryCode") || DEFAULT_PHONE_COUNTRY_CODE,
+      nationality: known("nationality") || DEFAULT_NATIONALITY,
+      idType: guessIdType(idNo),
+      idNo,
+      healthIssues: known("healthIssues"),
+      bloodType: known("bloodType"),
+      emergencyContact: known("emergencyContact"),
+      emergencyRelation: known("emergencyRelation"),
+      emergencyPhone: known("emergencyPhone"),
+      emergencyPhoneCountryCode: known("emergencyPhoneCountryCode") || DEFAULT_PHONE_COUNTRY_CODE,
       pictureUrl: me?.pictureUrl,
-      province: me?.province,
+      province: known("province"),
     });
+  };
 
   const chooseFriend = () => setPersonal({
     type: "friend",
@@ -143,7 +191,14 @@ const ApplicantForm = ({
   };
   const isPassport = idType === "passport";
 
-  const photoBlock = show("pictureUrl") ? (
+  const birthDate = CommonForm.useWatch(["applicants", index, "birthDate"], form);
+  const gender = CommonForm.useWatch(["applicants", index, "gender"], form);
+  const eventTypeId = CommonForm.useWatch(["applicants", index, "eventTypeId"], { form, preserve: true });
+  const eventType = (event?.eventTypes || []).find((et) => et.id === eventTypeId);
+
+  // Registering themself with a profile photo already on file: that photo is used, no upload step.
+  const usesProfilePhoto = type === "self" && !!me?.pictureUrl;
+  const photoBlock = show("pictureUrl") && !usesProfilePhoto ? (
     <div>
       <Label required={req("pictureUrl")}>{t("front.reg.photo")}</Label>
       {/* A small round avatar instead of a big drop area. */}
@@ -184,12 +239,12 @@ const ApplicantForm = ({
   return (
     <div id={`applicant-${index}`} className="rounded-xl border border-[#bfc7d2] bg-white overflow-hidden">
       <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-[#e5e9eb] bg-[#f1f4f6]">
-        <span className="font-bold text-[#181c1e]">
+        <span className="font-bold text-[#181c1e] shrink-0 whitespace-nowrap">
           {t("back.reg.common.applicantInfo")} #{index + 1}
         </span>
         <div className="flex items-center gap-2 min-w-0">
           {ticketLabel ? (
-            <span className={ticketBadgeCls}>{ticketLabel}</span>
+            <Pill tone="solid" title={ticketLabel} className="max-w-[60vw]">{ticketLabel}</Pill>
           ) : null}
           {canRemove ? (
             <button type="button" onClick={confirmRemove}
@@ -285,6 +340,7 @@ const ApplicantForm = ({
                 rules={[{ required: true, message: t("required.selectBirthDate") }]}>
                 <DobSelect />
               </CommonForm.Item>
+              <AgeGroupNote eventType={eventType} birthDate={birthDate} gender={gender} />
             </div>
 
             {show("idNo") && (

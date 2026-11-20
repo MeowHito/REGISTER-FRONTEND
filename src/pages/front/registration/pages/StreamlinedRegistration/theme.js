@@ -37,11 +37,3 @@ export const fieldItemCls =
   "[&_.ant-form-item-explain]:!text-[13px] [&_.ant-form-item-explain]:!leading-snug " +
   "[&_.ant-form-item-explain]:!pt-1 [&_.ant-form-item-explain]:!min-h-0 " +
   "[&_.ant-form-item-margin-offset]:!m-0";
-
-// Phase / payment-type badge shown on a ticket card (e.g. "Early Bird").
-export const phaseBadgeCls =
-  "inline-flex items-center px-2.5 py-0.5 rounded-full text-[13px] font-bold bg-[#cce5ff] text-[#006193]";
-
-// Distance / team badge on an applicant card header — solid so it stands out from the grey bar.
-export const ticketBadgeCls =
-  "inline-flex items-center max-w-[60vw] truncate px-3 py-1 rounded-full text-[13px] font-bold bg-[#006193] text-white shadow-sm";

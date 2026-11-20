@@ -216,7 +216,8 @@
       "searchResults": "Search results",
       "searchEventName": "Search event name...",
       "filterProvince": "Province",
-      "filterType": "Race type"
+      "filterType": "Race type",
+      "eventDay": "Race day"
     },
     "slider": {},
     "summary": {},
@@ -271,7 +272,7 @@
       "enterLastNameEn": "Last Name",
       "day": "Day",
       "month": "Month",
-      "year": "Year (AD)",
+      "year": "Year",
       "idType": "ID Document",
       "idCard": "Thai ID Card",
       "passport": "Passport",
@@ -307,7 +308,15 @@
       "menu": "Menu",
       "chooseWhoFor": "Applicant #{{n}}: please choose “Register for myself” or “For someone else” first",
       "photoHint": "A clear, front-facing photo (JPG or PNG)",
-      "tapToUpload": "Tap the circle to upload a photo"
+      "tapToUpload": "Tap the circle to upload a photo",
+      "draftRestored": "We restored what you typed last time. Carry on from here.",
+      "ageIs": "Age {{age}}",
+      "inAgeGroup": "Age group: {{group}}",
+      "groupRange": "{{min}} - {{max}} years",
+      "groupMin": "{{min}} years and over",
+      "groupMax": "up to {{max}} years",
+      "noAgeGroup": "Not in a competitive age group for this distance",
+      "pickGenderForGroup": "Choose a gender to see the age group"
     }
   },
   "back": {
@@ -1395,6 +1404,18 @@
         "update": {
           "failed": "Failed to update recipient email"
         }
+      },
+      "admin": {
+        "searchPlaceholder": "Search order no., event, runner name, email or phone",
+        "allEvents": "All events",
+        "allStatus": "All",
+        "eventDay": "Race day",
+        "orderedAt": "Ordered {{time}}",
+        "paidAt": "Paid {{time}}{{method}}",
+        "payBy": "Pay by {{time}}",
+        "applicants": "{{count}} runner(s)",
+        "buyer": "Ordered by",
+        "showing": "Showing {{from}}-{{to}} of {{total}}"
       }
     },
     "correctionEmail": {

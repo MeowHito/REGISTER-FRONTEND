@@ -4,6 +4,7 @@ import { ArrowRightOutlined, CalendarFilled, EnvironmentFilled, EyeOutlined, Lef
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import { SYS_DISPLAY_DATE_FORMAT } from "constants/helper";
+import Pill from "components/pill";
 
 /**
  * Dark/gold banner for admin-picked Major races, nearest first. Several Majors can be flipped
@@ -29,13 +30,11 @@ const MajorBanner = ({ events = [], isAdmin, onUnsetMajor, unsetLoading, onView 
       <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5 md:gap-6">
         <div className="space-y-3 min-w-0 md:max-w-xl">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="bg-amber-400 text-slate-950 font-bold px-2.5 py-0.5 rounded-md text-xs tracking-wider uppercase">
+            <Pill size="sm" tone="none" className="border-amber-400 bg-amber-400 text-slate-950 font-bold tracking-wider uppercase">
               {t("front.event.majorBadge")}
-            </span>
+            </Pill>
             {event.eventType && (
-              <span className="inline-flex items-center gap-1.5 bg-white/10 text-slate-200 border border-white/20 text-xs px-2.5 py-0.5 rounded-md font-medium">
-                {event.eventType}
-              </span>
+              <Pill size="sm" tone="glass">{event.eventType}</Pill>
             )}
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-amber-400 tracking-tight leading-tight m-0 break-words">

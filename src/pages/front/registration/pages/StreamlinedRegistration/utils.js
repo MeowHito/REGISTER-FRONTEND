@@ -1,5 +1,21 @@
 import dayjs from "dayjs";
 
+/** Race age: this year minus the birth year (what the order stores and age groups use). */
+export const raceAge = (birthDate) => (birthDate ? dayjs().year() - dayjs(birthDate).year() : null);
+
+/** The distance's age group a runner falls in, or null. Same rule the order is priced/labelled with. */
+export const findAgeGroup = (eventType, birthDate, gender) => {
+  const age = raceAge(birthDate);
+  if (age == null) return null;
+  return (eventType?.ageGroups || []).find(
+    (group) =>
+      group.gender === gender &&
+      ((age >= group.minAge && age <= group.maxAge) ||
+        (age >= group.minAge && group.maxAge === null) ||
+        (age <= group.maxAge && group.minAge === null))
+  ) || null;
+};
+
 /**
  * Re-shape the raw form `applicants` array into the exact `order.applicants`
  * structure expected by RegistrationDetail / createOrder. Logic mirrors
@@ -18,14 +34,7 @@ export const finalizeApplicants = (rawApplicants, event, t) => {
     const allFields = [...globalFields, ...eventTypeFields];
 
     // ---- age group label ----
-    const age = dayjs().year() - dayjs(applicant.birthDate).year();
-    const matchedGroup = selectedEventType?.ageGroups?.find(
-      (group) =>
-        group.gender === applicant.gender &&
-        ((age >= group.minAge && age <= group.maxAge) ||
-          (age >= group.minAge && group.maxAge === null) ||
-          (age <= group.maxAge && group.minAge === null))
-    );
+    const matchedGroup = findAgeGroup(selectedEventType, applicant.birthDate, applicant.gender);
     const { minAge, maxAge } = matchedGroup || {};
 
     if (minAge != null && maxAge != null) {
@@ -152,17 +161,11 @@ export const totalQty = (tickets) =>
   Object.values(tickets || {}).reduce((sum, q) => sum + (Number(q) || 0), 0);
 
 /**
- * Registration for an event type is "closed" when the admin configured payment
- * phases (pricing rows) but every one of them has already passed its end date —
- * i.e. there is no current phase and no next phase to fall through to. Event
- * types with no payment phases at all keep working on the Standard price.
+ * A distance is never closed just because its price phases (Early Bird…) have ended: once the
+ * last phase is over it sells at the standard price until the event's registration window
+ * closes, which the page handles as a whole. Kept as a function so callers stay unchanged.
  */
-export const isEventTypeClosed = (eventType) => {
-  const pricing = eventType?.pricing || [];
-  if (!pricing.length) return false;
-  const now = dayjs();
-  return pricing.every((p) => p.endDate && dayjs(p.endDate).isBefore(now));
-};
+export const isEventTypeClosed = () => false;
 
 /** Resolve the current price for an event type, preferring live availability. */
 export const resolvePricing = (eventType, availability) => {

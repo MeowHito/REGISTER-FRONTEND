@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { extraShirtList } from "./StreamlinedRegistration/utils";
+import { clearDrafts } from "./StreamlinedRegistration/draftStore";
 import { formatPhone } from "constants/phoneCountryCodes";
 import { Checkbox, message } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
@@ -252,6 +253,8 @@ const RegistrationDetail = () => {
 
 			let newParsedData = { ...order, orderId: data.id, orderNo, paymentToken, paymentDueDatetime, paymentStatus, eventData: eventData || order.eventData };
 			dispatch(SET_ORDER(newParsedData))
+			// The order exists now, so the saved registration-form draft is no longer needed.
+			clearDrafts(order?.eventId);
 			const today = new Date();
 			const dateRegister = convertDateToThaiFormatWithTime(today);
 			const storedDataMail = newParsedData;

@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useState } from "react";
-import { Table, Button, Row, Col, Tag, Tooltip, Modal, message } from "antd";
+import { Table, Button, Row, Col, Tooltip, Modal, message } from "antd";
 import CommonForm from "components/commonForm";
 import { SearchOutlined, EyeOutlined, RightOutlined, CalendarOutlined } from "@ant-design/icons";
 import { useMediaQuery } from "react-responsive";
@@ -12,14 +12,9 @@ import FloatingLabel from "components/floatingLabel";
 import { useTranslation } from "react-i18next";
 import HistoryDetail from "./historyDetail";
 import PageHeader from "components/pageHeader";
-
-const statusColors = {
-  PENDING: { color: "#faad14", label: "รอดำเนินการ" },
-  CANCELLED: { color: "#ff4d4f", label: "ยกเลิกโดยผู้ใช้" },
-  FAILED: { color: "#ff4d4f", label: "ล้มเหลว" },
-  SUCCESS: { color: "#52c41a", label: "ดำเนินการสำเร็จ" },
-  REVIEW: { color: "#fa8c16", label: "รอตรวจสอบ" },
-};
+import Pill from "components/pill";
+import useMe from "hooks/useMe";
+import AdminOrderList from "./AdminOrderList";
 
 const HistoryList = () => {
   const { t } = useTranslation();
@@ -35,6 +30,9 @@ const HistoryList = () => {
   const [paymentId, setPaymentId] = useState(searchParams.get("order"));
   // Phones get one card per order instead of a table that has to be scrolled sideways.
   const isPhone = useMediaQuery({ query: "(max-width: 767px)" });
+  // Admins see every registration, with the runners' names, on their own layout.
+  const { data: me } = useMe();
+  const isAdmin = me?.role?.roleType === "admin";
 
   const { data: payments, refetch, isFetching, ...other } = backOfficeServices.useQueryGetAllPaymentHistory({
     params: filters,
@@ -99,11 +97,11 @@ const HistoryList = () => {
 
   const statusTag = (status) => {
     const normalized = status?.toUpperCase();
-    const { color } = statusColors[normalized] || { color: "blue" };
+    const tone = { SUCCESS: "green", PENDING: "orange", REVIEW: "orange", CANCELLED: "red", FAILED: "red" }[normalized] || "blue";
     return (
-      <Tag color={color} className="!m-0 !font-semibold">
+      <Pill size="sm" tone={tone} dot>
         {t(`back.history.historyList.status.${normalized}`, { defaultValue: status })}
-      </Tag>
+      </Pill>
     );
   };
 
@@ -217,6 +215,16 @@ const HistoryList = () => {
       ),
     },
   ];
+
+  // Kept mounted while an order is open, so "back" returns to the same filters and page.
+  if (isAdmin) {
+    return (
+      <>
+        <div className={mode === "list" ? "" : "hidden"}><AdminOrderList onView={handleViewDetail} /></div>
+        {mode !== "list" && <HistoryDetail paymentId={paymentId} setMode={setMode} />}
+      </>
+    );
+  }
 
   return mode === "list" ?
     <>

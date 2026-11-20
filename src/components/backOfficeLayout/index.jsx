@@ -57,7 +57,8 @@ export default function BackOfficeLayout() {
         dispatch(PROFILE_LOADING(false));
 
         const roleType = me?.role?.roleType;
-        const hideHistory = roleType === "admin" || roleType === "organizer";
+        // Admins get the all-registrations list (paymentHistory/AdminOrderList); organizers don't.
+        const hideHistory = roleType === "organizer";
 
         const menus = me.role.permissions
           .map((p) => p.menu)

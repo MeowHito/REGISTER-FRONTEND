@@ -80,7 +80,7 @@ function Slider() {
   const showHeroSkeleton = isLoadingSliders && images.length === 0
 
   const Hero = (
-    <section className="relative overflow-hidden flex items-start md:items-center h-[250px] md:h-auto md:aspect-[16/5] bg-gray-100">
+    <section className="relative overflow-hidden flex items-start md:items-center h-[230px] md:h-auto md:aspect-[16/5] bg-gray-100">
       {/* Background images */}
       <div className="absolute inset-0">
         {showHeroSkeleton && (
@@ -102,10 +102,11 @@ function Slider() {
   const SearchBar = (
     // w-full: this sits in a flex column, where mx-auto alone shrinks it to its content, so the
     // box changed width every time a filter was picked.
-    // Phones: two compact rows (province + type side by side, then the name) on frosted glass,
-    // sitting at the bottom of the banner so the picture still shows through and above it.
-    <div className="w-full max-w-[360px] md:max-w-screen-xl mx-auto px-3 md:px-5 -mt-[108px] md:-mt-10 relative z-20">
-      <div className="mobile-home-search bg-white/20 backdrop-blur-md md:bg-white md:backdrop-blur-none border border-white/40 md:border-gray-200 rounded-2xl shadow-[0_10px_30px_rgba(15,23,42,0.18)] p-1.5 md:p-4 grid grid-cols-2 gap-1.5 md:flex md:flex-row md:gap-3 md:items-center">
+    // Phones: two compact rows (province + type side by side, then the name) on see-through
+    // glass that only overlaps the banner's bottom edge, so the picture stays visible and the
+    // "upcoming events" heading below keeps its own space.
+    <div className="w-full max-w-[360px] md:max-w-screen-xl mx-auto px-3 md:px-5 -mt-11 md:-mt-10 mb-3 md:mb-0 relative z-20">
+      <div className="mobile-home-search bg-white/10 backdrop-blur-[6px] md:bg-white md:backdrop-blur-none border border-white/35 md:border-gray-200 rounded-2xl shadow-[0_8px_24px_rgba(15,23,42,0.12)] p-1.5 md:p-4 grid grid-cols-2 gap-1.5 md:flex md:flex-row md:gap-3 md:items-center">
         <Select
           placeholder={isPhone ? t('front.home.filterProvince') : t('front.event.selectProvince')}
           allowClear

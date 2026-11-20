@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import generalService from "services/general.services";
 import { buildAgeGroupLabel, buildAgeLabelFromAge } from "utils/ageGroup";
 import { SYS_DATE_FORMAT } from "constants/helper";
+import Pill from "components/pill";
 
 /* ─── Shared sub-components ─── */
 const DetailField = ({ label, children, span = 1 }) => (
@@ -55,9 +56,9 @@ const QrDetailCard = ({ detail: p, t, renderGender, renderDeliveryMethod }) => {
                                     )}
                                 </div>
                                 {p.bibNo && (
-                                    <Tag color="blue" className="text-lg! px-4! py-1! font-bold! rounded-full! m-0!">
+                                    <Pill size="lg" tone="blue" className="!text-[16px] font-bold">
                                         BIB #{p.bibNo}
-                                    </Tag>
+                                    </Pill>
                                 )}
                             </div>
                         </div>
@@ -489,9 +490,7 @@ function ParticipantSearch() {
                                                 {p.firstName} {p.lastName}
                                             </h3>
                                             {p.bibNo && (
-                                                <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
-                                                    #{p.bibNo}
-                                                </span>
+                                                <Pill tone="blue">#{p.bibNo}</Pill>
                                             )}
                                         </div>
 

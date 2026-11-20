@@ -11,7 +11,9 @@ import { selectCls } from "./theme";
  * Desktop keeps the antd Select. Option values keep their type (numbers stay numbers).
  */
 const PhoneFriendlySelect = ({
-  id, value, onChange, options = [], placeholder, allowClear, className = selectCls, ...antdProps
+  id, value, onChange, options = [], placeholder, allowClear, className = selectCls,
+  // Narrow columns (day / month / year): less side padding so the text gets the width.
+  dense = false, ...antdProps
 }) => {
   const isPhone = useMediaQuery({ query: "(max-width: 767px)" });
 
@@ -33,14 +35,14 @@ const PhoneFriendlySelect = ({
           const v = e.target.value;
           onChange?.(v === "" ? undefined : options[Number(v)].value);
         }}
-        className={`w-full h-12 appearance-none rounded-lg border border-[#bfc7d2] bg-white pl-3 pr-9 text-base focus:border-[#006193] focus:outline-none ${empty ? "text-[#9aa1a9]" : "text-[#181c1e]"}`}
+        className={`w-full h-12 appearance-none rounded-lg border border-[#bfc7d2] bg-white ${dense ? "pl-2.5 pr-7" : "pl-3 pr-9"} text-base focus:border-[#006193] focus:outline-none ${empty ? "text-[#9aa1a9]" : "text-[#181c1e]"}`}
       >
         <option value="" disabled={!allowClear}>{placeholder || ""}</option>
         {options.map((o, i) => (
           <option key={String(o.value)} value={String(i)}>{typeof o.label === "string" || typeof o.label === "number" ? o.label : String(o.value)}</option>
         ))}
       </select>
-      <DownOutlined className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#6b7280]" />
+      <DownOutlined className={`pointer-events-none absolute ${dense ? "right-2.5" : "right-3"} top-1/2 -translate-y-1/2 text-xs text-[#6b7280]`} />
     </div>
   );
 };

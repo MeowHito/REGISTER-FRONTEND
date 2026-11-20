@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import generalService from 'services/general.services';
 import { findSimilarEvents, pickUpcomingEvents, scoreEventMatch, STRONG_MATCH_SCORE } from 'utils/eventSuggestion';
+import Pill from "components/pill";
 
 const EventNotFound = ({ slug, isServerError = false, onRetry, embedded = false }) => {
     const { t } = useTranslation();
@@ -71,9 +72,7 @@ const EventNotFound = ({ slug, isServerError = false, onRetry, embedded = false 
                     description={t('front.eventDetail.notFound.description')}
                 />
                 {slug && (
-                    <div className="mt-3 inline-block max-w-full truncate rounded-full bg-gray-100 px-4 py-1 text-sm text-gray-500">
-                        /eventDetail/{slug}
-                    </div>
+                    <Pill tone="slate" className="mt-3 !font-normal">/eventDetail/{slug}</Pill>
                 )}
             </div>
 

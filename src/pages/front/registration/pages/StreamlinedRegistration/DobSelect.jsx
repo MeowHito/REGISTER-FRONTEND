@@ -70,13 +70,15 @@ const DobSelect = ({ id, value, onChange }) => {
   const cls = selectCls;
 
   return (
-    <div id={id} className="grid grid-cols-3 gap-2">
+    // Day only ever needs two digits; the month gets the room so names like "พฤศจิกายน" /
+    // "September" show in full.
+    <div id={id} className="grid grid-cols-[60px_minmax(0,1fr)_84px] sm:grid-cols-[88px_minmax(0,1fr)_120px] gap-2">
       {/* Phones get the native picker (wheel on iPhone), which scrolls far more smoothly. */}
-      <PhoneFriendlySelect className={cls} placeholder={t("front.reg.day")} value={day} options={dayOptions}
+      <PhoneFriendlySelect dense className={cls} placeholder={t("front.reg.day")} value={day} options={dayOptions}
         onChange={(v) => { setDay(v); commit(v, month, year); }} />
-      <PhoneFriendlySelect className={cls} placeholder={t("front.reg.month")} value={month} options={monthOptions}
+      <PhoneFriendlySelect dense className={cls} placeholder={t("front.reg.month")} value={month} options={monthOptions}
         onChange={(v) => { setMonth(v); commit(day, v, year); }} />
-      <PhoneFriendlySelect className={cls} showSearch placeholder={t("front.reg.year")}
+      <PhoneFriendlySelect dense className={cls} showSearch placeholder={t("front.reg.year")}
         value={year} options={yearOptions} optionFilterProp="label"
         onChange={(v) => { setYear(v); commit(day, month, v); }} />
     </div>

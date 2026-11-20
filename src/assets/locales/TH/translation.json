@@ -216,7 +216,8 @@
       "searchResults": "ผลการค้นหา",
       "searchEventName": "ค้นหาชื่องาน...",
       "filterProvince": "จังหวัด",
-      "filterType": "ประเภทงาน"
+      "filterType": "ประเภทงาน",
+      "eventDay": "วันจัดกิจกรรม"
     },
     "slider": {},
     "summary": {},
@@ -271,7 +272,7 @@
       "enterLastNameEn": "Last Name",
       "day": "วัน",
       "month": "เดือน",
-      "year": "ปี (ค.ศ.)",
+      "year": "ปี",
       "idType": "ประเภทเอกสาร",
       "idCard": "บัตรประชาชน",
       "passport": "พาสปอร์ต",
@@ -307,7 +308,15 @@
       "menu": "เมนู",
       "chooseWhoFor": "ผู้สมัคร #{{n}}: กรุณาเลือก “สมัครให้ตัวเอง” หรือ “สำหรับเพื่อน/ผู้อื่น” ก่อน",
       "photoHint": "รูปหน้าตรง เห็นหน้าชัด ไฟล์ JPG หรือ PNG",
-      "tapToUpload": "แตะวงกลมเพื่ออัปโหลดรูป"
+      "tapToUpload": "แตะวงกลมเพื่ออัปโหลดรูป",
+      "draftRestored": "กู้คืนข้อมูลที่กรอกไว้ล่าสุดให้แล้ว กรอกต่อได้เลย",
+      "ageIs": "อายุ {{age}} ปี",
+      "inAgeGroup": "อยู่ในกลุ่มอายุ {{group}}",
+      "groupRange": "{{min}} - {{max}} ปี",
+      "groupMin": "{{min}} ปีขึ้นไป",
+      "groupMax": "ไม่เกิน {{max}} ปี",
+      "noAgeGroup": "ไม่อยู่ในกลุ่มอายุที่แข่งขันของระยะนี้",
+      "pickGenderForGroup": "เลือกเพศเพื่อดูกลุ่มอายุ"
     }
   },
   "back": {
@@ -1396,6 +1405,18 @@
         "update": {
           "failed": "ไม่สามารถอัปเดตอีเมลผู้รับได้"
         }
+      },
+      "admin": {
+        "searchPlaceholder": "ค้นหาเลขคำสั่งซื้อ ชื่องาน ชื่อผู้สมัคร อีเมล หรือเบอร์โทร",
+        "allEvents": "ทุกงาน",
+        "allStatus": "ทั้งหมด",
+        "eventDay": "วันงาน",
+        "orderedAt": "สมัครเมื่อ {{time}}",
+        "paidAt": "ชำระเมื่อ {{time}}{{method}}",
+        "payBy": "ต้องชำระภายใน {{time}}",
+        "applicants": "ผู้สมัคร {{count}} คน",
+        "buyer": "ผู้สั่งซื้อ",
+        "showing": "แสดง {{from}}-{{to}} จาก {{total}} รายการ"
       }
     },
     "correctionEmail": {

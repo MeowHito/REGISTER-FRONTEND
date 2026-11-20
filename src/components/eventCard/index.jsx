@@ -7,14 +7,11 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { usePublicImageUrl } from "utils/fileUtils";
 import { PinIcon, TypeIcon } from "./typeIcons";
+import Pill from "components/pill";
 import useFitText from "./useFitText";
 import { distanceChips } from "./utils";
 
-const STATUS_STYLE = {
-    openRegistration: { pill: "border-[#bbf7d0] bg-[#f0fdf4] text-[#15803d]", dot: "bg-[#22c55e]" },
-    soon: { pill: "border-[#bfdbfe] bg-[#eff6ff] text-[#1d4ed8]", dot: "bg-[#3b82f6]" },
-    closedRegistration: { pill: "border-[#fecaca] bg-[#fef2f2] text-[#dc2626]", dot: "bg-[#ef4444]" },
-};
+const STATUS_TONE = { openRegistration: "green", soon: "blue", closedRegistration: "red" };
 
 const EventCard = ({
     id,
@@ -47,7 +44,7 @@ const EventCard = ({
                     ? t("general.closedRegistration")
                     : "";
 
-    const status = STATUS_STYLE[eventStatus] || STATUS_STYLE.closedRegistration;
+    const status = STATUS_TONE[eventStatus] || "red";
 
     const titleRef = useFitText(name, compact ? 13 : 15);
     const chips = distanceChips(distances);
@@ -90,40 +87,24 @@ const EventCard = ({
                     {chips.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1.5">
                             {shownChips.map((label, i) => (
-                                <span
-                                    key={label}
-                                    className={`inline-flex items-center max-w-full truncate rounded-full border px-2.5 py-0.5 text-[13px] font-semibold ${i === 0
-                                        ? "border-[#bfdbfe] bg-[#eff6ff] text-[#1d4ed8]"
-                                        : "border-slate-200 bg-slate-50 text-slate-700"}`}
-                                >
-                                    {label}
-                                </span>
+                                <Pill key={label} tone={i === 0 ? "blue" : "slate"} title={label}>{label}</Pill>
                             ))}
-                            {hiddenChips > 0 && (
-                                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[13px] font-semibold text-slate-500">
-                                    +{hiddenChips}
-                                </span>
-                            )}
+                            {hiddenChips > 0 && <Pill tone="slate">+{hiddenChips}</Pill>}
                         </div>
                     )}
 
                     {(provinceLabel || type) && (
                         <div className="mt-2 flex flex-wrap gap-1.5">
                             {provinceLabel && (
-                                <span className="inline-flex items-center gap-1.5 max-w-full rounded-full border border-slate-200 bg-white py-0.5 pl-1 pr-2.5 text-[13px] font-semibold text-slate-700">
-                                    <span className="inline-flex items-center justify-center w-5 h-5 shrink-0 rounded-full bg-[#eff6ff] text-[#2563eb]">
-                                        <PinIcon className="w-3 h-3" />
-                                    </span>
-                                    <span className="truncate">{provinceLabel}</span>
-                                </span>
+                                <Pill tone="blue" title={provinceLabel} icon={<PinIcon className="w-3.5 h-3.5" />}
+                                    className="!text-slate-700">
+                                    {provinceLabel}
+                                </Pill>
                             )}
                             {type && (
-                                <span className="inline-flex items-center gap-1.5 max-w-full rounded-full border border-[#fde68a] bg-[#fffbeb] py-0.5 pl-1 pr-2.5 text-[13px] font-semibold text-[#713f12]">
-                                    <span className="inline-flex items-center justify-center w-5 h-5 shrink-0 rounded-full bg-[#fcd34d] text-[#713f12]">
-                                        <TypeIcon type={type} className="w-3 h-3" />
-                                    </span>
-                                    <span className="truncate">{type}</span>
-                                </span>
+                                <Pill tone="amber" title={type} icon={<TypeIcon type={type} className="w-3.5 h-3.5" />}>
+                                    {type}
+                                </Pill>
                             )}
                         </div>
                     )}
@@ -131,19 +112,19 @@ const EventCard = ({
                     {/* Date and registration status sit together in one soft box at the bottom. */}
                     <div className="mt-auto pt-3">
                         <div className="border-t border-slate-100 pt-3">
-                            <div className={`flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-100 bg-slate-50 ${compact ? "p-2" : "p-2.5"}`}>
-                                <div className={`flex items-center min-w-0 ${compact ? "gap-2 text-[13px] leading-tight" : "gap-2.5 text-[16px] md:text-[15px] whitespace-nowrap"} font-bold text-[#1f2330]`}>
-                                    <span className={`inline-flex items-center justify-center shrink-0 ${compact ? "w-7 h-7 rounded-lg" : "w-9 h-9 rounded-xl"} bg-gradient-to-br from-[#3b82f6] to-[#1d4ed8] text-white shadow-sm`}>
+                            <div className={`flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200/70 bg-slate-50/80 ${compact ? "p-2" : "px-3 py-2.5"}`}>
+                                <div className={`flex items-center min-w-0 ${compact ? "gap-2" : "gap-3"}`}>
+                                    <span className={`inline-flex items-center justify-center shrink-0 ${compact ? "w-8 h-8 rounded-lg" : "w-9 h-9 rounded-xl"} bg-[#1d4ed8] text-white shadow-sm`}>
                                         <CalendarOutlined className={compact ? "text-sm" : "text-base"} />
                                     </span>
-                                    {dayjs(eventDate).format(SYS_DISPLAY_DATE_FORMAT)}
-                                </div>
-                                {statusText && (
-                                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[13px] font-bold whitespace-nowrap ${status.pill}`}>
-                                        <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
-                                        {statusText}
+                                    <span className="flex flex-col min-w-0">
+                                        <span className="text-[12px] font-medium text-slate-400 leading-tight">{t("front.home.eventDay")}</span>
+                                        <span className={`${compact ? "text-[13px]" : "text-[15px]"} font-bold text-[#0f172a] leading-tight`}>
+                                            {dayjs(eventDate).format(SYS_DISPLAY_DATE_FORMAT)}
+                                        </span>
                                     </span>
-                                )}
+                                </div>
+                                {statusText && <Pill tone={status} dot>{statusText}</Pill>}
                             </div>
                         </div>
                     </div>
