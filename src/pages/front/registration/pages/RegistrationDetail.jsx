@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { extraShirtList } from "./StreamlinedRegistration/utils";
 import { clearDrafts } from "./StreamlinedRegistration/draftStore";
 import { formatPhone } from "constants/phoneCountryCodes";
-import { Checkbox, message } from 'antd';
+import { message } from 'antd';
+import ConditionChecklist from './ConditionChecklist';
 import { LoadingOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import FrontLayout from 'components/frontLayout';
@@ -81,7 +82,8 @@ const RegistrationDetail = () => {
 		let conditions = [];
 		if (order.eventConditions && Array.isArray(order.eventConditions)) {
 			conditions = order.eventConditions.map((c, i) => ({
-				label: c.description,
+				description: c.description,
+				detail: c.detail,
 				value: `eventCondition-${i}`,
 			}));
 		}
@@ -531,8 +533,7 @@ const RegistrationDetail = () => {
 								{order?.eventConditions?.length > 0 ? (
 									<div className="bg-white border border-[#bfc7d2] rounded-xl shadow-sm p-5">
 										<div className="font-bold text-[#181c1e] mb-3">{t("back.reg.payment.checkBeforePay")}</div>
-										<Checkbox.Group options={checkboxOptions} value={checkedValues} onChange={handleCheckboxChange}
-											style={{ display: 'flex', flexDirection: 'column', gap: 10 }} />
+										<ConditionChecklist conditions={checkboxOptions} value={checkedValues} onChange={handleCheckboxChange} />
 									</div>
 								) : null}
 

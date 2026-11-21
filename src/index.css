@@ -912,3 +912,11 @@ h6 {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
+
+/* Confirm-before-pay conditions: the whole row is the checkbox label, with a bigger box. */
+.cond-row.ant-checkbox-wrapper { display: flex; align-items: flex-start; padding: 12px 14px; }
+.cond-row .ant-checkbox { align-self: flex-start; margin-top: 3px; flex-shrink: 0; }
+.cond-row .ant-checkbox .ant-checkbox-inner { width: 20px; height: 20px; border-radius: 6px; }
+.cond-row .ant-checkbox .ant-checkbox-inner::after { inset-inline-start: 30%; width: 6.5px; height: 11px; }
+.cond-row .ant-checkbox + span { padding-inline-start: 10px; padding-inline-end: 0; }
+a.cond-link.cond-link, a.cond-link.cond-link:hover, a.cond-link.cond-link:visited { color: #0071e3; }

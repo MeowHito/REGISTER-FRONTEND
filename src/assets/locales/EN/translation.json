@@ -316,7 +316,12 @@
       "groupMin": "{{min}} years and over",
       "groupMax": "up to {{max}} years",
       "noAgeGroup": "Not in a competitive age group for this distance",
-      "pickGenderForGroup": "Choose a gender to see the age group"
+      "pickGenderForGroup": "Choose a gender to see the age group",
+      "condition": {
+        "readMore": "Read details",
+        "accept": "Accept this condition",
+        "close": "Close"
+      }
     }
   },
   "back": {
@@ -362,7 +367,7 @@
         "title": "Title",
         "detail": "Detail",
         "addExtraInfo": "Add Additional Info",
-        "conditionDescription": "Condition Detail",
+        "conditionDescription": "Condition text",
         "addCondition": "Add Condition",
         "paymentTypeName": "Payment Type Name",
         "endDate": "End Date",
@@ -549,7 +554,12 @@
           "shirtsDesc": "Shirt types/sizes and add-on packages such as hotels and photos",
           "extra": "Additional info",
           "extraDesc": "Extra information sections shown on the event page"
-        }
+        },
+        "conditionDetail": "Popup details (optional)",
+        "conditionHint": "Wrap the words runners can tap in { }, e.g. I accept {the race rules}. Those words turn blue and open a popup with the details below. Without { }, a \"Read details\" link is added at the end.",
+        "conditionPreview": "What runners will see:",
+        "conditionBraceNoDetail": "There are words in { } but no details yet — they will show as plain text.",
+        "conditionDetailTooLong": "Details are too long (20,000 characters max)."
       },
       "home": {
         "confirmPublish": "Do you want to publish the event?",
