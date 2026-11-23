@@ -130,11 +130,17 @@ const RegistrationDetail = () => {
 						? pictureValue
 						: (fileList?.[0]?.name ?? null);
 
-				let pictureUrl = await getImageFileToUpload({
-					fileList,
-					prefix,
-					oldKey,
-				});
+				// A string is an already-stored key (the runner's profile photo when
+				// registering themself, or a saved runner's photo): keep it as is.
+				// getImageFileToUpload returns null for an empty fileList, which
+				// dropped that photo and made "photo required" events reject the order.
+				const pictureUrl = typeof pictureValue === "string" && pictureValue
+					? pictureValue
+					: await getImageFileToUpload({
+						fileList,
+						prefix,
+						oldKey,
+					});
 
 				return {
 					isSelf: applicant.type === "self",
