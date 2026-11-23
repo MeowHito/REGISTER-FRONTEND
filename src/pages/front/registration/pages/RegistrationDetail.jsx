@@ -215,36 +215,7 @@ const RegistrationDetail = () => {
 			const res = await createOrder(orderData);
 
 			if (res.status !== 200) {
-				const errorData = res.data;
-				const errorCode = errorData?.errorCode;
-
-				if (errorCode === 'QUOTA_EXCEEDED') {
-					AlertError({
-						title: t('back.reg.error.quotaExceededTitle'),
-						text: t('back.reg.error.quotaExceeded', {
-							name: errorData?.pricingName || errorData?.eventTypeName || t('general.unknown'),
-							available: errorData?.availableQuota || 0
-						}),
-						onOk: () => navigate(`/registrationInfo/${order?.eventId}`)
-					});
-					return;
-				}
-
-				if (errorCode === 'PRICING_EXPIRED') {
-					AlertWarning({
-						title: t('back.reg.error.pricingExpiredTitle'),
-						text: t('back.reg.error.pricingExpired', {
-							name: errorData?.pricingName || t('general.unknown')
-						}),
-						onOk: () => navigate(`/registrationInfo/${order?.eventId}`)
-					});
-					return;
-				}
-
-				AlertError({
-					title: t('back.reg.error.createOrderFailedTitle'),
-					text: errorData?.message || t('back.reg.error.createOrderFailed')
-				});
+				showCreateOrderError(res.data);
 				return;
 			}
 
@@ -326,13 +297,53 @@ const RegistrationDetail = () => {
 				return;
 			}
 
-			AlertError({
-				title: t('back.reg.error.createOrderFailedTitle'),
-				text: t('back.reg.error.createOrderFailed')
-			});
+			// axios rejects every non-2xx, so the backend's reason (sold out, price
+			// phase closed, missing required field, team size…) arrives here.
+			showCreateOrderError(error?.response?.data);
 		} finally {
 			setIsSubmitting(false);
 		}
+	};
+
+	/**
+	 * Quota/pricing rejections come back as Response<QuotaValidationError>
+	 * ({ data: { errorCode, … }, message }); business-rule rejections as
+	 * ErrorDetails ({ message }). Show the backend's Thai reason when there is one.
+	 */
+	const showCreateOrderError = (body) => {
+		const detail = body?.data && typeof body.data === 'object' ? body.data : body;
+		const errorCode = detail?.errorCode;
+		const backToForm = () => navigate(`/registrationInfo/${order?.eventId}`);
+
+		if (errorCode === 'QUOTA_EXCEEDED') {
+			AlertError({
+				title: t('back.reg.error.quotaExceededTitle'),
+				text: t('back.reg.error.quotaExceeded', {
+					name: detail?.pricingName || detail?.eventTypeName || t('general.unknown'),
+					available: detail?.availableQuota || 0
+				}),
+				onOk: backToForm
+			});
+			return;
+		}
+
+		if (errorCode === 'PRICING_EXPIRED') {
+			AlertWarning({
+				title: t('back.reg.error.pricingExpiredTitle'),
+				text: t('back.reg.error.pricingExpired', {
+					name: detail?.pricingName || t('general.unknown')
+				}),
+				onOk: backToForm
+			});
+			return;
+		}
+
+		const reason = detail?.message || body?.message;
+		AlertError({
+			title: t('back.reg.error.createOrderFailedTitle'),
+			text: reason || t('back.reg.error.createOrderFailed'),
+			...(errorCode?.startsWith('ADDON_') ? { onOk: backToForm } : {})
+		});
 	};
 
 	const generatePaymentReferences = () => {
