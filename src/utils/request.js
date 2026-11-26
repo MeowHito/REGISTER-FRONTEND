@@ -23,6 +23,12 @@ const isExpectedNotFound = (err) => {
   return err?.response?.status === 404 || /not found/i.test(err?.response?.data?.message || "");
 };
 
+// A coupon that doesn't exist or is used up comes back as 400 {status:"error"}: a normal answer the
+// payment page shows to the runner, not a fault worth logging.
+const isExpectedCouponRejection = (err) =>
+  /\/api\/coupon\/validateCoupon$/.test(err?.config?.url || "")
+  && err?.response?.status === 400 && err?.response?.data?.status === "error";
+
 createRequest.interceptors.request.use(
   (config) => {
     return config;
@@ -35,7 +41,7 @@ createRequest.interceptors.response.use(
   async (err) => {
     const requestUrl = err?.config?.url;
     
-    if (err?.response?.status !== 401 && !shouldIgnoreLog(requestUrl) && !isExpectedNotFound(err)) {
+    if (err?.response?.status !== 401 && !shouldIgnoreLog(requestUrl) && !isExpectedNotFound(err) && !isExpectedCouponRejection(err)) {
       errorLogger.apiError(err);
     }
 

@@ -41,7 +41,7 @@ export default function AddOnList({ items = [], showApplicant = true }) {
             </div>
           </div>
           <span className="shrink-0 text-sm font-semibold text-[#1d1d1f] tabular-nums">
-            ฿{numeral(a.totalPrice || 0).format("0,0.00")}
+            {numeral(a.totalPrice || 0).format("0,0.00")} {t("general.unitBaht")}
           </span>
         </div>
       ))}

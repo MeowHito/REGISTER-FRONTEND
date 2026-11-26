@@ -244,7 +244,8 @@ function Profile() {
         onValuesChange={handleValuesChange}
         autoComplete="off"
       >
-        <div className="grid gap-6">
+        {/* minmax(0,1fr): a wide child (the postcode step chips) must not widen the column past the screen. */}
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
           <SectionCard
             icon={<IdcardOutlined />}
             tone="blue"
@@ -444,7 +445,7 @@ function Profile() {
             </CommonForm.Item>
             <ProvinceSelector
               form={form}
-              rowGutter={gutter}
+              rowGutter={[gutter, 16]}
               fieldNames={{ zipcode: "zipcode", province: "province", amphoe: "amphoe", district: "district" }}
               compact
               labels={{
@@ -468,7 +469,7 @@ function Profile() {
             </CommonForm.Item>
             <ProvinceSelector
               form={form}
-              rowGutter={gutter}
+              rowGutter={[gutter, 16]}
               fieldNames={{
                 zipcode: "shippingZipcode",
                 province: "shippingProvince",

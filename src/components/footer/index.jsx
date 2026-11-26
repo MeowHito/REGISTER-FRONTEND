@@ -55,7 +55,7 @@ export default function Footer({ layout }) {
             </div>
 
             {/* Link columns */}
-            <div className="grid grid-cols-2 gap-10 md:gap-16">
+            <div className="grid min-w-0 grid-cols-2 gap-10 md:gap-10 lg:gap-16">
               <div>
                 <h4 className="text-brand font-bold mb-4">{t("front.footer.otherMenu")}</h4>
                 <ul className="space-y-3 text-sm">
@@ -80,13 +80,14 @@ export default function Footer({ layout }) {
                 </ul>
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <h4 className="text-brand font-bold mb-4">{t("front.footer.contact")}</h4>
                 <ul className="space-y-3 text-sm text-inkx-variant">
                   <li>{t("front.footer.address")}</li>
                   <li>
                     <a href="mailto:Action.in.th@gmail.com" className="hover:text-brand transition-colors">
-                      Action.in.th@gmail.com
+                      {/* may wrap after the @ on a narrow column instead of pushing the page wider */}
+                      Action.in.th@<wbr />gmail.com
                     </a>
                   </li>
                 </ul>

@@ -5,6 +5,12 @@ import { useTranslation } from 'react-i18next';
 
 const { Text } = Typography;
 
+// Only the last 4 characters of an ID card / passport number are shown on screen.
+const maskIdNo = (idNo) => {
+  const v = String(idNo || "").trim();
+  return v.length <= 4 ? v : `${"•".repeat(Math.min(v.length - 4, 9))}${v.slice(-4)}`;
+};
+
 const CouponSection = ({
   availableCoupons,
   couponCode,
@@ -145,8 +151,9 @@ const CouponSection = ({
               {applicants
                 .filter(a => a.couponApplied)
                 .map((a, idx) => (
-                  <li key={idx}>
-                    <span className="text-[13px]">{a.idNo}</span>
+                  <li key={idx} className="text-[13px]">
+                    {[a.firstName, a.lastName].filter(Boolean).join(" ")}
+                    {a.idNo ? <span className="ml-1 font-mono text-gray-500">({maskIdNo(a.idNo)})</span> : null}
                   </li>
                 ))}
             </ul>

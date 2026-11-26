@@ -76,7 +76,7 @@ export default function EventResults({ provinceId = null, eventType = null, even
         </div>
 
         {isFetching && page === 1 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-5">
             {[...Array(4)].map((_, index) => (
               <div key={`skeleton-${index}`} className="w-full bg-white rounded-2xl border border-gray-100 p-4">
                 <Skeleton.Image active className="!w-full !h-40 !rounded-xl" />
@@ -92,7 +92,7 @@ export default function EventResults({ provinceId = null, eventType = null, even
             hasMore={hasMore}
             loader={<h5 className="text-center mt-10 opacity-50">Loading...</h5>}
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-5">
               {sortedItems.map((data, index) => (
                 <EventCard key={`event-${data.id || index}`} {...data} />
               ))}

@@ -46,6 +46,22 @@ const SECTION_TONES = {
     "ef-extra": { color: "#a2845e", text: "#7a5f3d" },
 };
 
+// ImageUpload loads the saved logo/cover (and question images) after the form opens and reports
+// them through onChange as `isPreview` files. That is the stored value showing up, not an edit, so
+// it must not light up "unsaved changes". Sparse list entries (unchanged rows) are skipped.
+const isPreviewSeed = (v) => {
+    if (Array.isArray(v)) {
+        const items = v.filter((x) => x != null);
+        if (!items.length) return false;
+        return items.every((x) => (x && typeof x === "object" && "uid" in x ? x.isPreview === true : isPreviewSeed(x)));
+    }
+    if (v && typeof v === "object") {
+        const vals = Object.values(v);
+        return vals.length > 0 && vals.every(isPreviewSeed);
+    }
+    return false;
+};
+
 const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
     const { t } = useTranslation();
     const [form] = CommonForm.useForm();
@@ -446,7 +462,7 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                     name="event-form"
                     layout="vertical"
                     onFinish={onFinish}
-                    onValuesChange={() => setDirty(true)}
+                    onValuesChange={(changed) => { if (!isPreviewSeed(changed)) setDirty(true); }}
                     autoComplete="off"
                 >
                     <CommonForm.Item name="id" noStyle>

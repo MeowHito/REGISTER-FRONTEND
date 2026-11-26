@@ -136,7 +136,7 @@ export default function UpcomingEvents() {
 
         {/* Cards */}
         {isFetching && items.length === 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-5">
             {[...Array(4)].map((_, index) => (
               <div
                 key={`skeleton-${index}`}
@@ -148,7 +148,7 @@ export default function UpcomingEvents() {
             ))}
           </div>
         ) : items.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-5">
             {items.map((data, index) => (
               <UpcomingEventCard key={`upcoming-${data.id || index}`} {...data} />
             ))}

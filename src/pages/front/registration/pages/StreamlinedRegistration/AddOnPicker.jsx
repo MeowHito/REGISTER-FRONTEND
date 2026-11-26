@@ -214,7 +214,7 @@ const AddOnCard = ({ addOn, selection, applicants, lang, onChange, showErrors })
           )}
 
           {noteLabel ? (
-            <div className="space-y-2">
+            <div id={`addon-note-wrap-${addOn.id}`} className="space-y-2">
               <label className="block text-sm font-bold text-[#3f4850]">
                 {noteLabel}
                 {addOn.noteRequired ? <span className="text-[#ba1a1a]"> *</span> : null}

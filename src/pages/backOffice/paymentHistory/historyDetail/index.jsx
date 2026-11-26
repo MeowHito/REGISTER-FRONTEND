@@ -237,25 +237,25 @@ const ApplicantDetail = ({ applicant: a }) => {
           <div className="w-full sm:w-72 bg-gray-50 rounded-lg px-4 py-3">
             <div className="flex justify-between py-1">
               <Text type="secondary">{t("back.history.historyDetail.breakdown.fee.registration")}</Text>
-              <Text>{(a.price ?? 0).toLocaleString("th-TH")} {t("general.unitBaht")}</Text>
+              <Text>{money(a.price ?? 0)} {t("general.unitBaht")}</Text>
             </div>
             {(a.discount ?? 0) > 0 && (
               <div className="flex justify-between py-1">
                 <Text type="secondary">{t("back.history.historyDetail.breakdown.fee.discount")}</Text>
-                <Text type="success">-{(a.discount ?? 0).toLocaleString("th-TH")} {t("general.unitBaht")}</Text>
+                <Text type="success">-{money(a.discount ?? 0)} {t("general.unitBaht")}</Text>
               </div>
             )}
             {a.deliveryMethod === "post" && (
               <div className="flex justify-between py-1">
                 <Text type="secondary">{t("back.history.historyDetail.breakdown.fee.shipping")}</Text>
-                <Text>{(a.shippingFee ?? 0).toLocaleString("th-TH")} {t("general.unitBaht")}</Text>
+                <Text>{money(a.shippingFee ?? 0)} {t("general.unitBaht")}</Text>
               </div>
             )}
             <Divider className="my-1.5!" />
             <div className="flex justify-between py-1">
               <Text strong>{t("back.history.historyDetail.breakdown.fee.total")}</Text>
               <Text strong className="text-base!" style={{ color: COLOR.primary }}>
-                {subtotal.toLocaleString("th-TH")} {t("general.unitBaht")}
+                {money(subtotal)} {t("general.unitBaht")}
               </Text>
             </div>
           </div>
@@ -297,11 +297,15 @@ const ApplicantCollapseHeader = ({ applicant: a, index }) => {
         </div>
       </div>
       <span className="shrink-0 text-[15px] font-semibold text-gray-900 whitespace-nowrap">
-        {subtotal.toLocaleString("th-TH")} {t("general.unitBaht")}
+        {money(subtotal)} {t("general.unitBaht")}
       </span>
     </div>
   );
 };
+
+// Every amount on this page with two decimals, like the payment pages (2,400.00 / 128.40).
+const money = (v) =>
+  Number(v || 0).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const helpStatusColor = (status) => {
   const map = { NEW: "blue", PENDING: "orange", SOLVED: "green", CANCELLED: "red" };
@@ -358,6 +362,9 @@ const HistoryDetail = ({ paymentId, setMode }) => {
         uuid: data.uuid || null,
         reviewReason: data.reviewReason || null,
         addOns: data.addOns || [],
+        feePercent: data.feePercent ?? 0,
+        fee: data.fee ?? 0,
+        totalAmountWithFee: data.totalAmountWithFee ?? null,
         applicants: (data.details || []).map((d, idx) => ({
           key: d.id || idx,
           firstName: d.firstName || "",
@@ -492,7 +499,11 @@ const HistoryDetail = ({ paymentId, setMode }) => {
   );
   const addOns = order?.addOns || [];
   const addOnTotal = addOns.reduce((sum, a) => sum + (Number(a.totalPrice) || 0), 0);
-  const grandTotal = totals.registration - totals.discount + totals.shipping + addOnTotal;
+  const fee = Number(order?.fee) || 0;
+  // What the gateway charged (fee included); the line sum is only a fallback for old rows without it.
+  const grandTotal = order?.totalAmountWithFee != null
+    ? Number(order.totalAmountWithFee)
+    : totals.registration - totals.discount + totals.shipping + addOnTotal + fee;
 
   return (
     <Spin className="block mt-24" spinning={isFetching}>
@@ -647,31 +658,37 @@ const HistoryDetail = ({ paymentId, setMode }) => {
                           </div>
                           <div className="flex justify-between py-1.5">
                             <Text type="secondary">{t("back.history.historyDetail.breakdown.fee.registration")}</Text>
-                            <Text>{totals.registration.toLocaleString("th-TH")} {t("general.unitBaht")}</Text>
+                            <Text>{money(totals.registration)} {t("general.unitBaht")}</Text>
                           </div>
                           {totals.discount > 0 && (
                             <div className="flex justify-between py-1.5">
                               <Text type="secondary">{t("back.history.historyDetail.breakdown.fee.discount")}</Text>
-                              <Text type="success">-{totals.discount.toLocaleString("th-TH")} {t("general.unitBaht")}</Text>
+                              <Text type="success">-{money(totals.discount)} {t("general.unitBaht")}</Text>
                             </div>
                           )}
                           {totals.shipping > 0 && (
                             <div className="flex justify-between py-1.5">
                               <Text type="secondary">{t("back.history.historyDetail.breakdown.fee.shipping")}</Text>
-                              <Text>{totals.shipping.toLocaleString("th-TH")} {t("general.unitBaht")}</Text>
+                              <Text>{money(totals.shipping)} {t("general.unitBaht")}</Text>
                             </div>
                           )}
                           {addOnTotal > 0 && (
                             <div className="flex justify-between py-1.5">
                               <Text type="secondary">{t("back.reg.addOn.title")}</Text>
-                              <Text>{addOnTotal.toLocaleString("th-TH")} {t("general.unitBaht")}</Text>
+                              <Text>{money(addOnTotal)} {t("general.unitBaht")}</Text>
+                            </div>
+                          )}
+                          {fee > 0 && (
+                            <div className="flex justify-between py-1.5">
+                              <Text type="secondary">{t("back.reg.payment.fee")}{order.feePercent ? ` ${order.feePercent}%` : ""}</Text>
+                              <Text>{money(fee)} {t("general.unitBaht")}</Text>
                             </div>
                           )}
                           <Divider className="my-2!" />
                           <div className="flex justify-between py-1.5">
                             <Text strong className="text-base!">{t("back.history.historyDetail.summary.grandTotal")}</Text>
                             <Text strong className="text-lg!" style={{ color: COLOR.primary }}>
-                              {grandTotal.toLocaleString("th-TH")} {t("general.unitBaht")}
+                              {money(grandTotal)} {t("general.unitBaht")}
                             </Text>
                           </div>
                         </div>

@@ -329,13 +329,13 @@ const StreamlinedRegistration = () => {
 
   // scrollIntoView works whichever element scrolls (the document, since main.css stopped
   // making <body> a scroll box), and scrollMarginTop keeps the header from covering it.
-  const scrollToEl = (el) => {
+  const scrollToEl = (el, gap = 0) => {
     if (!el) return;
     // On phones the header slides away when the page scrolls down and comes back when it
     // scrolls up (components/header), so only leave room for it when going up.
     const goingDown = el.getBoundingClientRect().top > 0;
     const phone = globalThis.matchMedia?.("(max-width: 767px)").matches;
-    el.style.scrollMarginTop = `${phone && goingDown ? 12 : HEADER_OFFSET}px`;
+    el.style.scrollMarginTop = `${(phone && goingDown ? 12 : HEADER_OFFSET) + gap}px`;
     el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
   // Open the next section and put its header at the top of the screen, so "Next"
@@ -554,15 +554,17 @@ const StreamlinedRegistration = () => {
     if (shipping === false) return;
     const tickedEmpty = firstTickedAddOnWithoutApplicant(addOns, addOnSelections);
     if (tickedEmpty) {
-      document.getElementById(`addon-${tickedEmpty.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-      centerNotice("warning", `${tickedEmpty.name}: ${t("back.reg.addOn.chooseApplicants")}`);
+      // Card at the top, notice at the bottom, so the notice never covers the runner chips to tap.
+      scrollToEl(document.getElementById(`addon-${tickedEmpty.id}`), 12);
+      centerNotice("warning", `${tickedEmpty.name}: ${t("back.reg.addOn.chooseApplicants")}`, { at: "bottom" });
       return;
     }
     const missingNote = firstMissingAddOnNote(addOns, addOnSelections);
     if (missingNote) {
       setAddOnShowErrors(true);
-      document.getElementById(`addon-note-${missingNote.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-      centerNotice("warning", `${missingNote.name}: ${t("back.reg.addOn.noteMissing", { label: missingNote.noteLabel })}`);
+      // The field's wrapper, so its label shows too; at the top, clear of the bottom notice.
+      scrollToEl(document.getElementById(`addon-note-wrap-${missingNote.id}`), 12);
+      centerNotice("warning", `${missingNote.name}: ${t("back.reg.addOn.noteMissing", { label: missingNote.noteLabel })}`, { at: "bottom" });
       return;
     }
     const raw = form.getFieldValue("applicants") || [];

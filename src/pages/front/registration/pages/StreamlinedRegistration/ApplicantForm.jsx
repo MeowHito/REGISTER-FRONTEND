@@ -147,16 +147,32 @@ const ApplicantForm = ({
     return w != null && w !== "" ? w : undefined;
   };
 
+  // Names travel as pairs so the Thai and English names always belong to the same person: the
+  // profile's pair first, else the last "for myself" entry's. That entry's English name is only
+  // borrowed when its Thai name matches the one we're using (the runner may have renamed since).
+  const has = (o, a, b) => !!(o?.[a] && String(o[a]).trim() && o?.[b] && String(o[b]).trim());
+  const same = (x, y) => String(x || "").trim() === String(y || "").trim();
+  const pickNames = () => {
+    const th = has(me, "firstName", "lastName") ? me : has(lastSelfEntry, "firstName", "lastName") ? lastSelfEntry : me;
+    let en;
+    if (has(me, "firstNameEn", "lastNameEn")) en = me;
+    else if (has(lastSelfEntry, "firstNameEn", "lastNameEn")
+      && same(lastSelfEntry.firstName, th?.firstName) && same(lastSelfEntry.lastName, th?.lastName)) en = lastSelfEntry;
+    return {
+      firstName: th?.firstName || undefined,
+      lastName: th?.lastName || undefined,
+      firstNameEn: en?.firstNameEn || undefined,
+      lastNameEn: en?.lastNameEn || undefined,
+    };
+  };
+
   const chooseSelf = () => {
     const gender = known("gender");
     const birthDate = known("birthDate");
     const idNo = known("idNo");
     setPersonal({
       type: "self",
-      firstName: known("firstName"),
-      lastName: known("lastName"),
-      firstNameEn: known("firstNameEn"),
-      lastNameEn: known("lastNameEn"),
+      ...pickNames(),
       gender: gender ? String(gender).toLowerCase() : undefined,
       birthDate: birthDate ? dayjs(birthDate) : undefined,
       email: me?.email,

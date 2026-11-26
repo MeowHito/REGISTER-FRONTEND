@@ -411,8 +411,12 @@ const RegistrationPayment = () => {
             }
         } catch (error) {
             // Never show raw server/axios text ("Request failed with status code 404") to a runner.
-            console.error("[RegistrationPayment] validateCoupon failed:", error);
-            setCouponMsg(t("back.reg.payment.checkFailed"));
+            // A 400 from the coupon check carries the business reason ("ไม่พบคูปองนี้ หรือคูปองถูกใช้ไปแล้ว");
+            // anything else (network, 5xx) keeps the generic message and is a real failure.
+            const body = error?.response?.status === 400 ? error.response.data : null;
+            const reason = body?.status === "error" && typeof body?.message === "string" ? body.message.trim() : "";
+            if (!reason) console.error("[RegistrationPayment] validateCoupon failed:", error);
+            setCouponMsg(reason || t("back.reg.payment.checkFailed"));
             setCouponMsgType('warning');
         }
         setIsApplying(false);
@@ -583,12 +587,13 @@ const RegistrationPayment = () => {
                     </div>
                     <Button
                         type="primary"
-                        className="!h-12 flex-1 !rounded-xl !border-0 !font-semibold !text-base !text-white !shadow-[0_6px_18px_-4px_rgba(79,70,229,0.5)] !bg-gradient-to-r !from-[#4f46e5] !via-indigo-600 !to-[#3730a3]"
+                        className="min-w-0 !h-auto min-h-12 !py-2 !whitespace-normal flex-1 !rounded-xl !border-0 !font-semibold !text-base !text-white !shadow-[0_6px_18px_-4px_rgba(79,70,229,0.5)] !bg-gradient-to-r !from-[#4f46e5] !via-indigo-600 !to-[#3730a3]"
                         onClick={needsMethod ? promptForMethod : handleNext}
                         disabled={!canProceed && !needsMethod}
                         loading={isProceeding}
                     >
-                        <span className="inline-flex items-center gap-2">{payButtonLabel} <ArrowRightOutlined /></span>
+                        {/* may wrap to two lines on a 360px phone instead of pushing the page sideways */}
+                        <span className="inline-flex items-center gap-2 text-center leading-tight">{payButtonLabel} <ArrowRightOutlined /></span>
                     </Button>
                 </div>
             </div>
