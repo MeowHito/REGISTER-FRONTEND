@@ -18,7 +18,7 @@ const PaymentMethods = ({ selectedPayment, handlePaymentSelection, options, opti
       hoverable
       onClick={() => handlePaymentSelection(type)}
       style={{
-        border: selectedPayment === type ? "2px solid #FFB946" : "1px solid #ddd",
+        border: selectedPayment === type ? "2px solid #4f46e5" : "1px solid #ddd",
         textAlign: "center",
         padding: "8px",
         height: "100px",
@@ -26,9 +26,9 @@ const PaymentMethods = ({ selectedPayment, handlePaymentSelection, options, opti
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        borderRadius: "6px",
+        borderRadius: "14px",
         transition: "all 0.3s",
-        boxShadow: selectedPayment === type ? "0 0 8px rgba(255, 185, 70, 0.5)" : "none"
+        boxShadow: selectedPayment === type ? "0 0 0 3px rgba(79, 70, 229, 0.12)" : "none"
       }}
     >
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
@@ -40,14 +40,14 @@ const PaymentMethods = ({ selectedPayment, handlePaymentSelection, options, opti
     </Card>
   );
 
-  const iconColor = (type, idle = "#666") => (selectedPayment === type ? "#FFB946" : idle);
+  const iconColor = (type, idle = "#666") => (selectedPayment === type ? "#4f46e5" : idle);
 
   // Two per row on every screen; an odd last one stretches across the full width.
   const allMethods = [
     { type: 'qrcode', label: t("back.reg.payment.payWithQR"),
-      icon: <QrcodeOutlined style={{ fontSize: '24px', color: selectedPayment === 'qrcode' ? "#FFB946" : "#666" }} /> },
+      icon: <QrcodeOutlined style={{ fontSize: '24px', color: selectedPayment === 'qrcode' ? "#4f46e5" : "#666" }} /> },
     { type: 'creditcard', label: t("back.reg.payment.payWithCard"),
-      icon: <CreditCardOutlined style={{ fontSize: '24px', color: selectedPayment === 'creditcard' ? "#FFB946" : "#999" }} /> },
+      icon: <CreditCardOutlined style={{ fontSize: '24px', color: selectedPayment === 'creditcard' ? "#4f46e5" : "#999" }} /> },
     { type: 'ewallet', label: t("back.reg.payment.payWithEWallet"),
       icon: (
         <div style={{ display: "flex", alignItems: "center", gap: "8px", maxWidth: "100%" }}>
@@ -72,8 +72,8 @@ const PaymentMethods = ({ selectedPayment, handlePaymentSelection, options, opti
   const banks = options?.banks || [];
 
   return (
-    <div id="payment-methods" className="scroll-mt-20">
-      <Title level={5} style={{ fontFamily: "inherit" }}>{t("back.reg.payment.selectMethod")}</Title>
+    <section id="payment-methods" className="scroll-mt-20 rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.08)]">
+      <Title level={5} style={{ fontFamily: "inherit", marginTop: 0 }}>{t("back.reg.payment.selectMethod")}</Title>
       {optionsLoading ? (
         <div className="flex justify-center py-6"><Spin /></div>
       ) : (
@@ -94,10 +94,10 @@ const PaymentMethods = ({ selectedPayment, handlePaymentSelection, options, opti
                 key={b.code}
                 type="button"
                 onClick={() => onSelectBank?.(b.code)}
-                className="h-11 rounded-md text-sm font-semibold transition-all"
+                className="h-11 rounded-xl text-sm font-semibold transition-all"
                 style={{
-                  border: selectedBank === b.code ? "2px solid #FFB946" : "1px solid #ddd",
-                  background: selectedBank === b.code ? "#FFF6E6" : "#fff",
+                  border: selectedBank === b.code ? "2px solid #4f46e5" : "1px solid #ddd",
+                  background: selectedBank === b.code ? "#eef2ff" : "#fff",
                   color: selectedBank === b.code ? "#000" : "#555",
                 }}
               >
@@ -107,7 +107,7 @@ const PaymentMethods = ({ selectedPayment, handlePaymentSelection, options, opti
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 };
 

@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, HourglassOutlined, ReloadOutlined } from '@ant-design/icons';
+import { ArrowRightOutlined, CheckOutlined, CloseCircleOutlined, ExclamationCircleOutlined, HomeOutlined, HourglassOutlined, MailOutlined, ReloadOutlined } from '@ant-design/icons';
+import CopyButton from 'components/copyButton';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Typography, Card, Button, Spin, message, Result, Row, Divider } from 'antd';
+import { Typography, Spin, message, Result, Row } from 'antd';
 import backOfficeServices from 'services/backoffice.services';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
@@ -34,6 +35,27 @@ function decode2c2pPayload(payload) {
         return null;
     }
 }
+
+// Full-width buttons shared by every state, matching the success card (Stitch #15).
+const PrimaryAction = ({ children, ...rest }) => (
+    <button
+        type="button"
+        {...rest}
+        className="w-full py-3.5 px-6 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 font-semibold text-base shadow-md shadow-amber-500/20 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+    >
+        {children}
+    </button>
+);
+const SecondaryAction = ({ children, loading, ...rest }) => (
+    <button
+        type="button"
+        disabled={loading}
+        {...rest}
+        className="w-full py-3 px-6 rounded-xl bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 font-medium text-sm border border-slate-200 active:scale-[0.99] transition-all flex items-center justify-center gap-1.5 disabled:opacity-60"
+    >
+        {children}
+    </button>
+);
 
 const RegistrationPaymentResult = () => {
     const { t } = useTranslation();
@@ -208,83 +230,88 @@ const RegistrationPaymentResult = () => {
         // PENDING in the persisted order would send the next registration back to this order.
     }, [orderData?.orderNo, orderData?.status, dispatch, needs2c2pVerify]);
 
+    // Layout follows the Stitch "ลงทะเบียนสำเร็จ (Redesign)" screen (tester deck #15).
     const successContent = (
-        <Result
-            status="success"
-            icon={<CheckCircleOutlined />}
-            title={t("back.reg.common.registrationSuccess")}
-            subTitle={
-                <div>
-                    <div>{t("back.reg.common.registrationCompleted")}</div>
-                    {shownOrderNo && (
-                        <div style={{ margin: "8px 0" }}>
-                            {t("back.reg.payment.orderNo")}: <strong style={{ color: "#1f1f1f" }}>{shownOrderNo}</strong>
-                        </div>
-                    )}
-                    {orderData?.confirmationEmail ? (
-                        <div style={{ marginTop: 4 }}>
-                            <div>{t("back.reg.common.emailSentTo")}</div>
-                            <strong style={{ overflowWrap: "anywhere", color: "#1f1f1f" }}>
-                                {orderData.confirmationEmail}
-                            </strong>
-                        </div>
-                    ) : (
-                        <div>{t("back.reg.common.pleaseCheckEmail")}</div>
-                    )}
-                    <div>{t("back.reg.common.checkSpamIfNoEmail")}</div>
-                    <div>
-                        <span className="font-bold">{t("back.reg.common.spam")}</span>{" "}
-                        {t("back.reg.common.or")}{" "}
-                        <span className="font-bold">{t("back.reg.common.junkMail")}</span>
+        <div className="flex flex-col items-center text-center">
+            <div className="relative mb-5 flex items-center justify-center">
+                <div className="absolute w-20 h-20 rounded-full bg-emerald-100/70 animate-pulse" />
+                <div className="relative w-16 h-16 rounded-full bg-gradient-to-tr from-emerald-500 to-green-400 flex items-center justify-center text-white shadow-[0_8px_24px_-6px_rgba(16,185,129,0.55)]">
+                    <CheckOutlined className="text-[28px]" />
+                </div>
+            </div>
+            <h1 className="text-2xl sm:text-[26px] font-bold text-slate-900 tracking-tight mb-1.5">
+                {t("back.reg.common.registrationSuccess")}
+            </h1>
+            <p className="text-sm text-slate-500 leading-relaxed max-w-xs mb-6">
+                {t("back.reg.common.registrationCompleted")}
+            </p>
+
+            {shownOrderNo && (
+                <div className="w-full bg-slate-50 border border-slate-200/90 rounded-2xl p-3.5 mb-5">
+                    <div className="text-[12px] font-medium text-slate-500 tracking-wider mb-1">
+                        {t("back.reg.payment.orderNo")}
+                    </div>
+                    <div className="flex items-center justify-center gap-2">
+                        <span className="font-mono text-base sm:text-lg font-bold tracking-tight text-slate-900">
+                            {shownOrderNo}
+                        </span>
+                        <CopyButton text={shownOrderNo} />
                     </div>
                 </div>
-            }
-            extra={
-                <>
-                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                        <Button
-                            type="primary"
-                            size="large"
-                            style={{ backgroundColor: "#FFB946", borderColor: "#FFB946" }}
-                            onClick={() => navigate(myOrderLink)}
-                        >
-                            {t("back.reg.common.viewMyRegistration")}
-                        </Button>
-                        <Button size="large" onClick={() => navigate("/")}>
-                            {t("back.reg.common.backToHome")}
-                        </Button>
+            )}
+
+            <div className="w-full bg-blue-50/50 border border-blue-100 rounded-2xl p-4 mb-6 text-left">
+                <div className="flex items-start gap-3">
+                    <MailOutlined className="mt-0.5 text-blue-600 text-lg shrink-0" />
+                    <div className="text-[13px] space-y-1.5 flex-1 min-w-0">
+                        {orderData?.confirmationEmail ? (
+                            <>
+                                <p className="m-0 text-slate-600">{t("back.reg.common.emailSentTo")}</p>
+                                <p className="m-0 font-semibold text-slate-900 break-all underline decoration-slate-300 underline-offset-2">
+                                    {orderData.confirmationEmail}
+                                </p>
+                            </>
+                        ) : (
+                            <p className="m-0 text-slate-600">{t("back.reg.common.pleaseCheckEmail")}</p>
+                        )}
+                        <p className="m-0 text-[12px] text-slate-500 pt-1.5 border-t border-blue-100/70">
+                            {t("back.reg.common.checkSpamIfNoEmail")}{" "}
+                            <span className="font-medium text-slate-800">{t("back.reg.common.spam")}</span>{" "}
+                            {t("back.reg.common.or")}{" "}
+                            <span className="font-medium text-slate-800">{t("back.reg.common.junkMail")}</span>
+                        </p>
                     </div>
+                </div>
+            </div>
 
-                    <Divider />
-
-                    <Text type="secondary" style={{ fontFamily: "inherit" }}>
-                        {t("back.reg.common.contactUsIfQuestions")}{" "}
-                        <a href="mailto:action.in.th@gmail.com">action.in.th@gmail.com</a>
-                    </Text>
-                </>
-            }
-        />
+            <div className="w-full space-y-3">
+                <button
+                    type="button"
+                    onClick={() => navigate(myOrderLink)}
+                    className="w-full py-3.5 px-6 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 font-semibold text-base shadow-md shadow-amber-500/20 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+                >
+                    <span>{t("back.reg.common.viewMyRegistration")}</span>
+                    <ArrowRightOutlined />
+                </button>
+                <button
+                    type="button"
+                    onClick={() => navigate("/")}
+                    className="w-full py-3 px-6 rounded-xl bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 font-medium text-sm border border-slate-200 active:scale-[0.99] transition-all flex items-center justify-center gap-1.5"
+                >
+                    <HomeOutlined className="text-slate-400" />
+                    <span>{t("back.reg.common.backToHome")}</span>
+                </button>
+            </div>
+        </div>
     );
 
     return (
-        <div
-            style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                minHeight: "100dvh",
-                padding: 16,
-            }}
-        >
-            <Card
-                style={{
-                    width: "100%",
-                    maxWidth: 600,
-                    border: "1px solid #f0f0f0",
-                    borderRadius: 12,
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                }}
-            >
+        <div className="min-h-[100dvh] flex flex-col bg-gradient-to-b from-emerald-50/60 via-slate-50 to-slate-50">
+            <div className="flex-1 flex items-center justify-center px-4 py-6">
+            <div className="relative w-full max-w-[480px] overflow-hidden rounded-3xl border border-slate-100 bg-white p-6 sm:p-7 shadow-[0_20px_40px_-15px_rgba(15,23,42,0.12)]">
+                <div className="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-emerald-50 blur-xl" />
+                <div className="pointer-events-none absolute -bottom-8 -left-8 h-28 w-28 rounded-full bg-amber-50 blur-lg" />
+                <div className="relative">
                 {showSpinner ? (
                     <Row justify="center" style={{ marginBottom: 24 }}>
                         <Spin size="large" />
@@ -324,33 +351,20 @@ const RegistrationPaymentResult = () => {
                                     </div>
                                 }
                                 extra={
-                                    <>
+                                    <div className="mx-auto w-full max-w-sm space-y-3">
                                         {isMPayOrder && (
-                                            <Button
-                                                type="primary"
-                                                size="large"
-                                                style={{ backgroundColor: "#FFB946", borderColor: "#FFB946" }}
-                                                onClick={() => navigate("/registrationPayment")}
-                                            >
-                                                {t("back.reg.payment.backToPayment")}
-                                            </Button>
+                                            <PrimaryAction onClick={() => navigate("/registrationPayment")}>
+                                                {t("back.reg.payment.backToPayment")} <ArrowRightOutlined />
+                                            </PrimaryAction>
                                         )}
-                                        <Button
-                                            icon={<ReloadOutlined />}
-                                            size="large"
+                                        <SecondaryAction
                                             loading={verifyPaymentMutation.isPending || orderDetail.isFetching}
                                             onClick={refresh}
                                         >
+                                            <ReloadOutlined spin={verifyPaymentMutation.isPending || orderDetail.isFetching} />
                                             {t("back.reg.payment.checkAgain")}
-                                        </Button>
-
-                                        <Divider />
-
-                                        <Text type="secondary" style={{ fontFamily: "inherit" }}>
-                                            {t("back.reg.common.contactUsIfQuestions")}{" "}
-                                            <a href="mailto:action.in.th@gmail.com">action.in.th@gmail.com</a>
-                                        </Text>
-                                    </>
+                                        </SecondaryAction>
+                                    </div>
                                 }
                             />
                         )}
@@ -371,13 +385,11 @@ const RegistrationPaymentResult = () => {
                                     </div>
                                 }
                                 extra={
-                                    <Button
-                                        type="primary"
-                                        size="large"
-                                        onClick={() => navigate("/")}
-                                    >
-                                        {t("back.reg.common.backToHome")}
-                                    </Button>
+                                    <div className="mx-auto w-full max-w-sm">
+                                        <SecondaryAction onClick={() => navigate("/")}>
+                                            <HomeOutlined className="text-slate-400" /> {t("back.reg.common.backToHome")}
+                                        </SecondaryAction>
+                                    </div>
                                 }
                             />
                         )}
@@ -404,19 +416,25 @@ const RegistrationPaymentResult = () => {
                                     </div>
                                 }
                                 extra={
-                                    <Button
-                                        type="primary"
-                                        size="large"
-                                        onClick={() => navigate("/registrationPayment")}
-                                    >
-                                        {t("back.reg.payment.backToPayment")}
-                                    </Button>
+                                    <div className="mx-auto w-full max-w-sm">
+                                        <PrimaryAction onClick={() => navigate("/registrationPayment")}>
+                                            {t("back.reg.payment.backToPayment")} <ArrowRightOutlined />
+                                        </PrimaryAction>
+                                    </div>
                                 }
                             />
                         )}
                     </>
                 )}
-            </Card>
+                </div>
+            </div>
+            </div>
+            <footer className="border-t border-slate-100 bg-white/70 py-5 text-center text-[13px] text-slate-500">
+                <div>{t("back.reg.common.contactUsIfQuestions")}</div>
+                <a href="mailto:action.in.th@gmail.com" className="inline-flex items-center gap-1.5 font-medium text-blue-600 underline underline-offset-2">
+                    <MailOutlined /> action.in.th@gmail.com
+                </a>
+            </footer>
         </div>
     );
 }

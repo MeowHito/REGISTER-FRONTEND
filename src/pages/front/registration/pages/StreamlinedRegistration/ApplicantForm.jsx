@@ -56,12 +56,12 @@ const RegTypeButton = ({ active, onClick, icon, title }) => (
 );
 
 /** "Age 34 · in the 30–39 group", shown in a soft green box once the birth date is complete. */
-const AgeGroupNote = ({ eventType, birthDate, gender }) => {
+const AgeGroupNote = ({ event, eventType, birthDate, gender }) => {
   const { t } = useTranslation();
-  const age = raceAge(birthDate);
+  const age = raceAge(birthDate, event, eventType);
   if (age == null || Number.isNaN(age)) return null;
   const groups = eventType?.ageGroups || [];
-  const group = findAgeGroup(eventType, birthDate, gender);
+  const group = findAgeGroup(eventType, birthDate, gender, event);
   let groupText = null;
   if (group) {
     const { minAge, maxAge } = group;
@@ -340,7 +340,7 @@ const ApplicantForm = ({
                 rules={[{ required: true, message: t("required.selectBirthDate") }]}>
                 <DobSelect />
               </CommonForm.Item>
-              <AgeGroupNote eventType={eventType} birthDate={birthDate} gender={gender} />
+              <AgeGroupNote event={event} eventType={eventType} birthDate={birthDate} gender={gender} />
             </div>
 
             {show("idNo") && (

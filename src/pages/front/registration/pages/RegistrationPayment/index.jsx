@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Button, message } from 'antd';
+import { ArrowRightOutlined, CreditCardOutlined } from '@ant-design/icons';
 import FrontLayout from 'components/frontLayout';
 import { AlertError } from 'components/alert';
 import backOfficeServices from 'services/backoffice.services';
@@ -493,87 +494,101 @@ const RegistrationPayment = () => {
         }));
     };
 
+    const payButtonLabel = isTestMode
+        ? t("back.reg.payment.confirmTestRegistration")
+        : isFreeOrder
+            ? t("back.reg.payment.confirmRegistration") || "ยืนยันการสมัคร"
+            : hasSelectedPayment
+                ? t("back.reg.payment.proceedPayment")
+                : t("back.reg.payment.selectMethod");
+
+    // Layout follows the Stitch "ชำระเงิน - สรุปรายการคำสั่งซื้อ" screen (tester deck #12).
     return (
         <FrontLayout>
-            <div className="payment-container pt-4" style={{ maxWidth: "700px", margin: "0 auto" }}>
-                <div className="text-2xl font-bold text-center text-gray-800 mb-4">💳 {t("back.reg.payment.title")}</div>
+            <div className="mx-auto w-full max-w-[560px] px-4 pt-4">
+                <div className="mb-4 flex items-center justify-center gap-2">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-[#4338ca]">
+                        <CreditCardOutlined />
+                    </span>
+                    <h1 className="m-0 text-xl font-bold tracking-tight text-slate-900">{t("back.reg.payment.title")}</h1>
+                </div>
 
-                <OrderDetails
-                    orderNo={orderNo}
-                    currentStatus={currentStatus}
-                />
-
-                <CouponSection
-                    availableCoupons={availableCoupons}
-                    couponCode={couponCode}
-                    setCouponCode={setCouponCode}
-                    setCouponType={setCouponType}
-                    handleApplyCoupon={handleApplyCoupon}
-                    handleApplyCouponSelected={handleApplyCouponSelected}
-                    handleRemoveCoupon={handleRemoveCoupon}
-                    isApplying={isApplying}
-                    couponMsg={couponMsg}
-                    couponMsgType={couponMsgType}
-                    setCouponMsg={setCouponMsg}
-                    setCouponMsgType={setCouponMsgType}
-                    totalCoupon={totalCoupon}
-                    couponMeta={couponMeta}
-                    applicants={applicants}
-                />
-
-                <OrderSummary
-                    totalShirtPrice={totalShirtPrice}
-                    totalDeliveryFee={totalDeliveryFee}
-                    totalAddOns={totalAddOns}
-                    addOns={order?.addOns || []}
-                    totalDiscount={totalDiscount}
-                    totalCoupon={totalCoupon}
-                    finalTotal={finalTotal}
-                    feePercent={feePercent}
-                    feeAmount={feeAmount}
-                    totalAmountWithFee={totalAmountWithFee}
-                    paymentDueTH={paymentDueTH}
-                    formatMoney={formatMoney}
-                />
-
-                {isTestMode ? (
-                    <Alert type="warning" showIcon className="!mt-4" message={t("back.reg.payment.testModeNotice")} />
-                ) : (
-                    <PaymentMethods
-                        selectedPayment={selectedPayment}
-                        handlePaymentSelection={handlePaymentSelection}
-                        options={paymentOptions}
-                        optionsLoading={isLoadingPaymentOptions}
-                        selectedBank={selectedBank}
-                        onSelectBank={setSelectedBank}
+                <div className="space-y-4">
+                    <OrderDetails
+                        orderNo={orderNo}
+                        currentStatus={currentStatus}
                     />
-                )}
 
-                {/* Before a method is picked the button stays bright and tapping it points at the
-                    method list, instead of sitting there greyed out. */}
-                <div className="flex justify-center mt-6">
+                    <div>
+                        <CouponSection
+                            availableCoupons={availableCoupons}
+                            couponCode={couponCode}
+                            setCouponCode={setCouponCode}
+                            setCouponType={setCouponType}
+                            handleApplyCoupon={handleApplyCoupon}
+                            handleApplyCouponSelected={handleApplyCouponSelected}
+                            handleRemoveCoupon={handleRemoveCoupon}
+                            isApplying={isApplying}
+                            couponMsg={couponMsg}
+                            couponMsgType={couponMsgType}
+                            setCouponMsg={setCouponMsg}
+                            setCouponMsgType={setCouponMsgType}
+                            totalCoupon={totalCoupon}
+                            couponMeta={couponMeta}
+                            applicants={applicants}
+                        />
+                    </div>
+
+                    <OrderSummary
+                        itemCount={applicants?.length || 0}
+                        totalShirtPrice={totalShirtPrice}
+                        totalDeliveryFee={totalDeliveryFee}
+                        totalAddOns={totalAddOns}
+                        addOns={order?.addOns || []}
+                        totalDiscount={totalDiscount}
+                        totalCoupon={totalCoupon}
+                        finalTotal={finalTotal}
+                        feePercent={feePercent}
+                        feeAmount={feeAmount}
+                        totalAmountWithFee={totalAmountWithFee}
+                        paymentDueTH={paymentDueTH}
+                        formatMoney={formatMoney}
+                    />
+
+                    {isTestMode ? (
+                        <Alert type="warning" showIcon message={t("back.reg.payment.testModeNotice")} />
+                    ) : (
+                        <PaymentMethods
+                            selectedPayment={selectedPayment}
+                            handlePaymentSelection={handlePaymentSelection}
+                            options={paymentOptions}
+                            optionsLoading={isLoadingPaymentOptions}
+                            selectedBank={selectedBank}
+                            onSelectBank={setSelectedBank}
+                        />
+                    )}
+                </div>
+            </div>
+
+            {/* Net amount + pay button pinned to the bottom (Stitch). Before a method is picked the
+                button stays bright and tapping it points at the method list. */}
+            <div className="sticky bottom-0 z-30 mx-auto mt-6 w-full max-w-[528px] border-t border-slate-100 bg-white/95 backdrop-blur-md shadow-[0_-4px_16px_rgba(0,0,0,0.04)] sm:rounded-t-2xl sm:border-x">
+                <div className="flex w-full items-center justify-between gap-3 px-4 py-3" style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}>
+                    <div className="flex shrink-0 flex-col">
+                        <span className="text-[12px] text-slate-400">{t("back.reg.payment.netPay")}</span>
+                        <span className="leading-tight">
+                            <span className="text-xl font-bold text-[#4338ca]">{formatMoney(totalAmountWithFee)}</span>
+                            <span className="ml-1 text-xs font-medium text-slate-600">{t("general.unitBaht")}</span>
+                        </span>
+                    </div>
                     <Button
                         type="primary"
-                        className="w-full sm:w-auto !h-12 !rounded-xl !font-bold !text-base !shadow-md"
-                        style={{
-                            padding: "0 32px",
-                            ...(canProceed
-                                ? { backgroundColor: "#FFB946", borderColor: "#FFB946", color: "#633700" }
-                                : needsMethod
-                                    ? { backgroundColor: "#006193", borderColor: "#006193", color: "#fff" }
-                                    : {}),
-                        }}
+                        className="!h-12 flex-1 !rounded-xl !border-0 !font-semibold !text-base !text-white !shadow-[0_6px_18px_-4px_rgba(79,70,229,0.5)] !bg-gradient-to-r !from-[#4f46e5] !via-indigo-600 !to-[#3730a3]"
                         onClick={needsMethod ? promptForMethod : handleNext}
                         disabled={!canProceed && !needsMethod}
                         loading={isProceeding}
                     >
-                        {isTestMode
-                            ? t("back.reg.payment.confirmTestRegistration")
-                            : isFreeOrder
-                            ? t("back.reg.payment.confirmRegistration") || "ยืนยันการสมัคร"
-                            : hasSelectedPayment
-                                ? t("back.reg.payment.proceedPayment")
-                                : t("back.reg.payment.selectMethod")}
+                        <span className="inline-flex items-center gap-2">{payButtonLabel} <ArrowRightOutlined /></span>
                     </Button>
                 </div>
             </div>

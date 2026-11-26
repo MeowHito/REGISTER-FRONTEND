@@ -212,6 +212,11 @@ const ApplicantDetail = ({ applicant: a }) => {
               ? t("back.history.historyDetail.breakdown.shirtNone")
               : `${a.shirtTypeName} / ${a.shirtSizeName}`}
           </Field>
+          {a.extraShirts.map((sh) => (
+            <Field key={sh.id || sh.category} label={t(`back.reg.payment.shirtCategory.${sh.category}`, { defaultValue: sh.category })}>
+              {[sh.shirtTypeName, sh.shirtSizeName].filter(Boolean).join(" / ") || "-"}
+            </Field>
+          ))}
           <Field label={t("back.history.historyDetail.breakdown.field.delivery")}>
             <Pill size="sm" tone={a.deliveryMethod === "post" ? "blue" : "green"}>
               {t(a.deliveryMethod === "post"
@@ -386,6 +391,8 @@ const HistoryDetail = ({ paymentId, setMode }) => {
           noShirt: d.receiveShirt === false,
           shirtTypeName: d.shirtTypeName || "-",
           shirtSizeName: d.shirtSizeName || "-",
+          // finisher / special shirts picked on top of the race shirt
+          extraShirts: (d.extraShirts || []).filter((sh) => sh?.category && sh.category !== "RACE"),
           deliveryMethod: d.deliveryMethod || "onsite",
           shippingAddress: d.shippingAddress || "",
           shippingProvince: d.shippingProvince || "",

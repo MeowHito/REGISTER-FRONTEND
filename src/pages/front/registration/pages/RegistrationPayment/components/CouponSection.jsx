@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, Row, Col, AutoComplete, Input, Button, Typography } from 'antd';
-import { GiftOutlined } from '@ant-design/icons';
+import { Card, AutoComplete, Input, Button, Typography } from 'antd';
+import { GiftOutlined, TagOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 
 const { Text } = Typography;
@@ -26,121 +26,84 @@ const CouponSection = ({
 
   return (
     <>
-      <Card
-        style={{
-          marginBottom: "20px",
-          background: "#fff7e6",
-          borderRadius: "12px",
-          border: "1.5px solid #FFD591",
-          boxShadow: "0 2px 8px rgba(255,185,70,0.06)"
-        }}
-      >
-        <Row gutter={12} align="middle" justify="space-between" wrap={false}>
-          <Col flex="none">
-            <GiftOutlined style={{ fontSize: 24, color: "#faad14", marginRight: 10 }} />
-          </Col>
-          <Col flex="auto">
-            <div style={{ position: 'relative' }}>
-              <AutoComplete
-                options={availableCoupons.map(coupon => ({
-                  value: coupon.couponCode,
-                  label: (
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <span style={{ fontWeight: 500, color: "#096dd9" }}>
-                        {coupon.couponName || coupon.couponCode}
-                      </span>
-                      <span style={{ fontSize: 12, color: "#888" }}>
-                        {t("back.reg.common.discount")} {coupon.deductionPercentage}%
-                      </span>
-                    </div>
-                  ),
-                  couponType: coupon.type,
-                }))}
-                style={{
-                  width: '100%',
-                  borderRadius: 8,
-                }}
-                size="large"
-                placeholder={t("back.reg.payment.placeholder")}
-                value={couponCode}
-                allowClear
-                onChange={(value, option) => {
-                  setCouponCode(value);
-                  if (option) setCouponType(option.couponType);
-                  if (!value) {
-                    setCouponMsg('');
-                    setCouponMsgType('');
-                  }
-                }}
-                onSelect={(value, option) => {
-                  setCouponCode(value);
-                  setCouponType(option.couponType);
+      <section className="rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50/70 via-amber-50/30 to-orange-50/40 p-4 shadow-sm">
+        <div className="mb-2.5 flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
+            <GiftOutlined />
+          </span>
+          <span className="text-sm font-semibold tracking-wide text-amber-900">{t("back.reg.payment.couponTitle")}</span>
+        </div>
+        <div className="flex items-start gap-2">
+          <div className="relative min-w-0 flex-1">
+            <AutoComplete
+              options={availableCoupons.map(coupon => ({
+                value: coupon.couponCode,
+                label: (
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <span style={{ fontWeight: 500, color: "#096dd9" }}>
+                      {coupon.couponName || coupon.couponCode}
+                    </span>
+                    <span style={{ fontSize: 12, color: "#888" }}>
+                      {t("back.reg.common.discount")} {coupon.deductionPercentage}%
+                    </span>
+                  </div>
+                ),
+                couponType: coupon.type,
+              }))}
+              className="w-full"
+              size="large"
+              placeholder={t("back.reg.payment.placeholder")}
+              value={couponCode}
+              allowClear
+              onChange={(value, option) => {
+                setCouponCode(value);
+                if (option) setCouponType(option.couponType);
+                if (!value) {
                   setCouponMsg('');
                   setCouponMsgType('');
-                  handleApplyCouponSelected(value, availableCoupons, option.couponType);
-                }}
-                disabled={isApplying}
-                notFoundContent={availableCoupons.length === 0 ? t("back.reg.payment.notFound") : null}
-              >
-                <Input
-                  style={{
-                    borderRadius: 8,
-                    borderColor: "#FFD591",
-                    background: "#fffbe6",
-                    paddingRight: 24,
-                    height: 40
-                  }}
-                  onPressEnter={handleApplyCoupon}
-                />
-              </AutoComplete>
-              {couponMsg && couponMsgType === 'warning' && (
-                <Text
-                  className="!text-red-500"
-                  style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    fontSize: 12,
-                    fontFamily: "inherit",
-                    marginTop: 1,
-                    whiteSpace: 'nowrap',
-                    padding: '2px 12px',
-                    zIndex: 1
-                  }}
-                >
-                  {couponMsg}
-                </Text>
-              )}
-            </div>
-          </Col>
-          <Col flex="none">
-            <Button
-              type="primary"
-              size="large"
-              style={{
-                background: "#FFB946",
-                borderColor: "#FFD591",
-                borderRadius: 8,
-                marginLeft: 6,
-                minWidth: 88,
-                fontWeight: "bold"
+                }
               }}
-              loading={isApplying}
-              onClick={handleApplyCoupon}
+              onSelect={(value, option) => {
+                setCouponCode(value);
+                setCouponType(option.couponType);
+                setCouponMsg('');
+                setCouponMsgType('');
+                handleApplyCouponSelected(value, availableCoupons, option.couponType);
+              }}
+              disabled={isApplying}
+              notFoundContent={availableCoupons.length === 0 ? t("back.reg.payment.notFound") : null}
             >
-              {t("back.reg.payment.apply")}
-            </Button>
-          </Col>
-        </Row>
-      </Card>
+              <Input
+                className="!h-11 !rounded-xl !border-amber-200 !bg-white !text-base"
+                suffix={<TagOutlined className="text-slate-300" />}
+                onPressEnter={handleApplyCoupon}
+              />
+            </AutoComplete>
+            {couponMsg && couponMsgType === 'warning' && (
+              <Text className="!text-red-500 block mt-1 !text-[13px] px-1" style={{ fontFamily: "inherit" }}>
+                {couponMsg}
+              </Text>
+            )}
+          </div>
+          <Button
+            type="primary"
+            size="large"
+            className="!h-11 !rounded-xl !border-0 !bg-gradient-to-r !from-amber-400 !to-amber-500 !px-4 !font-semibold !text-white !shadow-[0_4px_14px_-2px_rgba(245,158,11,0.45)] shrink-0"
+            loading={isApplying}
+            onClick={handleApplyCoupon}
+          >
+            {t("back.reg.payment.apply")}
+          </Button>
+        </div>
+      </section>
 
       {totalCoupon > 0 && (
         <Card
           style={{
             background: "#f6ffed",
             border: "1px solid #b7eb8f",
-            borderRadius: 8,
-            marginBottom: 20,
+            borderRadius: 16,
+            marginTop: 12,
             padding: "0px",
             position: "relative",
             boxShadow: "0 2px 4px rgba(0,0,0,0.04)",

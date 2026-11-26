@@ -31,6 +31,7 @@ import { hasQuestions, questionsFor } from "./questionnaire";
 import {
   finalizeApplicants, totalQty, resolvePricing, ticketPrice,
   sellableAddOns, buildAddOnOrder, addOnsTotal, firstMissingAddOnNote,
+  firstTickedAddOnWithoutApplicant,
 } from "./utils";
 import { primaryBtn, inputCls, fieldItemCls } from "./theme";
 import { resolveFieldConfig } from "./fieldConfig";
@@ -127,6 +128,17 @@ const StreamlinedRegistration = () => {
   // Drives how many applicant cards to render. Kept in React state (not Form.useWatch)
   // so the cards render reliably; the form itself only holds the editable field values.
   const [applicantList, setApplicantList] = useState([]);
+  // Names typed on the applicant cards live only in the form, not in applicantList; the add-on
+  // step lists runners by name, so read them from the form store (preserve: imperatively set too).
+  const formApplicants = CommonForm.useWatch("applicants", { form, preserve: true });
+  const addOnApplicants = useMemo(
+    () => applicantList.map((a, i) => ({
+      ...a,
+      firstName: formApplicants?.[i]?.firstName ?? a?.firstName,
+      lastName: formApplicants?.[i]?.lastName ?? a?.lastName,
+    })),
+    [applicantList, formApplicants]
+  );
   // Coming back from the review page: restore everything the runner typed.
   const resumeDraft = useRef(location.state?.resume && !order?.orderNo ? order?.draft : null);
   // PDPA disclosure answer (null = not asked yet); only events with the switch on ask for it.
@@ -531,6 +543,8 @@ const StreamlinedRegistration = () => {
     checkout();
   };
 
+  // Red outline on a required add-on note once checkout has been refused for it.
+  const [addOnShowErrors, setAddOnShowErrors] = useState(false);
   const setAddOnSelection = (addOnId, selection) =>
     setAddOnSelections((prev) => ({ ...prev, [addOnId]: selection }));
 
@@ -538,9 +552,17 @@ const StreamlinedRegistration = () => {
   const checkout = async () => {
     const shipping = await resolveShipping();
     if (shipping === false) return;
+    const tickedEmpty = firstTickedAddOnWithoutApplicant(addOns, addOnSelections);
+    if (tickedEmpty) {
+      document.getElementById(`addon-${tickedEmpty.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      centerNotice("warning", `${tickedEmpty.name}: ${t("back.reg.addOn.chooseApplicants")}`);
+      return;
+    }
     const missingNote = firstMissingAddOnNote(addOns, addOnSelections);
     if (missingNote) {
-      centerNotice("warning", `${missingNote.name}: ${missingNote.noteLabel}`);
+      setAddOnShowErrors(true);
+      document.getElementById(`addon-note-${missingNote.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      centerNotice("warning", `${missingNote.name}: ${t("back.reg.addOn.noteMissing", { label: missingNote.noteLabel })}`);
       return;
     }
     const raw = form.getFieldValue("applicants") || [];
@@ -892,7 +914,8 @@ const StreamlinedRegistration = () => {
                 <div className="space-y-5">
                   <AddOnPicker
                     addOns={addOns}
-                    applicants={applicantList}
+                    applicants={addOnApplicants}
+                    showErrors={addOnShowErrors}
                     selections={addOnSelections}
                     onChange={setAddOnSelection}
                     lang={i18n.language}

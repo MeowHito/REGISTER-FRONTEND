@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from 'react'
-import { Col, Input, notification, Row, Spin, Switch } from 'antd';
+import { Col, Input, notification, Radio, Row, Spin, Switch } from 'antd';
 import CommonForm from "components/commonForm";
 import { AlertError, AlertConfirm } from 'components/alert';
 import PageHeader from 'components/pageHeader';
@@ -59,6 +59,7 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
     const eventName = CommonForm.useWatch("name", form);
     const testMode = CommonForm.useWatch("testMode", form);
     const pdpaConsentEnabled = CommonForm.useWatch("pdpaConsentEnabled", form);
+    const ageCalcMethod = CommonForm.useWatch("ageCalcMethod", form);
     const primaryColor = CommonForm.useWatch("eventPrimaryColor", form);
     const secondaryColor = CommonForm.useWatch("eventSecondaryColor", form);
     const fontColor = CommonForm.useWatch("eventFontColor", form);
@@ -371,6 +372,7 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                     showChecklist: false,
                     testMode: false,
                     pdpaConsentEnabled: false,
+                    ageCalcMethod: "BIRTH_YEAR",
                     eventConditions: [
                         { id: uuidv4(), description: "ข้าพเจ้าได้ตรวจสอบข้อมูลความถูกต้องของการสมัครเรียบร้อย" },
                         { id: uuidv4(), description: "ข้าพเจ้ายอมรับเงื่อนไขการสมัครของผู้จัดงาน" },
@@ -768,6 +770,24 @@ const EventForm = ({ isEditable, eventId, refetch, mode, setMode }) => {
                             <div className="border-t border-[#e5e5ea] my-6" />
                             <Title>{t("back.event.form.conditions")}</Title>
                             <EventConditions form={form} />
+                            <div className="border-t border-[#e5e5ea] my-6" />
+                            <p className="m-0 text-sm font-semibold text-[#1d1d1f]">{t("back.event.form.ageCalc.title")}</p>
+                            <p className="m-0 mt-0.5 mb-3 text-xs text-[#6e6e73]">{t("back.event.form.ageCalc.hint")}</p>
+                            <CommonForm.Item name="ageCalcMethod" className="!mb-0">
+                                <Radio.Group disabled={!isEditable} className="flex flex-col gap-2">
+                                    <Radio value="BIRTH_YEAR">
+                                        <span className="font-medium">{t("back.event.form.ageCalc.birthYear")}</span>
+                                        <span className="block text-xs text-[#6e6e73]">{t("back.event.form.ageCalc.birthYearHint")}</span>
+                                    </Radio>
+                                    <Radio value="EXACT_DATE">
+                                        <span className="font-medium">{t("back.event.form.ageCalc.exactDate")}</span>
+                                        <span className="block text-xs text-[#6e6e73]">{t("back.event.form.ageCalc.exactDateHint")}</span>
+                                    </Radio>
+                                </Radio.Group>
+                            </CommonForm.Item>
+                            {!ageCalcMethod && (
+                                <p className="m-0 mt-2 text-xs text-[#b25000]">{t("back.event.form.ageCalc.legacy")}</p>
+                            )}
                             <div className="border-t border-[#e5e5ea] my-6" />
                             <div className="flex items-center justify-between gap-4">
                                 <div>

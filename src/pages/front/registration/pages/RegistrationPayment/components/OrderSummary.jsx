@@ -1,8 +1,20 @@
 import React from 'react';
-import { Card, Row, Col, Divider } from 'antd';
+import { ClockCircleOutlined, ShoppingOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 
+const Line = ({ label, children, valueClass = "font-semibold text-slate-800" }) => (
+  <div className="flex items-center justify-between gap-3 text-slate-600">
+    <span className="min-w-0">{label}</span>
+    <span className={`shrink-0 text-right ${valueClass}`}>{children}</span>
+  </div>
+);
+
+/**
+ * "สรุปรายการสั่งซื้อ" card (Stitch #12): each charge, discounts, the one grand total the gateway
+ * charges (fee included), and the payment deadline. The lines plus the fee add up to that total.
+ */
 const OrderSummary = ({
+  itemCount = 0,
   totalShirtPrice,
   totalDeliveryFee,
   totalAddOns = 0,
@@ -16,100 +28,73 @@ const OrderSummary = ({
   formatMoney
 }) => {
   const { t } = useTranslation();
+  const baht = t("general.unitBaht");
 
   return (
-    <Card style={{ marginBottom: "20px", background: "#FAFAFA", borderRadius: "12px" }}>
-      <div className="text-base font-semibold text-gray-800 mb-3">{t("back.reg.payment.orderSummary")}</div>
+    <section className="space-y-3.5 rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.08)]">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+        <span className="flex items-center gap-1.5 text-[15px] font-bold tracking-tight text-slate-800">
+          <ShoppingOutlined className="text-[#4338ca]" />
+          {t("back.reg.payment.orderSummary")}
+        </span>
+        {itemCount > 0 && (
+          <span className="text-[13px] text-slate-400">{t("back.reg.payment.itemCount", { count: itemCount })}</span>
+        )}
+      </div>
 
-      <Row className="text-sm text-gray-700">
-        <Col span={16}>
-          <div>{t("back.reg.payment.totalRegFee")}</div>
-        </Col>
-        <Col span={8}>
-          <div className="text-right font-semibold">{formatMoney(totalShirtPrice)} {t("general.unitBaht")}</div>
-        </Col>
-      </Row>
+      <div className="space-y-2 text-sm">
+        <Line label={t("back.reg.payment.totalRegFee")}>{formatMoney(totalShirtPrice)} {baht}</Line>
+        <Line label={t("back.reg.payment.totalShipping")}>{formatMoney(totalDeliveryFee)} {baht}</Line>
+        {totalAddOns > 0 && (
+          <>
+            <Line label={t("back.reg.addOn.title")}>{formatMoney(totalAddOns)} {baht}</Line>
+            {addOns.map((a, i) => (
+              <div key={i} className="flex justify-between gap-3 pl-3 text-[13px] text-slate-500">
+                <span className="truncate">• {a.name}{a.qty > 1 ? ` × ${a.qty}` : ""}</span>
+                <span className="shrink-0">{formatMoney(a.totalPrice)} {baht}</span>
+              </div>
+            ))}
+          </>
+        )}
+        <Line
+          label={
+            <span className="flex items-center gap-1.5">
+              {t("back.reg.common.discount")} ({t("back.reg.payment.noReceive")})
+              <span className="rounded bg-emerald-50 px-1.5 text-[11px] text-emerald-600">{t("back.reg.payment.privilege")}</span>
+            </span>
+          }
+          valueClass="font-medium text-red-500"
+        >
+          -{formatMoney(totalDiscount)} {baht}
+        </Line>
+        <Line label={t("back.reg.payment.couponDiscount")} valueClass="font-medium text-sky-600">
+          -{formatMoney(totalCoupon)} {baht}
+        </Line>
+        {feePercent > 0 && (
+          <Line label={`${t("back.reg.payment.fee")} ${feePercent}%`}>{formatMoney(feeAmount)} {baht}</Line>
+        )}
+      </div>
 
-      <Row className="text-sm text-gray-700 mt-1">
-        <Col span={16}>
-          <div>{t("back.reg.payment.totalShipping")}</div>
-        </Col>
-        <Col span={8}>
-          <div className="text-right font-semibold">{formatMoney(totalDeliveryFee)} {t("general.unitBaht")}</div>
-        </Col>
-      </Row>
+      <hr className="my-1 border-dashed border-slate-200" />
 
-      {totalAddOns > 0 && (
-        <>
-          <Row className="text-sm text-gray-700 mt-1">
-            <Col span={16}>
-              <div>{t("back.reg.addOn.title")}</div>
-            </Col>
-            <Col span={8}>
-              <div className="text-right font-semibold">{formatMoney(totalAddOns)} {t("general.unitBaht")}</div>
-            </Col>
-          </Row>
-          {addOns.map((a, i) => (
-            <Row key={i} className="text-[13px] text-gray-500">
-              <Col span={16}>
-                <div className="pl-3 truncate">• {a.name}{a.qty > 1 ? ` × ${a.qty}` : ""}</div>
-              </Col>
-              <Col span={8}>
-                <div className="text-right">{formatMoney(a.totalPrice)} {t("general.unitBaht")}</div>
-              </Col>
-            </Row>
-          ))}
-        </>
-      )}
+      <div className="flex items-baseline justify-between gap-3 pt-1">
+        <span className="text-[15px] font-bold text-slate-900">{t("back.reg.payment.total")}</span>
+        <span className="text-right">
+          <span className="text-2xl font-bold tracking-tight text-[#4338ca]">{formatMoney(totalAmountWithFee)}</span>
+          <span className="ml-1 text-sm font-semibold text-slate-700">{baht}</span>
+        </span>
+      </div>
 
-      <Row className="text-sm text-gray-700 mt-1">
-        <Col span={16}>
-          <div>{t("back.reg.common.discount")} ({t("back.reg.payment.noReceive")})</div>
-        </Col>
-        <Col span={8}>
-          <div className="text-right !text-red-500">-{formatMoney(totalDiscount)} {t("general.unitBaht")}</div>
-        </Col>
-      </Row>
-
-      <Row className="text-sm text-gray-700 mt-1">
-        <Col span={16}>
-          <div>{t("back.reg.payment.couponDiscount")}</div>
-        </Col>
-        <Col span={8}>
-          <div className="text-right text-primary">-{formatMoney(totalCoupon)} {t("general.unitBaht")}</div>
-        </Col>
-      </Row>
-      {/* Only one "total" line: the lines above plus the fee add up to the amount charged. */}
-      {feePercent > 0 && (
-        <Row>
-          <Col span={12}>
-            <span>{t("back.reg.payment.fee")}  {feePercent}%</span>
-          </Col>
-          <Col span={12} style={{ textAlign: 'right' }}>
-            <span>{formatMoney(feeAmount)}  {t("general.unitBaht")}</span>
-          </Col>
-        </Row>
-      )}
-
-      <Divider />
-
-      <Row className="text-lg font-bold text-gray-800">
-        <Col span={16}>
-          <div>{t("back.reg.payment.total")}</div>
-        </Col>
-        <Col span={8}>
-          <div className="text-right text-primary">{formatMoney(totalAmountWithFee)} {t("general.unitBaht")}</div>
-        </Col>
-      </Row>
-
-      <Row className="mt-2">
-        <Col span={24}>
-          <div className="text-sm !text-red-500">
-            {t("back.reg.payment.dueIn")} <span style={{ color: 'red' }} className="font-semibold">{paymentDueTH || "-"}</span>
-          </div>
-        </Col>
-      </Row>
-    </Card>
+      <div className="flex items-start gap-2.5 rounded-xl border border-rose-100 bg-rose-50/70 p-3">
+        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+          <ClockCircleOutlined className="text-[12px]" />
+        </span>
+        <div className="text-[13px] leading-relaxed">
+          <div className="font-medium text-rose-600">{t("back.reg.payment.dueIn")}</div>
+          <div className="mt-0.5 font-bold text-rose-700">{paymentDueTH || "-"}</div>
+        </div>
+      </div>
+    </section>
   );
 };
 

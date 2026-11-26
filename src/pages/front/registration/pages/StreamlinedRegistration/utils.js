@@ -1,11 +1,27 @@
 import dayjs from "dayjs";
 
-/** Race age: this year minus the birth year (what the order stores and age groups use). */
-export const raceAge = (birthDate) => (birthDate ? dayjs().year() - dayjs(birthDate).year() : null);
+/**
+ * Race age under the event's `ageCalcMethod`, the same rule the backend stores on the order
+ * (AgeGroupUtils.raceAge):
+ *  - BIRTH_YEAR: race year − birth year
+ *  - EXACT_DATE: completed years on race day
+ *  - unset (events from before the option): this year − birth year
+ * Race day is the distance's own date, else the event's.
+ */
+export const raceAge = (birthDate, event, eventType) => {
+  if (!birthDate) return null;
+  const birth = dayjs(birthDate);
+  if (!birth.isValid()) return null;
+  const method = event?.ageCalcMethod;
+  if (method !== "BIRTH_YEAR" && method !== "EXACT_DATE") return dayjs().year() - birth.year();
+  const raceDay = dayjs(eventType?.eventDate || event?.eventDate || undefined);
+  if (method === "EXACT_DATE") return Math.max(0, raceDay.startOf("day").diff(birth.startOf("day"), "year"));
+  return raceDay.year() - birth.year();
+};
 
 /** The distance's age group a runner falls in, or null. Same rule the order is priced/labelled with. */
-export const findAgeGroup = (eventType, birthDate, gender) => {
-  const age = raceAge(birthDate);
+export const findAgeGroup = (eventType, birthDate, gender, event) => {
+  const age = raceAge(birthDate, event, eventType);
   if (age == null) return null;
   return (eventType?.ageGroups || []).find(
     (group) =>
@@ -34,7 +50,7 @@ export const finalizeApplicants = (rawApplicants, event, t) => {
     const allFields = [...globalFields, ...eventTypeFields];
 
     // ---- age group label ----
-    const matchedGroup = findAgeGroup(selectedEventType, applicant.birthDate, applicant.gender);
+    const matchedGroup = findAgeGroup(selectedEventType, applicant.birthDate, applicant.gender, event);
     const { minAge, maxAge } = matchedGroup || {};
 
     if (minAge != null && maxAge != null) {
@@ -265,6 +281,16 @@ export const addOnsTotal = (addOns, selections) =>
       sum + addOnPickedCount(addOn, (selections || {})[addOn.id]) * (Number(addOn.price) || 0),
     0
   );
+
+/**
+ * A per-runner package that was ticked but nobody was picked for: the buyer
+ * opened it meaning to buy, so say so instead of silently charging nothing.
+ */
+export const firstTickedAddOnWithoutApplicant = (addOns, selections) =>
+  (addOns || []).find((addOn) => {
+    const selection = (selections || {})[addOn.id];
+    return !!addOn.perApplicant && !!selection?.checked && addOnPickedCount(addOn, selection) < 1;
+  }) || null;
 
 /**
  * First add-on that was picked but whose required note is still blank, so the
