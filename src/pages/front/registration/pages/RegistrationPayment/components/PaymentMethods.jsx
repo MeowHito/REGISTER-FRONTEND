@@ -17,6 +17,8 @@ const PaymentMethods = ({ selectedPayment, handlePaymentSelection, options, opti
       className={`payment-option-card ${selectedPayment === type ? 'selected' : ''}`}
       hoverable
       onClick={() => handlePaymentSelection(type)}
+      // antd's 24px body padding left a two-column card on a 360px phone ~80px for its label
+      styles={{ body: { padding: 0 } }}
       style={{
         border: selectedPayment === type ? "2px solid #4f46e5" : "1px solid #ddd",
         textAlign: "center",
@@ -34,7 +36,10 @@ const PaymentMethods = ({ selectedPayment, handlePaymentSelection, options, opti
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
         {icon}
         <Text style={{ fontFamily: "inherit", fontSize: '13px', lineHeight: 1.2, textAlign: 'center', color: selectedPayment === type ? "#000" : "#555" }}>
-          {label}
+          {/* breaks only at spaces: "สแกนจ่าย/โอนเงิน / (QR Code)", never inside a word */}
+          {String(label).split(" ").map((w, i) => (
+            <React.Fragment key={i}>{i > 0 ? " " : null}<span className="inline-block">{w}</span></React.Fragment>
+          ))}
         </Text>
       </div>
     </Card>

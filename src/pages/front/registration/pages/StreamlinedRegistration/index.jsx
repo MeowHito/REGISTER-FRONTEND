@@ -570,12 +570,17 @@ const StreamlinedRegistration = () => {
       // The field's wrapper, so its label shows too; at the top, clear of the bottom notice.
       scrollToEl(document.getElementById(`addon-note-wrap-${missingNote.id}`), 12);
       // The field name is kept on one line ("วันเช็คอิน" must not break as "วันเช็ค / อิน").
-      const [before, after = ""] = t("back.reg.addOn.noteMissing", { label: "\u0000" }).split("\u0000");
+      // The quote marks around it travel with it. inline-block keeps it whole when it fits and lets
+      // it wrap inside only when it is wider than the notice.
+      let [before, after = ""] = t("back.reg.addOn.noteMissing", { label: "\u0000" }).split("\u0000");
+      const open = /[“"'‘]$/.test(before) ? before.slice(-1) : "";
+      const close = /^[”"'’]/.test(after) ? after[0] : "";
+      before = before.slice(0, before.length - open.length);
+      after = after.slice(close.length);
       centerNotice("warning", (
         <span>
           {missingNote.name}: {before}
-          {/* a long organizer-written label may still wrap, so it can't overflow the notice */}
-          <span className={String(missingNote.noteLabel || "").length <= 20 ? "whitespace-nowrap" : ""}>{missingNote.noteLabel}</span>
+          <span className="inline-block">{open}{missingNote.noteLabel}{close}</span>
           {after}
         </span>
       ), { at: "bottom" });

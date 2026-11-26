@@ -96,18 +96,14 @@
   margin-bottom: 16px;
   padding: 6px 10px;
   background: #fafafa;
-  border-radius: 20px;
+  border-radius: 16px;
   border: 1px solid #f0f0f0;
   width: fit-content;
   max-width: 100%;
-  overflow-x: auto;
-  flex-wrap: nowrap;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-
-.ps-cascade-bar::-webkit-scrollbar {
-  display: none;
+  /* Wraps onto a second row on a narrow phone. It used to scroll sideways with the scrollbar
+     hidden, so the last step ("ตำบล") sat out of sight once the ticks made the chips wider. */
+  flex-wrap: wrap;
+  row-gap: 6px;
 }
 
 .ps-cascade-arrow {

@@ -42,7 +42,7 @@ const isPayablePayment = (status, paymentDueDatetime, now = dayjs()) => {
 };
 
 const RegistrationPayment = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const dispatch = useDispatch();
     const order = useSelector(state => state.context.order) || {};
     const navigate = useNavigate();
@@ -113,8 +113,8 @@ const RegistrationPayment = () => {
     }, [currentStatus, isFetchingOrderDetail]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
-        setPaymentDueTH(paymentDueDatetime ? convertDateToThaiFormat(paymentDueDatetime) : "");
-    }, [paymentDueDatetime]);
+        setPaymentDueTH(paymentDueDatetime ? convertDateToThaiFormat(paymentDueDatetime, i18n.language) : "");
+    }, [paymentDueDatetime, i18n.language]);
 
     useEffect(() => {
         scrollPageToTop();
@@ -577,8 +577,9 @@ const RegistrationPayment = () => {
             {/* Net amount + pay button pinned to the bottom (Stitch). Before a method is picked the
                 button stays bright and tapping it points at the method list. */}
             <div className="sticky bottom-0 z-30 mx-auto mt-6 w-full max-w-[528px] border-t border-slate-100 bg-white/95 backdrop-blur-md shadow-[0_-4px_16px_rgba(0,0,0,0.04)] sm:rounded-t-2xl sm:border-x">
-                {/* Below 400px the bar tightens its gaps so the button label stays on one line on a 390px
-                    iPhone; at 360 it still wraps rather than pushing the page sideways. */}
+                {/* Narrower than 399px the bar tightens its gaps and, under 410px, the button drops its
+                    arrow, so the label (TH and EN) stays on one line from 350px up; on narrower phones it
+                    wraps rather than pushing the page sideways. */}
                 <div className="flex w-full items-center justify-between gap-3 px-4 py-3 max-[399px]:gap-2 max-[399px]:px-3" style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}>
                     <div className="flex shrink-0 flex-col">
                         <span className="text-[12px] text-slate-400">{t("back.reg.payment.netPay")}</span>
@@ -594,8 +595,7 @@ const RegistrationPayment = () => {
                         disabled={!canProceed && !needsMethod}
                         loading={isProceeding}
                     >
-                        {/* The arrow drops below 375px so the label stays on one line on a 360px phone too. */}
-                        <span className="inline-flex items-center gap-2 text-center leading-tight">{payButtonLabel} <ArrowRightOutlined className="max-[374px]:!hidden" /></span>
+                        <span className="inline-flex items-center gap-2 text-center leading-tight">{payButtonLabel} <ArrowRightOutlined className="max-[410px]:!hidden" /></span>
                     </Button>
                 </div>
             </div>

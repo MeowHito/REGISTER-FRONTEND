@@ -18,11 +18,17 @@ export const calculatePaymentFeePercent = (paymentType) => {
 };
 
 // Gregorian year, like every other date on the site (cards, event page, history).
-export const convertDateToThaiFormat = (inputDate) => {
+// `lang` "en" gives "29 November 2026, 09:40"; anything else the Thai form.
+export const convertDateToThaiFormat = (inputDate, lang) => {
   if (!inputDate) return "-";
   const date = new Date(inputDate);
+  const hhmm = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  if (String(lang || "").toLowerCase().startsWith("en")) {
+    const enMonths = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    return `${date.getDate()} ${enMonths[date.getMonth()]} ${date.getFullYear()}, ${hhmm}`;
+  }
   const months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
-  return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()} เวลา ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')} น.`;
+  return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()} เวลา ${hhmm} น.`;
 };
 
 export const base64ToJson = (base64String) => {
