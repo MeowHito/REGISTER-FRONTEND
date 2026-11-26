@@ -4,7 +4,7 @@ import { clearDrafts } from "./StreamlinedRegistration/draftStore";
 import { formatPhone } from "constants/phoneCountryCodes";
 import { message } from 'antd';
 import ConditionChecklist from './ConditionChecklist';
-import { LoadingOutlined } from '@ant-design/icons';
+import { CarOutlined, IdcardOutlined, LoadingOutlined, SafetyCertificateOutlined, ShopOutlined, SkinOutlined, TrophyOutlined, UserOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import FrontLayout from 'components/frontLayout';
 import backOfficeServices from "services/backoffice.services";
@@ -24,21 +24,29 @@ function addHoursToNow(hours) {
 	return now.toISOString();
 }
 
-// Small presentational helpers so the review card reads like the registration
-// form (orange-accented section heading + label/value rows), responsive by default.
-const DetailSection = ({ title, children }) => (
-	<div className="space-y-1.5">
-		<h4 className="text-[13px] font-bold uppercase tracking-wide text-[#006193] border-l-2 border-[#fe9400] pl-2 mb-2">
+// Review card pieces (tester deck #11, right-hand design): one white card per group with an
+// orange-barred heading, label on the left and value on the right.
+const DetailSection = ({ icon, title, children }) => (
+	<section className="rounded-2xl border border-[#e5e9eb] bg-white p-4 shadow-[0_2px_10px_-4px_rgba(15,23,42,0.08)]">
+		<h4 className="mb-2 flex items-center gap-2 border-b border-[#f0f2f4] pb-2.5 text-[15px] font-bold text-[#181c1e]">
+			<span className="h-4 w-1 shrink-0 rounded-full bg-[#fe9400]" />
+			<span className="text-[#6b7680]">{icon}</span>
 			{title}
 		</h4>
-		{children}
-	</div>
+		<div className="divide-y divide-[#f5f6f7]">{children}</div>
+	</section>
 );
 
+// Long e-mails may wrap only after "@" or a dot, never in the middle of a word.
+const breakableEmail = (email) =>
+	String(email || "").replace(/([@.])/g, "$1\u0000").split("\u0000").filter(Boolean).map((part, i) => (
+		<span key={i}>{i > 0 ? <wbr /> : null}{part}</span>
+	));
+
 const DetailRow = ({ label, children }) => (
-	<div className="flex flex-wrap gap-x-2 text-sm leading-relaxed">
-		<span className="font-bold text-[#3f4850]">{label}:</span>
-		<span className="text-[#181c1e] break-words">{children}</span>
+	<div className="flex items-start justify-between gap-4 py-2 text-sm">
+		<span className="shrink-0 text-[#6b7680]">{label}:</span>
+		<span className="min-w-0 break-words text-right font-semibold text-[#181c1e]">{children}</span>
 	</div>
 );
 
@@ -417,77 +425,130 @@ const RegistrationDetail = () => {
 
 					<div className="grid gap-6 lg:grid-cols-3 items-start">
 						{/* ---- left: applicant review cards ---- */}
-						<div className="lg:col-span-2 space-y-4">
+						<div className="lg:col-span-2 min-w-0 space-y-4">{/* min-w-0: a long name must truncate, not widen the column past a phone screen */}
 							{applicants.map((applicant, idx) => {
 								const price = Number(applicant.price || 0);
 								const discount = Number(applicant.discountNoShirt || 0);
 								return (
-									<div key={idx} className="bg-white border border-[#bfc7d2] rounded-xl overflow-hidden shadow-sm">
-										<div className="flex items-center justify-between gap-2 px-5 py-3 bg-[#f1f4f6] border-b border-[#e5e9eb]">
-											<span className="font-bold text-[#181c1e]">
-												👤 {t("back.reg.common.applicantNumber")} {idx + 1}/{applicants.length}
-												<span className="text-[#3f4850] font-normal ml-1">
-													({applicant.firstName} {applicant.lastName})
-												</span>
+									<div key={idx} className="space-y-3">
+										{/* dark name card */}
+										<div className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-[#0b1b2b] to-[#1f2d3d] px-4 py-3.5 text-white shadow-md">
+											<span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-lg">
+												<UserOutlined />
 											</span>
+											<div className="min-w-0 flex-1">
+												<span className="inline-block rounded-md bg-[#fe9400] px-2 py-0.5 text-[11px] font-bold text-white">
+													{t("back.reg.reviewCard.applicantBadge", { n: idx + 1, total: applicants.length })}
+												</span>
+												<div className="mt-1 truncate text-[16px] font-bold">{applicant.firstName} {applicant.lastName}</div>
+											</div>
+											<SafetyCertificateOutlined className="shrink-0 text-xl text-emerald-400" />
 										</div>
 
-										<div className="p-5 space-y-5">
-											<DetailSection title={t("back.reg.common.applicantInfo")}>
-												<DetailRow label={t("back.reg.form.firstName")}>{applicant.firstName} {applicant.lastName}</DetailRow>
-												<DetailRow label={t("back.reg.form.birthDate")}>{dayjs(applicant.birthDate).format(SYS_DATE_FORMAT)}</DetailRow>
-												<DetailRow label={t("back.reg.form.email")}>{applicant.email}</DetailRow>
-												{applicant.phone ? <DetailRow label={t("back.reg.form.phone")}>{formatPhone(applicant.phoneCountryCode, applicant.phone)}</DetailRow> : null}
-											</DetailSection>
+										<DetailSection icon={<IdcardOutlined />} title={t("back.reg.common.applicantInfo")}>
+											<DetailRow label={t("back.reg.form.firstName")}>{applicant.firstName} {applicant.lastName}</DetailRow>
+											<DetailRow label={t("back.reg.form.birthDate")}>{dayjs(applicant.birthDate).format(SYS_DATE_FORMAT)}</DetailRow>
+											<DetailRow label={t("back.reg.form.email")}>
+												<span className="font-medium text-[#e8590c] underline underline-offset-2">{breakableEmail(applicant.email)}</span>
+											</DetailRow>
+											{applicant.phone ? <DetailRow label={t("back.reg.form.phone")}>{formatPhone(applicant.phoneCountryCode, applicant.phone)}</DetailRow> : null}
+										</DetailSection>
 
-											<DetailSection title={t("back.reg.common.eventType")}>
-												<DetailRow label={t("back.reg.common.type")}>
-													{applicant.eventTypeName}
-													<span className="text-[#3f4850]"> ({applicant.paymentName || t("back.reg.common.normalPrice")})</span>
-												</DetailRow>
-												{applicant.teamGroup ? <DetailRow label={t("back.reg.common.team")}>{t("back.reg.common.teamNo", { no: applicant.teamGroup })} ({applicant.teamIndex}/{applicant.teamSize})</DetailRow> : null}
-												{applicant.teamClub?.trim() ? <DetailRow label={t("back.reg.form.teamClub")}>{applicant.teamClub}</DetailRow> : null}
-												<DetailRow label={t("back.reg.form.ageGroup")}>{applicant.ageGroupName || t("back.reg.form.noCompetitiveAgeGroup")}</DetailRow>
-												{applicant.noShirt ? (
-													<DetailRow label={t("back.reg.payment.shirt")}>
-														{t("back.reg.payment.noReceive")}
-														{(price > 0 && discount > 0) ? (
-															<span className="text-[#3f4850]"> ({t("back.reg.common.discount")} {discount.toLocaleString()} {t("general.unitBaht")})</span>
+										<DetailSection icon={<TrophyOutlined />} title={t("back.reg.common.eventType")}>
+											<div className="py-2">
+												<div className="rounded-xl border border-[#fde7c7] bg-[#fff8ec] px-3 py-2.5">
+													<div className="flex items-start justify-between gap-2">
+														<span className="text-[12px] text-[#b26a00]">{t("back.reg.common.type")}</span>
+														{applicant.paymentName ? (
+															<span className="shrink-0 rounded-full bg-[#fe9400] px-2 py-0.5 text-[11px] font-bold text-white">{applicant.paymentName}</span>
 														) : null}
-													</DetailRow>
-												) : (
-													<>
-														<DetailRow label={t("back.reg.payment.shirtType")}>{applicant.shirtTypeName}</DetailRow>
-														<DetailRow label={t("back.reg.payment.shirtSize")}>
-															{applicant.shirtSizeName}
-															{(applicant.shirtSizeChestSize || applicant.shirtSizeLength)
-																? ` ( ${t("back.reg.payment.chestSize")} : ${applicant.shirtSizeChestSize || "-"} ${t("back.reg.payment.lengthSize")} : ${applicant.shirtSizeLength || "-"} )`
-																: ""}
-														</DetailRow>
-													</>
-												)}
-												{extraShirtList(applicant).map((sh) => (
-													<DetailRow key={sh.category} label={t(`back.reg.payment.shirtCategory.${sh.category}`)}>
-														{sh.shirtTypeName} / {sh.shirtSizeName}
-													</DetailRow>
-												))}
-											</DetailSection>
+													</div>
+													<div className="mt-0.5 font-bold text-[#181c1e]">
+														{applicant.eventTypeName}
+														{!applicant.paymentName ? <span className="font-normal text-[#3f4850]"> ({t("back.reg.common.normalPrice")})</span> : null}
+													</div>
+												</div>
+											</div>
+											{applicant.teamGroup ? <DetailRow label={t("back.reg.common.team")}>{t("back.reg.common.teamNo", { no: applicant.teamGroup })} ({applicant.teamIndex}/{applicant.teamSize})</DetailRow> : null}
+											{applicant.teamClub?.trim() ? <DetailRow label={t("back.reg.form.teamClub")}>{applicant.teamClub}</DetailRow> : null}
+											<DetailRow label={t("back.reg.form.ageGroup")}>
+												<span className="inline-block rounded-md bg-[#f1f4f6] px-2 py-0.5 text-[13px] font-medium text-[#3f4850]">
+													{applicant.ageGroupName || t("back.reg.form.noCompetitiveAgeGroup")}
+												</span>
+											</DetailRow>
 
-											<DetailSection title={t("back.reg.payment.shipping")}>
-												<DetailRow label={t("back.reg.payment.receiveMethod")}>
-													{applicant.deliveryMethod === 'post' ? t("back.reg.payment.post") : t("back.reg.payment.pickup")}
+											<div className="flex items-center gap-1.5 pt-3 pb-1 text-[12px] font-semibold text-[#6b7680]">
+												<SkinOutlined /> {t("back.reg.reviewCard.shirtDetails")}
+											</div>
+											{applicant.noShirt ? (
+												<DetailRow label={t("back.reg.payment.shirt")}>
+													{t("back.reg.payment.noReceive")}
+													{(price > 0 && discount > 0) ? (
+														<span className="font-normal text-[#3f4850]"> ({t("back.reg.common.discount")} {discount.toLocaleString()} {t("general.unitBaht")})</span>
+													) : null}
 												</DetailRow>
-												{applicant.deliveryMethod === 'post' ? (
-													<>
-														{(applicant.shippingAddress || applicant.shippingDistrict || applicant.shippingAmphoe || applicant.shippingProvince || applicant.shippingZipcode) ? (
-															<DetailRow label={t("back.reg.payment.shippingAddress")}>
-																{formatAddress(applicant.shippingAddress, applicant.shippingDistrict, applicant.shippingAmphoe, applicant.shippingProvince, applicant.shippingZipcode, t)}
-															</DetailRow>
-														) : null}
-													</>
-												) : null}
-											</DetailSection>
-										</div>
+											) : (
+												<>
+													<DetailRow label={t("back.reg.payment.shirtType")}>{applicant.shirtTypeName}</DetailRow>
+													<DetailRow label={t("back.reg.payment.shirtSize")}>
+														{applicant.shirtSizeName}
+														{(applicant.shirtSizeChestSize || applicant.shirtSizeLength)
+															? ` (${t("back.reg.payment.chestSize")} : ${applicant.shirtSizeChestSize || "-"} ${t("back.reg.payment.lengthSize")} : ${applicant.shirtSizeLength || "-"})`
+															: ""}
+													</DetailRow>
+												</>
+											)}
+											{extraShirtList(applicant).map((sh) => (
+												<DetailRow key={sh.category} label={t(`back.reg.payment.shirtCategory.${sh.category}`)}>
+													{sh.category === "FINISHER" ? (
+														<span className="inline-flex items-center gap-1.5">
+															<span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+															{sh.shirtTypeName} / {sh.shirtSizeName}
+														</span>
+													) : (
+														<span className="inline-block rounded-md border border-[#fde7c7] bg-[#fff8ec] px-2 py-0.5 text-[13px] text-[#b26a00]">
+															{sh.shirtTypeName} / {sh.shirtSizeName}
+														</span>
+													)}
+												</DetailRow>
+											))}
+										</DetailSection>
+
+										<DetailSection icon={<CarOutlined />} title={t("back.reg.payment.shipping")}>
+											<div className="py-2">
+												<div className="flex items-start gap-3 rounded-xl border border-[#e5e9eb] bg-[#f7f9fa] p-3">
+													<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#fff1e6] text-[#e8590c]">
+														{applicant.deliveryMethod === 'post' ? <CarOutlined /> : <ShopOutlined />}
+													</span>
+													<div className="min-w-0 text-sm">
+														<div className="text-[12px] text-[#6b7680]">{t("back.reg.payment.receiveMethod")}:</div>
+														<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+															<span className="font-bold text-[#181c1e]">
+																{applicant.deliveryMethod === 'post' ? t("back.reg.payment.post") : t("back.reg.payment.pickup")}
+															</span>
+															{/* Shipping is charged once per order (kept on the first runner), so every
+															    posted runner's card shows the order's fee, or "free" when there is none. */}
+															{applicant.deliveryMethod === 'post' && totalShipping > 0 ? (
+																<span className="rounded-full bg-[#e6f0f7] px-2 py-0.5 text-[11px] font-semibold text-[#006193]">
+																	{t("back.reg.reviewCard.shippingFee", { fee: Number(totalShipping).toLocaleString() })}
+																</span>
+															) : (
+																<span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
+																	{t("back.reg.reviewCard.freeShipping")}
+																</span>
+															)}
+														</div>
+														<p className="mt-1 mb-0 text-[12px] leading-relaxed text-[#6b7680]">
+															{applicant.deliveryMethod === 'post'
+																? (applicant.shippingAddress || applicant.shippingDistrict || applicant.shippingAmphoe || applicant.shippingProvince || applicant.shippingZipcode)
+																	? <>{t("back.reg.reviewCard.postNote")} <span className="font-medium text-[#3f4850]">{formatAddress(applicant.shippingAddress, applicant.shippingDistrict, applicant.shippingAmphoe, applicant.shippingProvince, applicant.shippingZipcode, t)}</span></>
+																	: null
+																: t("back.reg.reviewCard.pickupNote")}
+														</p>
+													</div>
+												</div>
+											</div>
+										</DetailSection>
 									</div>
 								);
 							})}

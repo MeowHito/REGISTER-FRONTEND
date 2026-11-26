@@ -185,16 +185,27 @@ const ProvinceSelector = ({
     setField(fields.district, null);
   }, [fields, setField]);
 
-  const handleProvinceChange = useCallback(() => {
+  // A typed postcode is kept when the province / amphoe picked from its own matches still fits it,
+  // so the next list (amphoe, then tambon) stays narrowed to that postcode. Clearing it here used to
+  // drop the filter: with 30280 the tambon list showed all of เมืองนครราชสีมา, and picking one of
+  // them silently rewrote the postcode to 30000.
+  const zipFits = useCallback(
+    (fieldKey, value, geoList) =>
+      !!selectedZipcode && String(selectedZipcode).length === 5 && value != null &&
+      postalLookup.some((r) => pickLookupVal(r, fieldKey, geoList) === value),
+    [selectedZipcode, postalLookup, pickLookupVal]
+  );
+
+  const handleProvinceChange = useCallback((value) => {
     setField(fields.amphoe,   null);
     setField(fields.district, null);
-    setField(fields.zipcode,  null);
-  }, [fields, setField]);
+    if (!zipFits("province", value, provinces)) setField(fields.zipcode, null);
+  }, [fields, setField, zipFits, provinces]);
 
-  const handleAmphoeChange = useCallback(() => {
+  const handleAmphoeChange = useCallback((value) => {
     setField(fields.district, null);
-    setField(fields.zipcode,  null);
-  }, [fields, setField]);
+    if (!zipFits("amphoe", value, districts)) setField(fields.zipcode, null);
+  }, [fields, setField, zipFits, districts]);
 
   const handleDistrictChange = useCallback(
     (value) => {

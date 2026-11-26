@@ -2563,6 +2563,14 @@
         "systemBusyTitle": "System is Busy",
         "systemBusy": "Please try again in a moment"
       },
+      "reviewCard": {
+        "applicantBadge": "Applicant {{n}}/{{total}}",
+        "shirtDetails": "Shirt details",
+        "freeShipping": "Free",
+        "shippingFee": "Shipping {{fee}} THB",
+        "pickupNote": "Collect your race pack at the event registration point on the dates and times set by the organizer.",
+        "postNote": "Your shirt and race kit will be posted to"
+      },
       "addOn": {
         "title": "Add-ons",
         "intro": "Pick any extra packages you want, or go straight to checkout.",
