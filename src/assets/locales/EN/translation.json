@@ -2334,7 +2334,7 @@
         "scanQRCodeToPay": "Scan the QR Code to make a payment",
         "scanToPay": "Use mobile banking app to scan and pay",
         "loadingQR": "Loading QR Code...",
-        "dueIn": "Payment due in",
+        "dueIn": "Pay by",
         "orderSummary": "Order summary",
         "totalShirtPrice": "Total shirt price",
         "totalShipping": "Total shipping fee",

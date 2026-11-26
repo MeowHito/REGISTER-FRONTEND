@@ -88,6 +88,13 @@
   margin-left: auto;
 }
 
+.ps-cascade-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 /* ─── Cascade flow bar ─────────────────────────────────────────────────────── */
 .ps-cascade-bar {
   display: flex;

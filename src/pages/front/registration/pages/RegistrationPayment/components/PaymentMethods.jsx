@@ -9,6 +9,19 @@ const { Text, Title } = Typography;
 // Methods the legacy SCB / 2C2P gateways serve, used until the backend reports mPAY.
 const LEGACY_METHODS = ['qrcode', 'creditcard', 'ewallet', 'alipay', 'wechatpay'];
 
+// A method label breaks only between whole pieces: words, a "(…)" group kept together, and after a
+// slash — "สแกนจ่าย/โอนเงิน / (QR Code)", or "สแกนจ่าย/ / โอนเงิน / (QR Code)" on a 320px phone —
+// never inside a word. Each piece is inline-block, so one wider than the card still wraps inside.
+const CardLabel = ({ text }) => {
+  const words = String(text ?? "").match(/\([^)]*\)|\S+/g) || [];
+  return words.map((word, i) => (
+    <React.Fragment key={i}>
+      {i > 0 ? " " : null}
+      {word.replace(/\//g, "/\u0000").split("\u0000").filter(Boolean).map((piece, j) => <span key={j} className="inline-block">{piece}</span>)}
+    </React.Fragment>
+  ));
+};
+
 const PaymentMethods = ({ selectedPayment, handlePaymentSelection, options, optionsLoading, selectedBank, onSelectBank }) => {
   const { t } = useTranslation();
 
@@ -36,10 +49,7 @@ const PaymentMethods = ({ selectedPayment, handlePaymentSelection, options, opti
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
         {icon}
         <Text style={{ fontFamily: "inherit", fontSize: '13px', lineHeight: 1.2, textAlign: 'center', color: selectedPayment === type ? "#000" : "#555" }}>
-          {/* breaks only at spaces: "สแกนจ่าย/โอนเงิน / (QR Code)", never inside a word */}
-          {String(label).split(" ").map((w, i) => (
-            <React.Fragment key={i}>{i > 0 ? " " : null}<span className="inline-block">{w}</span></React.Fragment>
-          ))}
+          <CardLabel text={label} />
         </Text>
       </div>
     </Card>

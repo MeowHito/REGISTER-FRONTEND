@@ -532,6 +532,16 @@ const RegistrationPaymentConfirmation = () => {
                     </div>
 
                     <div className="px-5 pb-4 pt-5 text-center">
+                        {/* The amount the bank app should show after scanning, so the runner can check it. */}
+                        {Number(order?.totalAmountWithFee) > 0 && (
+                            <div className="mb-3">
+                                <div className="text-[12px] text-slate-400">{t("back.reg.payment.netPay")}</div>
+                                <div className="text-[26px] font-bold leading-tight tracking-tight text-[#003D6B]">
+                                    {Number(order.totalAmountWithFee).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    <span className="ml-1 text-sm font-semibold text-slate-600">{t("general.unitBaht")}</span>
+                                </div>
+                            </div>
+                        )}
                         {qrCode ? (
                             <div className={`relative mx-auto w-fit p-3 ${expired ? "opacity-30 grayscale" : ""}`}>
                                 <span className="absolute left-0 top-0 h-6 w-6 rounded-tl-lg border-l-4 border-t-4 border-[#0284C7]" />

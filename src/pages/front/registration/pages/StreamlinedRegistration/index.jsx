@@ -903,6 +903,8 @@ const StreamlinedRegistration = () => {
                           rules={[{ required: true, message: t("back.reg.payment.enterAddress") }]}>
                           <Input className={inputCls} placeholder={t("front.reg.enterAddressLine")} allowClear />
                         </CommonForm.Item>
+                        {/* pt-3: the address item above is mb-0 (fieldItemCls), which cancels space-y-3 */}
+                        <div className="pt-3">
                         <ProvinceSelector
                           form={form}
                           basePath={["shipping"]}
@@ -917,6 +919,7 @@ const StreamlinedRegistration = () => {
                             district: t("back.reg.payment.district"),
                           }}
                         />
+                        </div>
                       </div>
                     )}
                   </div>

@@ -584,7 +584,7 @@ const RegistrationPayment = () => {
                     <div className="flex shrink-0 flex-col">
                         <span className="text-[12px] text-slate-400">{t("back.reg.payment.netPay")}</span>
                         <span className="leading-tight">
-                            <span className="text-xl font-bold text-[#4338ca]">{formatMoney(totalAmountWithFee)}</span>
+                            <span className="text-xl font-bold text-[#4338ca] max-[399px]:text-lg">{formatMoney(totalAmountWithFee)}</span>
                             <span className="ml-1 text-xs font-medium text-slate-600">{t("general.unitBaht")}</span>
                         </span>
                     </div>

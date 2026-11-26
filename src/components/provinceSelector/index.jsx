@@ -281,7 +281,9 @@ const ProvinceSelector = ({
       {cascadeSteps.map((step, idx) => {
         const status = getStepStatus(step.filled, step.loading);
         return (
-          <React.Fragment key={step.key}>
+          // Each arrow travels with the step after it, so a wrapped row starts "→ ตำบล" instead of
+          // leaving an arrow hanging at the end of the row above.
+          <span key={step.key} className="ps-cascade-step">
             {idx > 0 && (
               <ArrowRightOutlined
                 className={`ps-cascade-arrow ${cascadeSteps[idx - 1].filled ? "active" : ""}`}
@@ -299,7 +301,7 @@ const ProvinceSelector = ({
             >
               {step.label}
             </Tag>
-          </React.Fragment>
+          </span>
         );
       })}
     </div>
