@@ -25,7 +25,8 @@
 }
 
 .ps-wrapper.ps-compact .ps-cascade-bar {
-  margin-bottom: 8px;
+  /* room for the first field's floating label, which sits above its border */
+  margin-bottom: 14px;
 }
 
 .ps-wrapper.ps-compact .ps-field-wrap {

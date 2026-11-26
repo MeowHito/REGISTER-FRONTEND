@@ -555,7 +555,12 @@ const StreamlinedRegistration = () => {
     const tickedEmpty = firstTickedAddOnWithoutApplicant(addOns, addOnSelections);
     if (tickedEmpty) {
       // Card at the top, notice at the bottom, so the notice never covers the runner chips to tap.
-      scrollToEl(document.getElementById(`addon-${tickedEmpty.id}`), 12);
+      // A card too tall to fit above the bottom notice (several runners on a short phone) is
+      // scrolled to its runner list instead, so the chips to tap stay clear of the notice.
+      const card = document.getElementById(`addon-${tickedEmpty.id}`);
+      const chips = document.getElementById(`addon-applicants-${tickedEmpty.id}`);
+      const room = globalThis.innerHeight - 180 - HEADER_OFFSET;
+      scrollToEl(card && chips && card.offsetHeight > room ? chips : card, 12);
       centerNotice("warning", `${tickedEmpty.name}: ${t("back.reg.addOn.chooseApplicants")}`, { at: "bottom" });
       return;
     }
@@ -564,7 +569,16 @@ const StreamlinedRegistration = () => {
       setAddOnShowErrors(true);
       // The field's wrapper, so its label shows too; at the top, clear of the bottom notice.
       scrollToEl(document.getElementById(`addon-note-wrap-${missingNote.id}`), 12);
-      centerNotice("warning", `${missingNote.name}: ${t("back.reg.addOn.noteMissing", { label: missingNote.noteLabel })}`, { at: "bottom" });
+      // The field name is kept on one line ("วันเช็คอิน" must not break as "วันเช็ค / อิน").
+      const [before, after = ""] = t("back.reg.addOn.noteMissing", { label: "\u0000" }).split("\u0000");
+      centerNotice("warning", (
+        <span>
+          {missingNote.name}: {before}
+          {/* a long organizer-written label may still wrap, so it can't overflow the notice */}
+          <span className={String(missingNote.noteLabel || "").length <= 20 ? "whitespace-nowrap" : ""}>{missingNote.noteLabel}</span>
+          {after}
+        </span>
+      ), { at: "bottom" });
       return;
     }
     const raw = form.getFieldValue("applicants") || [];

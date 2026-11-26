@@ -577,7 +577,9 @@ const RegistrationPayment = () => {
             {/* Net amount + pay button pinned to the bottom (Stitch). Before a method is picked the
                 button stays bright and tapping it points at the method list. */}
             <div className="sticky bottom-0 z-30 mx-auto mt-6 w-full max-w-[528px] border-t border-slate-100 bg-white/95 backdrop-blur-md shadow-[0_-4px_16px_rgba(0,0,0,0.04)] sm:rounded-t-2xl sm:border-x">
-                <div className="flex w-full items-center justify-between gap-3 px-4 py-3" style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}>
+                {/* Below 400px the bar tightens its gaps so the button label stays on one line on a 390px
+                    iPhone; at 360 it still wraps rather than pushing the page sideways. */}
+                <div className="flex w-full items-center justify-between gap-3 px-4 py-3 max-[399px]:gap-2 max-[399px]:px-3" style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}>
                     <div className="flex shrink-0 flex-col">
                         <span className="text-[12px] text-slate-400">{t("back.reg.payment.netPay")}</span>
                         <span className="leading-tight">
@@ -587,13 +589,13 @@ const RegistrationPayment = () => {
                     </div>
                     <Button
                         type="primary"
-                        className="min-w-0 !h-auto min-h-12 !py-2 !whitespace-normal flex-1 !rounded-xl !border-0 !font-semibold !text-base !text-white !shadow-[0_6px_18px_-4px_rgba(79,70,229,0.5)] !bg-gradient-to-r !from-[#4f46e5] !via-indigo-600 !to-[#3730a3]"
+                        className="min-w-0 !h-auto min-h-12 !py-2 max-[399px]:!px-3 max-[389px]:!text-[15px] !whitespace-normal flex-1 !rounded-xl !border-0 !font-semibold !text-base !text-white !shadow-[0_6px_18px_-4px_rgba(79,70,229,0.5)] !bg-gradient-to-r !from-[#4f46e5] !via-indigo-600 !to-[#3730a3]"
                         onClick={needsMethod ? promptForMethod : handleNext}
                         disabled={!canProceed && !needsMethod}
                         loading={isProceeding}
                     >
-                        {/* may wrap to two lines on a 360px phone instead of pushing the page sideways */}
-                        <span className="inline-flex items-center gap-2 text-center leading-tight">{payButtonLabel} <ArrowRightOutlined /></span>
+                        {/* The arrow drops below 375px so the label stays on one line on a 360px phone too. */}
+                        <span className="inline-flex items-center gap-2 text-center leading-tight">{payButtonLabel} <ArrowRightOutlined className="max-[374px]:!hidden" /></span>
                     </Button>
                 </div>
             </div>

@@ -169,7 +169,7 @@ const AddOnCard = ({ addOn, selection, applicants, lang, onChange, showErrors })
               </div>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div id={`addon-applicants-${addOn.id}`} className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
                 <label className="text-sm font-bold text-[#3f4850] whitespace-nowrap">
                   {bi("back.reg.addOn.chooseApplicants")}
